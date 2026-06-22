@@ -109,7 +109,7 @@ const ptBR: Dictionary = {
       royal_paladin: 'Royal Paladin',
       master_sorcerer: 'Master Sorcerer',
       elder_druid: 'Elder Druid',
-      monk: 'Monk',
+      exalted_monk: 'Exalted Monk',
     },
     accountTypes: { free: 'Free', premium: 'Premium' },
     addRow: 'Adicionar',

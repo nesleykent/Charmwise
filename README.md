@@ -65,7 +65,7 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 
 | Field | Meaning |
 | --- | --- |
-| Level, Vocation | Used for the reset/removal gold formulas. Vocations: Elite Knight, Royal Paladin, Master Sorcerer, Elder Druid, Monk. Vocation itself has no known effect on Charm activation chances or attack cadence, so it is not currently a scoring input - your actual critical/leech stats below are what drive the formulas. |
+| Level, Vocation | Used for the reset/removal gold formulas. Vocations: Elite Knight, Royal Paladin, Master Sorcerer, Elder Druid, Exalted Monk. Charm activation chances and costs are the same for every vocation, so vocation itself is not a direct scoring input - you enter your character's actual Critical chance/damage and Leech below, and Charmwise uses those numbers directly. Note that since the 15.25 "Vocation Adjustment" Augments, critical bonuses can vary by spell element as well as vocation (e.g. a Sorcerer's Master of Energy/Master of Death Augments only boost specific elements) - Charmwise's flat Critical chance/damage fields don't capture a per-element split, so treat those figures as your typical/average values rather than per-creature-exact. |
 | Max. hitpoints / mana | Feed Overpower and Overflux's proc-damage caps. |
 | Critical chance / damage bonus | Your *existing* (gear/talent) values - Low Blow and Savage Blow add to these. |
 | Life Leech % / Mana Leech % | Your *existing* leech - Vampiric Embrace and Void's Call only have an effect once this is above zero. |
@@ -141,6 +141,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
 - Carnage's AoE damages *other* nearby creatures, not the one that died; Charmwise approximates this using the same creature's own physical resistance, which is most accurate when hunting a single species in a pack.
 - Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless are scored from documented heuristic assumptions rather than the spec's explicit EV formulas, since none was given for them.
 - Bestiary "unlocked" status is treated as "this creature has a matching Bestiary entry at all", since per-account completion progress is not exposed by the data source.
+- Critical chance/damage are single flat numbers per character, but since the 15.25 "Vocation Adjustment" Augments (e.g. a Sorcerer's Master of Energy/Master of Death) can grant critical bonuses tied to a specific spell element, your real crit rate may vary by which element you're hitting a creature with. Charmwise has no per-element crit input, so Low Blow/Savage Blow scores are only as accurate as the single Critical chance/damage figure you enter.
 
 ## Future improvements
 
@@ -148,6 +149,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
 - A direct "Damage Taken" and per-monster hit-count parser path for Hunt Analyser exports that include them, removing the attack-rate and incoming-damage estimation heuristics entirely.
 - Persisting character presets (e.g. to `localStorage`) so returning users don't have to re-enter their build.
 - A proper knapsack solver for "best use of available Charm Points" across the whole account (today's greedy, per-charm, best-creature suggestion is simple and deterministic but not globally optimal).
+- Per-element critical chance/damage inputs (or a vocation + Augment picker that derives them), so Low Blow/Savage Blow scoring reflects element-specific crit bonuses instead of one flat figure.
 
 ## Project structure
 
