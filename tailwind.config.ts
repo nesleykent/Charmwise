@@ -23,6 +23,11 @@ const config: Config = {
           // important text (helper notes, decorative metadata).
           muted: '#9aa6bc',
           subtle: '#6b7587',
+          // Atmosphere blob palette - muted, desaturated takes on
+          // sunrise/twilight, reusing the existing brand hues (accent/major/
+          // primary) plus one new dusty rose, rather than introducing an
+          // unrelated saturated palette.
+          rose: '#d98a96',
         },
       },
       fontFamily: {
@@ -39,6 +44,9 @@ const config: Config = {
           'system-ui',
           'sans-serif',
         ],
+        // Editorial serif for large headlines only - body copy stays on the
+        // system sans above. Loaded via next/font in layout.tsx as --font-display.
+        display: ['var(--font-display)', 'Georgia', 'serif'],
       },
       boxShadow: {
         glow: '0 0 0 1px rgba(94,177,255,0.15), 0 8px 24px -8px rgba(94,177,255,0.25)',
@@ -46,6 +54,15 @@ const config: Config = {
       },
       borderRadius: {
         xl2: '1.25rem',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.5s ease-out',
       },
     },
   },

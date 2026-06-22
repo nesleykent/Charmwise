@@ -27,14 +27,14 @@ export function HuntAnalyserInput({ value, onChange, parseResult }: Props) {
           <button
             type="button"
             onClick={() => onChange(SAMPLE_HUNT_ANALYSER_TEXT)}
-            className="rounded-full border border-charm-border px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-primary hover:text-white"
+            className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-primary hover:text-white"
           >
             {t.huntAnalyserInput.loadSample}
           </button>
           <button
             type="button"
             onClick={() => onChange('')}
-            className="rounded-full border border-charm-border px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
+            className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
           >
             {t.huntAnalyserInput.clear}
           </button>

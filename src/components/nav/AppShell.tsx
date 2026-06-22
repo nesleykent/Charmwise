@@ -73,12 +73,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="hidden md:flex md:w-60 md:shrink-0 md:flex-col md:border-r md:border-charm-border">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-r md:border-white/10 md:bg-charm-bg/60 md:backdrop-blur-xl">
         <Link href="/" className="flex items-center gap-2 px-5 py-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-charm-primary to-charm-major text-base font-bold text-charm-bg">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-charm-accent via-charm-rose to-charm-major text-base font-bold text-charm-bg">
             C
           </span>
-          <span className="text-lg font-bold text-white">Charmwise</span>
+          <span className="font-display text-lg font-semibold text-white">Charmwise</span>
         </Link>
         <nav className="flex-1 space-y-1 px-3" aria-label={t.nav.dashboard}>
           {NAV_ITEMS.map(({ href, key, Icon }) => {
@@ -88,8 +88,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                  active ? 'bg-charm-surface text-white' : 'text-charm-muted hover:bg-charm-surface/60 hover:text-white'
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                  active ? 'bg-white/[0.07] text-white' : 'text-charm-muted hover:bg-white/[0.04] hover:text-white'
                 }`}
               >
                 <Icon />
@@ -104,12 +104,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <header className="flex items-center justify-between border-b border-charm-border px-4 py-3 md:hidden">
+      <header className="flex items-center justify-between border-b border-white/10 bg-charm-bg/70 px-4 py-3 backdrop-blur-xl md:hidden">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-charm-primary to-charm-major text-base font-bold text-charm-bg">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-charm-accent via-charm-rose to-charm-major text-base font-bold text-charm-bg">
             C
           </span>
-          <span className="text-lg font-bold text-white">Charmwise</span>
+          <span className="font-display text-lg font-semibold text-white">Charmwise</span>
         </Link>
         <LanguageSwitcher />
       </header>
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-charm-border bg-charm-bg/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-white/10 bg-charm-bg/75 backdrop-blur-xl md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label={t.nav.dashboard}
       >
@@ -130,8 +130,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               key={href}
               href={href}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${
-                active ? 'text-charm-primary' : 'text-charm-muted'
+              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-opacity ${
+                active ? 'text-charm-primary' : 'text-charm-muted hover:opacity-80'
               }`}
             >
               <Icon />

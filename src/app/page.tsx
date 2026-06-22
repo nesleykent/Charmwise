@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { DataBadge } from '@/components/DataBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { MissingDataPanel } from '@/components/MissingDataPanel';
+import { PageHeader } from '@/components/PageHeader';
 import { creatureSlug, formatNumber, formatScore } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { useWorkspace } from '@/lib/workspace';
@@ -22,9 +23,8 @@ export default function DashboardPage() {
   const { summary, hasHuntData } = useWorkspace();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-bold tracking-tight text-white">{t.dashboard.title}</h1>
-      <p className="mt-1.5 text-charm-muted">{t.dashboard.subtitle}</p>
+    <div className="mx-auto max-w-5xl animate-fadeIn px-4 py-10 sm:px-6">
+      <PageHeader title={t.dashboard.title} subtitle={t.dashboard.subtitle} />
 
       {!hasHuntData || !summary ? (
         <div className="mt-8">
@@ -38,13 +38,17 @@ export default function DashboardPage() {
           />
         </div>
       ) : (
-        <div className="mt-8 space-y-8">
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <SummaryCard
-              title={t.results.metrics.expectedDamagePerHour}
-              value={formatNumber(summary.expectedImprovementSummary.extraDamagePerHour, locale)}
-              accent
-            />
+        <div className="mt-10 space-y-10">
+          {/* Asymmetric 5-column split: the headline metric (damage/h) takes a
+              double-width slot, the other three share the remaining grid. */}
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="col-span-2 sm:col-span-2">
+              <SummaryCard
+                title={t.results.metrics.expectedDamagePerHour}
+                value={formatNumber(summary.expectedImprovementSummary.extraDamagePerHour, locale)}
+                accent
+              />
+            </div>
             <SummaryCard
               title={t.results.metrics.expectedProfitPerHour}
               value={formatNumber(summary.expectedImprovementSummary.extraProfitPerHour, locale)}
@@ -62,16 +66,16 @@ export default function DashboardPage() {
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-charm-subtle">{t.dashboard.bestAssignmentsTitle}</h2>
-              <Link href="/recommendations" className="text-xs font-medium text-charm-primary hover:underline">
+              <Link href="/recommendations" className="text-xs font-medium text-charm-primary transition-opacity hover:opacity-70">
                 {t.dashboard.viewAllLink}
               </Link>
             </div>
-            <div className="card divide-y divide-charm-border">
+            <div className="card divide-y divide-white/10">
               {summary.creatureResults.map((result) => (
                 <Link
                   key={result.monsterName}
                   href={`/recommendations#${creatureSlug(result.monsterName)}`}
-                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-charm-surfaceAlt/60"
+                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-white/[0.04]"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-white">{result.monsterName}</p>
@@ -96,7 +100,7 @@ export default function DashboardPage() {
             {summary.charmPointBudget.suggestions.length === 0 && summary.minorEchoBudget.suggestions.length === 0 ? (
               <p className="text-sm text-charm-subtle">{t.dashboard.noUpgrades}</p>
             ) : (
-              <ul className="card divide-y divide-charm-border text-xs">
+              <ul className="card divide-y divide-white/10 text-xs">
                 {[...summary.charmPointBudget.suggestions.slice(0, 3), ...summary.minorEchoBudget.suggestions.slice(0, 3)]
                   .sort((a, b) => b.scorePerCost - a.scorePerCost)
                   .slice(0, 5)

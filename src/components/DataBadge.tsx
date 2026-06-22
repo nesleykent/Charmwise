@@ -7,7 +7,7 @@ export type DataProvenance = 'measured' | 'estimated' | 'assumed';
 const PROVENANCE_CLASS: Record<DataProvenance, string> = {
   measured: 'border-charm-minor/30 bg-charm-minor/10 text-charm-minor',
   estimated: 'border-charm-warning/30 bg-charm-warning/10 text-charm-warning',
-  assumed: 'border-charm-subtle/40 bg-charm-surface text-charm-subtle',
+  assumed: 'border-charm-subtle/40 bg-white/[0.04] text-charm-subtle',
 };
 
 /**

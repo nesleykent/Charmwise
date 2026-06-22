@@ -20,10 +20,10 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
         {MODES.map((mode) => (
           <label
             key={mode}
-            className={`cursor-pointer rounded-2xl border p-3.5 text-sm transition-colors ${
+            className={`cursor-pointer rounded-2xl border p-3.5 text-sm transition-all ${
               value === mode
-                ? 'border-charm-primary bg-charm-primary/10 text-white'
-                : 'border-charm-border bg-charm-surface text-charm-muted hover:border-charm-primary/40'
+                ? 'border-charm-primary bg-charm-primary/10 text-white shadow-glow'
+                : 'border-white/10 bg-white/[0.03] text-charm-muted hover:border-charm-primary/40 hover:bg-white/[0.06]'
             }`}
           >
             <input

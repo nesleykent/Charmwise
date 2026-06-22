@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PageHeader } from '@/components/PageHeader';
 import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST } from '@/data/charms';
 import { useLocale } from '@/lib/i18n';
 import { formatNumber, formatPercent } from '@/lib/format';
@@ -13,7 +14,7 @@ function tierSummary(charm: CharmDefinition) {
 function CharmCard({ charm }: { charm: CharmDefinition }) {
   const { t, locale } = useLocale();
   return (
-    <Link href={`/charms/${charm.id}`} className="card block p-4 transition-colors hover:border-charm-primary/50">
+    <Link href={`/charms/${charm.id}`} className="card block p-4 transition-all hover:border-charm-primary/50 hover:bg-charm-surface/80">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-white">{t.charms[charm.id]?.name ?? charm.name}</span>
         <span
@@ -37,9 +38,8 @@ export default function CharmLibraryPage() {
   const { t } = useLocale();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-bold tracking-tight text-white">{t.charmLibrary.title}</h1>
-      <p className="mt-1.5 text-charm-muted">{t.charmLibrary.subtitle}</p>
+    <div className="mx-auto max-w-5xl animate-fadeIn px-4 py-10 sm:px-6">
+      <PageHeader title={t.charmLibrary.title} subtitle={t.charmLibrary.subtitle} />
 
       <section className="mt-8">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-charm-subtle">Major Charms</h2>

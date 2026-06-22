@@ -4,6 +4,7 @@ import { CharmRankingTable } from '@/components/CharmRankingTable';
 import { EmptyState } from '@/components/EmptyState';
 import { OptimisationModeSelector } from '@/components/OptimisationModeSelector';
 import { OptimisationResults } from '@/components/OptimisationResults';
+import { PageHeader } from '@/components/PageHeader';
 import { creatureSlug } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { useWorkspace } from '@/lib/workspace';
@@ -13,9 +14,8 @@ export default function RecommendationsPage() {
   const { summary, hasHuntData, mode, setMode } = useWorkspace();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-bold tracking-tight text-white">{t.recommendationsPage.title}</h1>
-      <p className="mt-1.5 text-charm-muted">{t.recommendationsPage.subtitle}</p>
+    <div className="mx-auto max-w-6xl animate-fadeIn px-4 py-10 sm:px-6">
+      <PageHeader title={t.recommendationsPage.title} subtitle={t.recommendationsPage.subtitle} />
 
       <div className="mt-7">
         <OptimisationModeSelector value={mode} onChange={setMode} />

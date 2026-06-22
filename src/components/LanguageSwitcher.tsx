@@ -12,7 +12,7 @@ export function LanguageSwitcher() {
   const { locale, setLocale, t } = useLocale();
 
   return (
-    <div className="inline-flex shrink-0 rounded-full border border-charm-border bg-charm-surface p-1" role="group" aria-label="Language">
+    <div className="inline-flex shrink-0 rounded-full border border-white/10 bg-white/[0.04] p-1" role="group" aria-label="Language">
       {OPTIONS.map((option) => (
         <button
           key={option.value}

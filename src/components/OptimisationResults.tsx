@@ -60,7 +60,7 @@ export function OptimisationResults({ summary }: Props) {
             ))}
           </ul>
           {summary.majorCharmSlotPlan.unassignedCandidates.length > 0 && (
-            <div className="mt-3 border-t border-charm-border pt-2.5 text-xs text-charm-warning">
+            <div className="mt-3 border-t border-white/10 pt-2.5 text-xs text-charm-warning">
               {summary.majorCharmSlotPlan.unassignedCandidates.map((c) => (
                 <p key={c.monsterName}>
                   {c.monsterName}: {formatMessage(t, c.reason)}
@@ -79,7 +79,7 @@ export function OptimisationResults({ summary }: Props) {
           {summary.charmPointBudget.suggestions.length === 0 ? (
             <p className="text-sm text-charm-subtle">-</p>
           ) : (
-            <ul className="card divide-y divide-charm-border text-xs">
+            <ul className="card divide-y divide-white/10 text-xs">
               {summary.charmPointBudget.suggestions.map((s, i) => (
                 <li key={i} className="p-3">
                   <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} {t.results.linkingFor}{' '}
@@ -96,7 +96,7 @@ export function OptimisationResults({ summary }: Props) {
           {summary.minorEchoBudget.suggestions.length === 0 ? (
             <p className="text-sm text-charm-subtle">-</p>
           ) : (
-            <ul className="card divide-y divide-charm-border text-xs">
+            <ul className="card divide-y divide-white/10 text-xs">
               {summary.minorEchoBudget.suggestions.map((s, i) => (
                 <li key={i} className="p-3">
                   <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} {t.results.linkingFor}{' '}
@@ -111,7 +111,7 @@ export function OptimisationResults({ summary }: Props) {
       {summary.reassignmentSuggestions.length > 0 && (
         <section>
           <SectionHeading>{t.results.reassignmentsTitle}</SectionHeading>
-          <ul className="card divide-y divide-charm-border text-xs">
+          <ul className="card divide-y divide-white/10 text-xs">
             {summary.reassignmentSuggestions.map((r, i) => (
               <li key={i} className="p-3">
                 <span className="text-white">{r.monsterName}</span>: {r.fromCharmId ? t.charms[r.fromCharmId]?.name : t.characterForm.tierLocked}{' '}
@@ -133,7 +133,9 @@ export function OptimisationResults({ summary }: Props) {
 
       <section>
         <SectionHeading>{t.results.rankedAlternatives}</SectionHeading>
-        <CharmRankingTable recommendations={summary.rankedAlternatives} />
+        <div className="card p-3.5 sm:p-4">
+          <CharmRankingTable recommendations={summary.rankedAlternatives} />
+        </div>
       </section>
 
       <section>

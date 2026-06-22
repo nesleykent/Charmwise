@@ -20,7 +20,7 @@ const CONFIDENCE_CLASS: Record<ConfidenceLevel, string> = {
 
 function MetricChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-charm-border/60 bg-charm-bg px-2.5 py-1.5">
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5">
       <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{label}</div>
       <div className="text-sm font-semibold text-white">{value}</div>
     </div>
@@ -29,7 +29,7 @@ function MetricChip({ label, value }: { label: string; value: string }) {
 
 function Badge({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${className || 'border-charm-border text-charm-muted'}`}>
+    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${className || 'border-white/15 text-charm-muted'}`}>
       {children}
     </span>
   );
@@ -53,15 +53,19 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
             // alternatives" list (the same charm appears once per creature),
             // so the index must be part of the key.
             key={`${rec.charmId}-${index}`}
+            // Translucent fill, deliberately WITHOUT backdrop-blur - a ranking
+            // list can run to dozens of rows across creatures, so each row
+            // stays cheap and lets the single blurred glass panel it sits
+            // inside (see call sites) carry the actual frosted-glass effect.
             className={`rounded-2xl border p-3.5 transition-colors ${
               index === 0 && rec.unlocked
-                ? 'border-charm-primary/50 bg-charm-primary/5'
-                : 'border-charm-border bg-charm-surface'
+                ? 'border-charm-primary/50 bg-charm-primary/10 shadow-glow'
+                : 'border-white/10 bg-white/[0.03]'
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-charm-bg text-xs font-bold text-charm-muted">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-charm-bg/80 text-xs font-bold text-charm-muted">
                   {index + 1}
                 </span>
                 <span className="font-semibold text-white">{t.charms[rec.charmId]?.name ?? rec.name}</span>
