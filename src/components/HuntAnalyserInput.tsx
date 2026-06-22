@@ -19,22 +19,22 @@ export function HuntAnalyserInput({ value, onChange, parseResult }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <label htmlFor={id} className="text-sm font-medium text-charm-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label htmlFor={id} className="field-label">
           {t.huntAnalyserInput.title}
         </label>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => onChange(SAMPLE_HUNT_ANALYSER_TEXT)}
-            className="rounded-md border border-charm-border px-2 py-1 text-xs text-charm-muted hover:border-charm-primary hover:text-white"
+            className="rounded-full border border-charm-border px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-primary hover:text-white"
           >
             {t.huntAnalyserInput.loadSample}
           </button>
           <button
             type="button"
             onClick={() => onChange('')}
-            className="rounded-md border border-charm-border px-2 py-1 text-xs text-charm-muted hover:border-charm-danger hover:text-charm-danger"
+            className="rounded-full border border-charm-border px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
           >
             {t.huntAnalyserInput.clear}
           </button>
@@ -47,35 +47,37 @@ export function HuntAnalyserInput({ value, onChange, parseResult }: Props) {
         placeholder={t.huntAnalyserInput.placeholder}
         rows={14}
         spellCheck={false}
-        className="w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 font-mono text-xs leading-relaxed text-white focus:border-charm-primary focus:outline-none focus:ring-1 focus:ring-charm-primary"
+        className="field-input font-mono text-xs leading-relaxed"
       />
 
       {parseResult && parseResult.killedMonsters.length > 0 && (
-        <div className="rounded-md border border-charm-border bg-charm-surface p-3 text-sm">
+        <div className="card p-4 text-sm">
           <h4 className="font-semibold text-white">{t.huntAnalyserInput.parsedSummaryTitle}</h4>
-          <dl className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+          <dl className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
             <div>
-              <dt className="text-charm-muted">{t.huntAnalyserInput.sessionDuration}</dt>
-              <dd className="text-white">
+              <dt className="text-charm-subtle">{t.huntAnalyserInput.sessionDuration}</dt>
+              <dd className="mt-0.5 text-sm text-white">
                 {parseResult.totals.sessionDurationHours !== null ? `${parseResult.totals.sessionDurationHours.toFixed(2)}h` : '-'}
               </dd>
             </div>
             <div>
-              <dt className="text-charm-muted">{t.huntAnalyserInput.killedMonstersFound}</dt>
-              <dd className="text-white">{parseResult.killedMonsters.length}</dd>
+              <dt className="text-charm-subtle">{t.huntAnalyserInput.killedMonstersFound}</dt>
+              <dd className="mt-0.5 text-sm text-white">{parseResult.killedMonsters.length}</dd>
             </div>
             <div>
-              <dt className="text-charm-muted">Damage/h</dt>
-              <dd className="text-white">{parseResult.totals.damagePerHour !== null ? formatNumber(parseResult.totals.damagePerHour, locale) : '-'}</dd>
+              <dt className="text-charm-subtle">Damage/h</dt>
+              <dd className="mt-0.5 text-sm text-white">
+                {parseResult.totals.damagePerHour !== null ? formatNumber(parseResult.totals.damagePerHour, locale) : '-'}
+              </dd>
             </div>
           </dl>
         </div>
       )}
 
       {parseResult && parseResult.warnings.length > 0 && (
-        <div className="rounded-md border border-charm-warning/40 bg-charm-warning/10 p-3 text-xs text-charm-warning">
+        <div className="rounded-2xl border border-charm-warning/30 bg-charm-warning/10 p-4 text-xs text-charm-warning">
           <h4 className="font-semibold">{t.huntAnalyserInput.warningsTitle}</h4>
-          <ul className="mt-1 list-inside list-disc space-y-0.5">
+          <ul className="mt-1.5 list-inside list-disc space-y-1">
             {parseResult.warnings.map((w, i) => (
               <li key={i}>{formatMessage(t, w)}</li>
             ))}

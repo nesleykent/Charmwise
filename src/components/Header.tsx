@@ -11,7 +11,9 @@ export function Header() {
 
   const linkClass = (href: string) => {
     const active = pathname === href;
-    return `text-sm font-medium transition-colors ${active ? 'text-white' : 'text-charm-muted hover:text-white'}`;
+    return `rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+      active ? 'bg-charm-surface text-white' : 'text-charm-muted hover:text-white'
+    }`;
   };
 
   return (

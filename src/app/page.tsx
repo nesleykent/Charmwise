@@ -15,16 +15,10 @@ export default function HomePage() {
           <p className="mx-auto mt-6 max-w-2xl text-lg text-charm-muted">{t.home.heroSubtitle}</p>
           <p className="mt-4 text-xl font-semibold text-charm-primary">{t.home.heroTagline}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/optimiser"
-              className="rounded-full bg-charm-primary px-6 py-3 text-sm font-semibold text-charm-bg shadow-glow transition-transform hover:scale-105"
-            >
+            <Link href="/optimiser" className="btn-primary">
               {t.home.ctaPrimary}
             </Link>
-            <a
-              href="#how-it-works"
-              className="rounded-full border border-charm-border px-6 py-3 text-sm font-semibold text-white hover:border-charm-primary"
-            >
+            <a href="#how-it-works" className="btn-secondary">
               {t.home.ctaSecondary}
             </a>
           </div>
@@ -36,7 +30,7 @@ export default function HomePage() {
         <p className="mx-auto mt-2 max-w-xl text-center text-sm text-charm-muted">{t.home.inputsSubtitle}</p>
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {t.home.inputs.map((input, i) => (
-            <div key={i} className="rounded-xl border border-charm-border bg-charm-surface p-5">
+            <div key={i} className="card p-5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-charm-primary/15 text-sm font-bold text-charm-primary">
                 {i + 1}
               </div>
@@ -52,7 +46,7 @@ export default function HomePage() {
           <h2 className="text-center text-2xl font-bold text-white">{t.home.howTitle}</h2>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {t.home.howSteps.map((step, i) => (
-              <div key={i} className="relative rounded-xl border border-charm-border bg-charm-surface p-5">
+              <div key={i} className="relative card p-5">
                 <span className="absolute -top-3 -left-3 flex h-7 w-7 items-center justify-center rounded-full bg-charm-major text-xs font-bold text-charm-bg">
                   {i + 1}
                 </span>
@@ -69,7 +63,7 @@ export default function HomePage() {
         <p className="mx-auto mt-2 max-w-xl text-center text-sm text-charm-muted">{t.home.outputsSubtitle}</p>
         <ul className="mx-auto mt-8 max-w-2xl space-y-3">
           {t.home.outputs.map((output, i) => (
-            <li key={i} className="flex items-start gap-3 rounded-lg border border-charm-border bg-charm-surface p-4">
+            <li key={i} className="card flex items-start gap-3 p-4">
               <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-charm-minor/20 text-xs text-charm-minor">
                 &#10003;
               </span>
@@ -78,10 +72,7 @@ export default function HomePage() {
           ))}
         </ul>
         <div className="mt-10 text-center">
-          <Link
-            href="/optimiser"
-            className="rounded-full bg-charm-primary px-6 py-3 text-sm font-semibold text-charm-bg shadow-glow transition-transform hover:scale-105"
-          >
+          <Link href="/optimiser" className="btn-primary">
             {t.home.ctaPrimary}
           </Link>
         </div>

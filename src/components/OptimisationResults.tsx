@@ -11,10 +11,14 @@ interface Props {
   summary: HuntOptimisationSummary;
 }
 
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-charm-subtle">{children}</h3>;
+}
+
 function SummaryCard({ title, value, accent }: { title: string; value: string; accent?: boolean }) {
   return (
-    <div className={`rounded-lg border p-4 ${accent ? 'border-charm-primary/50 bg-charm-primary/5' : 'border-charm-border bg-charm-surface'}`}>
-      <div className="text-xs uppercase tracking-wide text-charm-muted">{title}</div>
+    <div className={`card p-4 ${accent ? 'border-charm-primary/50 bg-charm-primary/5' : ''}`}>
+      <div className="text-xs uppercase tracking-wide text-charm-subtle">{title}</div>
       <div className="mt-1 text-xl font-bold text-white">{value}</div>
     </div>
   );
@@ -27,7 +31,7 @@ export function OptimisationResults({ summary }: Props) {
   return (
     <div className="space-y-8">
       <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charm-muted">{t.results.improvementSummary}</h3>
+        <SectionHeading>{t.results.improvementSummary}</SectionHeading>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <SummaryCard title={t.results.metrics.expectedDamagePerHour} value={formatNumber(improvement.extraDamagePerHour, locale)} accent />
           <SummaryCard title={t.results.metrics.expectedProfitPerHour} value={formatNumber(improvement.extraProfitPerHour, locale)} />
@@ -40,9 +44,9 @@ export function OptimisationResults({ summary }: Props) {
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charm-muted">{t.results.slotLimitTitle}</h3>
+        <SectionHeading>{t.results.slotLimitTitle}</SectionHeading>
         <p className="mb-2 text-xs text-charm-muted">{t.results.slotLimitDescription}</p>
-        <div className="rounded-lg border border-charm-border bg-charm-surface p-4 text-sm">
+        <div className="card p-4 text-sm">
           <p className="text-white">
             {summary.majorCharmSlotPlan.slotLimit === null
               ? `${summary.majorCharmSlotPlan.recommendedSlots.length} / ∞`
@@ -56,7 +60,7 @@ export function OptimisationResults({ summary }: Props) {
             ))}
           </ul>
           {summary.majorCharmSlotPlan.unassignedCandidates.length > 0 && (
-            <div className="mt-3 border-t border-charm-border pt-2 text-xs text-charm-warning">
+            <div className="mt-3 border-t border-charm-border pt-2.5 text-xs text-charm-warning">
               {summary.majorCharmSlotPlan.unassignedCandidates.map((c) => (
                 <p key={c.monsterName}>
                   {c.monsterName}: {formatMessage(t, c.reason)}
@@ -69,15 +73,15 @@ export function OptimisationResults({ summary }: Props) {
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charm-muted">
+          <SectionHeading>
             {t.results.charmPointBudget} ({formatNumber(summary.charmPointBudget.available, locale)})
-          </h3>
+          </SectionHeading>
           {summary.charmPointBudget.suggestions.length === 0 ? (
-            <p className="text-sm text-charm-muted">-</p>
+            <p className="text-sm text-charm-subtle">-</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="card divide-y divide-charm-border text-xs">
               {summary.charmPointBudget.suggestions.map((s, i) => (
-                <li key={i} className="rounded-md border border-charm-border bg-charm-surface p-2 text-xs">
+                <li key={i} className="p-3">
                   <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} for{' '}
                   <span className="text-white">{s.monsterName}</span> - {formatNumber(s.cost, locale)} CP ({formatScore(s.scorePerCost)} pts/CP)
                 </li>
@@ -86,15 +90,15 @@ export function OptimisationResults({ summary }: Props) {
           )}
         </div>
         <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charm-muted">
+          <SectionHeading>
             {t.results.minorEchoBudget} ({formatNumber(summary.minorEchoBudget.available, locale)})
-          </h3>
+          </SectionHeading>
           {summary.minorEchoBudget.suggestions.length === 0 ? (
-            <p className="text-sm text-charm-muted">-</p>
+            <p className="text-sm text-charm-subtle">-</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="card divide-y divide-charm-border text-xs">
               {summary.minorEchoBudget.suggestions.map((s, i) => (
-                <li key={i} className="rounded-md border border-charm-border bg-charm-surface p-2 text-xs">
+                <li key={i} className="p-3">
                   <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} for{' '}
                   <span className="text-white">{s.monsterName}</span> - {formatNumber(s.cost, locale)} MCE ({formatScore(s.scorePerCost)} pts/MCE)
                 </li>
@@ -106,16 +110,16 @@ export function OptimisationResults({ summary }: Props) {
 
       {summary.reassignmentSuggestions.length > 0 && (
         <section>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charm-muted">{t.results.reassignmentsTitle}</h3>
-          <ul className="space-y-2">
+          <SectionHeading>{t.results.reassignmentsTitle}</SectionHeading>
+          <ul className="card divide-y divide-charm-border text-xs">
             {summary.reassignmentSuggestions.map((r, i) => (
-              <li key={i} className="rounded-md border border-charm-border bg-charm-surface p-2 text-xs">
+              <li key={i} className="p-3">
                 <span className="text-white">{r.monsterName}</span>: {r.fromCharmId ? t.charms[r.fromCharmId]?.name : t.characterForm.tierLocked}{' '}
                 &rarr; {t.charms[r.toCharmId]?.name} (+{formatScore(r.netScoreGain)} pts, {formatNumber(r.removalCost, locale)} gold)
               </li>
             ))}
           </ul>
-          <div className="mt-3 rounded-md border border-charm-border bg-charm-surface p-3 text-xs text-charm-muted">
+          <div className="mt-3 card p-4 text-xs text-charm-muted">
             <p>
               {t.results.removalCost}: {formatNumber(summary.economics.totalRemovalCost, locale)} gold
             </p>
@@ -128,7 +132,7 @@ export function OptimisationResults({ summary }: Props) {
       )}
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charm-muted">{t.results.rankedAlternatives}</h3>
+        <SectionHeading>{t.results.rankedAlternatives}</SectionHeading>
         <CharmRankingTable recommendations={summary.rankedAlternatives} />
       </section>
 
@@ -140,13 +144,13 @@ export function OptimisationResults({ summary }: Props) {
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charm-muted">{t.results.perCreatureTitle}</h3>
+        <SectionHeading>{t.results.perCreatureTitle}</SectionHeading>
         <div className="space-y-4">
           {summary.creatureResults.map((result) => (
-            <div key={result.monsterName} className="rounded-lg border border-charm-border bg-charm-surface p-4">
+            <div key={result.monsterName} className="card p-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-white">{result.monsterName}</h4>
-                <span className="text-xs text-charm-muted">
+                <span className="text-xs text-charm-subtle">
                   {formatNumber(result.huntStat.kills, locale)} kills ({(result.huntStat.killShare * 100).toFixed(1)}%)
                 </span>
               </div>
@@ -155,14 +159,14 @@ export function OptimisationResults({ summary }: Props) {
               ) : (
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="mb-1 text-xs font-semibold text-charm-muted">{t.results.bestMajor}</p>
+                    <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMajor}</p>
                     <CharmRankingTable
                       recommendations={result.bestMajorCharm ? [result.bestMajorCharm] : []}
                       emptyMessage={t.results.noMajorUnlocked}
                     />
                   </div>
                   <div>
-                    <p className="mb-1 text-xs font-semibold text-charm-muted">{t.results.bestMinor}</p>
+                    <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMinor}</p>
                     <CharmRankingTable
                       recommendations={result.bestMinorCharm ? [result.bestMinorCharm] : []}
                       emptyMessage={t.results.noMinorUnlocked}

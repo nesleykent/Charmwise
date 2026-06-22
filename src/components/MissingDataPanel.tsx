@@ -12,16 +12,16 @@ export function MissingDataPanel({ creaturesLackingBestiaryData, creaturesNeedin
   const hasIssues = creaturesLackingBestiaryData.length > 0 || creaturesNeedingManualReview.length > 0;
 
   return (
-    <div className="rounded-lg border border-charm-border bg-charm-surface p-4">
+    <div className="card p-4">
       <h3 className="text-sm font-semibold text-white">{t.missingData.title}</h3>
-      {!hasIssues && <p className="mt-2 text-sm text-charm-muted">{t.missingData.noIssues}</p>}
+      {!hasIssues && <p className="mt-2 text-sm text-charm-subtle">{t.missingData.noIssues}</p>}
 
       {creaturesLackingBestiaryData.length > 0 && (
         <div className="mt-3">
           <p className="text-xs font-semibold text-charm-danger">{t.missingData.lackingBestiary}</p>
-          <ul className="mt-1 flex flex-wrap gap-1.5">
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {creaturesLackingBestiaryData.map((name) => (
-              <li key={name} className="rounded border border-charm-danger/30 bg-charm-danger/10 px-2 py-0.5 text-xs text-charm-danger">
+              <li key={name} className="rounded-full border border-charm-danger/30 bg-charm-danger/10 px-2.5 py-0.5 text-xs text-charm-danger">
                 {name}
               </li>
             ))}
@@ -32,9 +32,9 @@ export function MissingDataPanel({ creaturesLackingBestiaryData, creaturesNeedin
       {creaturesNeedingManualReview.length > 0 && (
         <div className="mt-3">
           <p className="text-xs font-semibold text-charm-warning">{t.missingData.needsManualReview}</p>
-          <ul className="mt-1 flex flex-wrap gap-1.5">
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {creaturesNeedingManualReview.map((name) => (
-              <li key={name} className="rounded border border-charm-warning/30 bg-charm-warning/10 px-2 py-0.5 text-xs text-charm-warning">
+              <li key={name} className="rounded-full border border-charm-warning/30 bg-charm-warning/10 px-2.5 py-0.5 text-xs text-charm-warning">
                 {name}
               </li>
             ))}

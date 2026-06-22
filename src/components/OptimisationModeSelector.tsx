@@ -15,15 +15,15 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
 
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-semibold text-white">{t.optimiser.modeLabel}</legend>
+      <legend className="mb-3 text-sm font-semibold text-white">{t.optimiser.modeLabel}</legend>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
         {MODES.map((mode) => (
           <label
             key={mode}
-            className={`cursor-pointer rounded-lg border p-3 text-sm transition-colors ${
+            className={`cursor-pointer rounded-2xl border p-3.5 text-sm transition-colors ${
               value === mode
                 ? 'border-charm-primary bg-charm-primary/10 text-white'
-                : 'border-charm-border bg-charm-surface text-charm-muted hover:border-charm-primary/50'
+                : 'border-charm-border bg-charm-surface text-charm-muted hover:border-charm-primary/40'
             }`}
           >
             <input
@@ -35,7 +35,7 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
               className="sr-only"
             />
             <span className="block font-semibold">{t.optimiser.modes[mode]}</span>
-            <span className="mt-1 block text-xs text-charm-muted">{t.optimiser.modeDescriptions[mode]}</span>
+            <span className="mt-1 block text-xs leading-relaxed text-charm-subtle">{t.optimiser.modeDescriptions[mode]}</span>
           </label>
         ))}
       </div>

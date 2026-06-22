@@ -20,10 +20,18 @@ const CONFIDENCE_CLASS: Record<ConfidenceLevel, string> = {
 
 function MetricChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-charm-bg px-2 py-1">
-      <div className="text-[10px] uppercase tracking-wide text-charm-muted">{label}</div>
+    <div className="rounded-lg border border-charm-border/60 bg-charm-bg px-2.5 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{label}</div>
       <div className="text-sm font-semibold text-white">{value}</div>
     </div>
+  );
+}
+
+function Badge({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${className || 'border-charm-border text-charm-muted'}`}>
+      {children}
+    </span>
   );
 }
 
@@ -31,11 +39,11 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
   const { t, locale } = useLocale();
 
   if (recommendations.length === 0) {
-    return <p className="text-sm text-charm-muted">{emptyMessage ?? '-'}</p>;
+    return <p className="text-sm text-charm-subtle">{emptyMessage ?? '-'}</p>;
   }
 
   return (
-    <ol className="space-y-2">
+    <ol className="space-y-2.5">
       {recommendations.map((rec, index) => {
         const e = rec.effect;
         return (
@@ -45,36 +53,27 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
             // alternatives" list (the same charm appears once per creature),
             // so the index must be part of the key.
             key={`${rec.charmId}-${index}`}
-            className={`rounded-lg border p-3 ${
+            className={`rounded-2xl border p-3.5 transition-colors ${
               index === 0 && rec.unlocked
                 ? 'border-charm-primary/50 bg-charm-primary/5'
                 : 'border-charm-border bg-charm-surface'
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-charm-bg text-xs font-bold text-charm-muted">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-charm-bg text-xs font-bold text-charm-muted">
                   {index + 1}
                 </span>
                 <span className="font-semibold text-white">{t.charms[rec.charmId]?.name ?? rec.name}</span>
-                <span className="rounded border border-charm-border px-1.5 py-0.5 text-[10px] text-charm-muted">
-                  {t.characterForm.tierNames[rec.tier - 1]}
-                </span>
-                {!rec.unlocked && (
-                  <span className="rounded border border-charm-border px-1.5 py-0.5 text-[10px] text-charm-muted">
-                    {t.characterForm.tierLocked}
-                  </span>
-                )}
-                <span className={`rounded border px-1.5 py-0.5 text-[10px] ${CONFIDENCE_CLASS[rec.confidence]}`}>
-                  {t.results.confidence[rec.confidence]}
-                </span>
+                <Badge>{rec.unlocked ? t.characterForm.tierNames[rec.tier - 1] : t.characterForm.tierLocked}</Badge>
+                <Badge className={CONFIDENCE_CLASS[rec.confidence]}>{t.results.confidence[rec.confidence]}</Badge>
               </div>
               <span className="text-sm font-bold text-charm-primary">{formatScore(rec.scores.totalScore)} pts</span>
             </div>
 
-            <p className="mt-2 text-xs text-charm-muted">{formatMessage(t, rec.reason)}</p>
+            <p className="mt-2 text-xs leading-relaxed text-charm-muted">{formatMessage(t, rec.reason)}</p>
 
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {e.expectedDamagePerHour > 0.5 && (
                 <MetricChip label={t.results.metrics.expectedDamagePerHour} value={formatNumber(e.expectedDamagePerHour, locale)} />
               )}
@@ -102,7 +101,7 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
             </div>
 
             {rec.warnings.length > 0 && (
-              <ul className="mt-2 list-inside list-disc space-y-0.5 text-[11px] text-charm-warning">
+              <ul className="mt-2.5 list-inside list-disc space-y-1 text-[11px] leading-relaxed text-charm-warning">
                 {rec.warnings.map((w, i) => (
                   <li key={i}>{formatMessage(t, w)}</li>
                 ))}
@@ -110,8 +109,8 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
             )}
 
             {detailed && (
-              <details className="mt-2">
-                <summary className="cursor-pointer text-xs text-charm-primary">{t.optimiser.sectionDetails}</summary>
+              <details className="mt-2.5">
+                <summary className="cursor-pointer text-xs font-medium text-charm-primary">{t.optimiser.sectionDetails}</summary>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] sm:grid-cols-6">
                   <MetricChip label={t.scoreDimensions.damage} value={formatScore(rec.scores.damageScore)} />
                   <MetricChip label={t.scoreDimensions.xp} value={formatScore(rec.scores.xpScore)} />

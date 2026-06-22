@@ -34,7 +34,7 @@ function NumberField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-charm-muted">
+      <label htmlFor={id} className="field-label">
         {label}
       </label>
       <input
@@ -46,15 +46,15 @@ function NumberField({
         onChange={(e) => onChange(e.target.value === '' ? NaN : Number(e.target.value))}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : help ? `${id}-help` : undefined}
-        className="mt-1 w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none focus:ring-1 focus:ring-charm-primary"
+        className={`field-input mt-1.5 ${error ? 'border-charm-danger' : ''}`}
       />
       {help && !error && (
-        <p id={`${id}-help`} className="mt-1 text-xs text-charm-muted">
+        <p id={`${id}-help`} className="mt-1.5 text-xs text-charm-subtle">
           {help}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-xs text-charm-danger">
+        <p id={`${id}-error`} className="mt-1.5 text-xs text-charm-danger">
           {error}
         </p>
       )}
@@ -87,14 +87,14 @@ function UnlockedCharmGrid({
       {charms.map((charm) => (
         <div
           key={charm.id}
-          className="flex items-center justify-between gap-2 rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm"
+          className="flex items-center justify-between gap-2 rounded-lg border border-charm-border bg-charm-bg px-3 py-2 text-sm"
         >
           <span className="truncate text-charm-muted">{t.charms[charm.id].name}</span>
           <select
             aria-label={t.charms[charm.id].name}
             value={getTier(list, charm.id)}
             onChange={(e) => onChange(withTier(list, charm.id, Number(e.target.value)))}
-            className="rounded border border-charm-border bg-charm-surface px-2 py-1 text-xs text-white focus:border-charm-primary focus:outline-none"
+            className="field-select py-1.5 text-xs"
           >
             <option value={0}>{t.characterForm.tierLocked}</option>
             <option value={1}>{t.characterForm.tierNames[0]}</option>
@@ -138,13 +138,13 @@ function AssignedCharmRows({
             onChange={(e) => updateRow(i, { creatureName: e.target.value })}
             placeholder={t.characterForm.creatureNamePlaceholder}
             aria-label={t.characterForm.creatureNamePlaceholder}
-            className="min-w-0 flex-1 rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
+            className="field-input min-w-0 flex-1"
           />
           <select
             value={row.charmId}
             onChange={(e) => updateRow(i, { charmId: e.target.value as CharmId })}
             aria-label={t.characterForm.charmFieldLabel}
-            className="rounded-md border border-charm-border bg-charm-surface px-2 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
+            className="field-select"
           >
             {charmOptions.map((c) => (
               <option key={c.id} value={c.id}>
@@ -156,7 +156,7 @@ function AssignedCharmRows({
             type="button"
             onClick={() => removeRow(i)}
             aria-label={t.characterForm.removeRow}
-            className="rounded-md border border-charm-border px-3 text-charm-muted hover:border-charm-danger hover:text-charm-danger"
+            className="rounded-lg border border-charm-border px-3 text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
           >
             &times;
           </button>
@@ -165,7 +165,7 @@ function AssignedCharmRows({
       <button
         type="button"
         onClick={addRow}
-        className="rounded-md border border-dashed border-charm-border px-3 py-1.5 text-sm text-charm-muted hover:border-charm-primary hover:text-white"
+        className="w-full rounded-lg border border-dashed border-charm-border px-3 py-2 text-sm text-charm-muted transition-colors hover:border-charm-primary hover:text-white sm:w-auto"
       >
         + {t.characterForm.addRow}
       </button>
@@ -185,6 +185,10 @@ function findError(issues: CharacterValidationIssue[], field: keyof CharacterInp
   }[issue.code];
 }
 
+function SubsectionHeading({ children }: { children: React.ReactNode }) {
+  return <h3 className="mb-2 text-sm font-semibold text-white">{children}</h3>;
+}
+
 export function CharacterForm({ value, onChange }: Props) {
   const { t } = useLocale();
   const idPrefix = useId();
@@ -199,7 +203,7 @@ export function CharacterForm({ value, onChange }: Props) {
       {/* Essentials: the only inputs that feed the formulas directly (Overpower/Overflux read
           hitpoints/mana, level drives the gold formulas) - everything else has a working default. */}
       <section>
-        <p className="mb-3 text-xs text-charm-muted">{t.characterForm.essentialsHelp}</p>
+        <p className="mb-3 text-sm leading-relaxed text-charm-muted">{t.characterForm.essentialsHelp}</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <NumberField
             id={`${idPrefix}-level`}
@@ -228,11 +232,12 @@ export function CharacterForm({ value, onChange }: Props) {
         </div>
       </section>
 
-      <details className="group rounded-lg border border-charm-border">
-        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-charm-primary marker:content-none">
-          <span className="inline-block transition-transform group-open:rotate-90">&rsaquo;</span> {t.characterForm.advancedToggle}
+      <details className="group rounded-2xl border border-charm-border bg-charm-surface/40">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3.5 text-sm font-semibold text-charm-primary marker:content-none">
+          <span className="inline-block text-charm-muted transition-transform group-open:rotate-90">&rsaquo;</span>
+          {t.characterForm.advancedToggle}
         </summary>
-        <div className="space-y-6 border-t border-charm-border p-4">
+        <div className="space-y-7 border-t border-charm-border p-4 sm:p-5">
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <NumberField
               id={`${idPrefix}-life-leech`}
@@ -274,21 +279,21 @@ export function CharacterForm({ value, onChange }: Props) {
               help={t.characterForm.helpMinorEchoes}
             />
             <div>
-              <label htmlFor={`${idPrefix}-account`} className="block text-sm font-medium text-charm-muted">
+              <label htmlFor={`${idPrefix}-account`} className="field-label">
                 {t.characterForm.accountType}
               </label>
               <select
                 id={`${idPrefix}-account`}
                 value={value.accountType}
                 onChange={(e) => set('accountType', e.target.value as AccountType)}
-                className="mt-1 w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
+                className="field-select mt-1.5 w-full py-2.5"
               >
                 <option value="free">{t.characterForm.accountTypes.free}</option>
                 <option value="premium">{t.characterForm.accountTypes.premium}</option>
               </select>
             </div>
-            <div className="flex flex-col gap-3 self-end">
-              <label className="flex items-center gap-2 text-sm text-charm-muted">
+            <div className="flex flex-col justify-center gap-3">
+              <label className="flex items-center gap-2.5 text-sm text-charm-muted">
                 <input
                   type="checkbox"
                   checked={value.hasCharmExpansion}
@@ -297,7 +302,7 @@ export function CharacterForm({ value, onChange }: Props) {
                 />
                 {t.characterForm.hasCharmExpansion}
               </label>
-              <label className="flex items-center gap-2 text-sm text-charm-muted">
+              <label className="flex items-center gap-2.5 text-sm text-charm-muted">
                 <input
                   type="checkbox"
                   checked={value.hasUsedFreeReset}
@@ -310,17 +315,17 @@ export function CharacterForm({ value, onChange }: Props) {
           </section>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.unlockedMajorCharms}</h3>
+            <SubsectionHeading>{t.characterForm.unlockedMajorCharms}</SubsectionHeading>
             <UnlockedCharmGrid charms={MAJOR_CHARM_LIST} list={value.unlockedMajorCharms} onChange={(v) => set('unlockedMajorCharms', v)} t={t} />
           </section>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.unlockedMinorCharms}</h3>
+            <SubsectionHeading>{t.characterForm.unlockedMinorCharms}</SubsectionHeading>
             <UnlockedCharmGrid charms={MINOR_CHARM_LIST} list={value.unlockedMinorCharms} onChange={(v) => set('unlockedMinorCharms', v)} t={t} />
           </section>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.assignedMajorCharms}</h3>
+            <SubsectionHeading>{t.characterForm.assignedMajorCharms}</SubsectionHeading>
             <AssignedCharmRows
               rows={value.assignedMajorCharms}
               charmOptions={MAJOR_CHARM_LIST}
@@ -330,7 +335,7 @@ export function CharacterForm({ value, onChange }: Props) {
           </section>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.assignedMinorCharms}</h3>
+            <SubsectionHeading>{t.characterForm.assignedMinorCharms}</SubsectionHeading>
             <AssignedCharmRows
               rows={value.assignedMinorCharms}
               charmOptions={MINOR_CHARM_LIST}

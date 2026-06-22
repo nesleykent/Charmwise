@@ -9,7 +9,7 @@ export function Footer() {
     <footer className="border-t border-charm-border bg-charm-bg">
       <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-charm-muted sm:px-6">
         <p>{t.home.footerNote}</p>
-        <p className="mt-2">Charmwise - {t.nav.tagline}</p>
+        <p className="mt-2 text-charm-subtle">Charmwise - {t.nav.tagline}</p>
       </div>
     </footer>
   );

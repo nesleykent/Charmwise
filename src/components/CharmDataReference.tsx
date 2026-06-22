@@ -16,24 +16,24 @@ function tierSummary(charm: CharmDefinition, tierIndex: number) {
 function CharmCard({ charm }: { charm: CharmDefinition }) {
   const { t, locale } = useLocale();
   return (
-    <div className="rounded-lg border border-charm-border bg-charm-surface p-3">
+    <div className="card p-3.5">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-white">{t.charms[charm.id]?.name ?? charm.name}</span>
         <span
-          className={`rounded px-1.5 py-0.5 text-[10px] ${
+          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
             charm.category === 'major' ? 'bg-charm-major/15 text-charm-major' : 'bg-charm-minor/15 text-charm-minor'
           }`}
         >
           {charm.category === 'major' ? 'Major' : 'Minor'}
         </span>
       </div>
-      <p className="mt-1 text-xs text-charm-muted">{t.charms[charm.id]?.description}</p>
-      <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[11px]">
+      <p className="mt-1.5 text-xs leading-relaxed text-charm-muted">{t.charms[charm.id]?.description}</p>
+      <div className="mt-3 grid grid-cols-3 gap-1.5 text-center text-[11px]">
         {charm.tiers.map((tier, i) => (
-          <div key={tier.tier} className="rounded bg-charm-bg p-1.5">
-            <div className="text-charm-muted">{t.characterForm.tierNames[tier.tier - 1]}</div>
+          <div key={tier.tier} className="rounded-lg bg-charm-bg p-1.5">
+            <div className="text-charm-subtle">{t.characterForm.tierNames[tier.tier - 1]}</div>
             <div className="text-white">{tierSummary(charm, i) || '-'}</div>
-            <div className="text-charm-muted">{formatNumber(tier.cost, locale)}</div>
+            <div className="text-charm-subtle">{formatNumber(tier.cost, locale)}</div>
           </div>
         ))}
       </div>
@@ -47,13 +47,13 @@ export function CharmDataReference() {
 
   return (
     <div>
-      <div className="mb-3 inline-flex rounded-full border border-charm-border bg-charm-surface p-1">
+      <div className="mb-4 inline-flex rounded-full border border-charm-border bg-charm-surface p-1">
         {(['major', 'minor'] as CharmCategory[]).map((c) => (
           <button
             key={c}
             type="button"
             onClick={() => setCategory(c)}
-            className={`rounded-full px-4 py-1 text-xs font-semibold capitalize transition-colors ${
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-colors ${
               category === c ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
             }`}
           >

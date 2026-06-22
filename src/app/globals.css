@@ -2,15 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: #0b0f17;
-  color: #e7ecf5;
+  background-color: #0a0d12;
+  color: #e9edf4;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * {
-  scrollbar-color: #243047 #0b0f17;
+  scrollbar-color: #252b37 #0a0d12;
+}
+
+/* A visible, consistent focus ring on every interactive element, regardless
+   of whether it picked up Tailwind's focus utilities - HIG treats clear
+   keyboard focus as a baseline accessibility requirement, not an extra. */
+:focus-visible {
+  outline: 2px solid #5eb1ff;
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* Shared field chrome so every text/number input looks identical without
+     each component re-typing the same long utility string. */
+  .field-input {
+    @apply w-full rounded-lg border border-charm-border bg-charm-bg px-3 py-2.5 text-sm text-white transition-colors placeholder:text-charm-subtle focus:border-charm-primary focus:outline-none;
+  }
+  .field-select {
+    @apply rounded-lg border border-charm-border bg-charm-surface px-3 py-2.5 text-sm text-white transition-colors focus:border-charm-primary focus:outline-none;
+  }
+  .field-label {
+    @apply block text-sm font-medium text-charm-muted;
+  }
+  .card {
+    @apply rounded-2xl border border-charm-border bg-charm-surface shadow-card;
+  }
+  .btn-primary {
+    @apply rounded-full bg-charm-primary px-6 py-3 text-sm font-semibold text-charm-bg shadow-glow transition-transform active:scale-[0.98] hover:scale-[1.02];
+  }
+  .btn-secondary {
+    @apply rounded-full border border-charm-border px-6 py-3 text-sm font-semibold text-white transition-colors hover:border-charm-primary/60 active:scale-[0.98];
+  }
 }
