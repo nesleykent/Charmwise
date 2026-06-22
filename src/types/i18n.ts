@@ -65,7 +65,9 @@ export interface Dictionary {
     addRow: string;
     removeRow: string;
     creatureNamePlaceholder: string;
-    tierLabel: string;
+    charmFieldLabel: string;
+    /** The three real in-game tier names (Bronze/Silver/Gold), not a generic "Tier 1/2/3". */
+    tierNames: readonly [string, string, string];
     tierLocked: string;
     helpCharmPoints: string;
     helpMinorEchoes: string;

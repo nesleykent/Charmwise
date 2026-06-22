@@ -98,9 +98,9 @@ function UnlockedCharmGrid({
             className="rounded border border-charm-border bg-charm-surface px-2 py-1 text-xs text-white focus:border-charm-primary focus:outline-none"
           >
             <option value={0}>{t.characterForm.tierLocked}</option>
-            <option value={1}>{t.characterForm.tierLabel} 1</option>
-            <option value={2}>{t.characterForm.tierLabel} 2</option>
-            <option value={3}>{t.characterForm.tierLabel} 3</option>
+            <option value={1}>{t.characterForm.tierNames[0]}</option>
+            <option value={2}>{t.characterForm.tierNames[1]}</option>
+            <option value={3}>{t.characterForm.tierNames[2]}</option>
           </select>
         </div>
       ))}
@@ -144,7 +144,7 @@ function AssignedCharmRows({
           <select
             value={row.charmId}
             onChange={(e) => updateRow(i, { charmId: e.target.value as CharmId })}
-            aria-label={t.characterForm.tierLabel}
+            aria-label={t.characterForm.charmFieldLabel}
             className="rounded-md border border-charm-border bg-charm-surface px-2 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
           >
             {charmOptions.map((c) => (

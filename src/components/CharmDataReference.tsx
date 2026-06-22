@@ -31,7 +31,7 @@ function CharmCard({ charm }: { charm: CharmDefinition }) {
       <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[11px]">
         {charm.tiers.map((tier, i) => (
           <div key={tier.tier} className="rounded bg-charm-bg p-1.5">
-            <div className="text-charm-muted">T{tier.tier}</div>
+            <div className="text-charm-muted">{t.characterForm.tierNames[tier.tier - 1]}</div>
             <div className="text-white">{tierSummary(charm, i) || '-'}</div>
             <div className="text-charm-muted">{formatNumber(tier.cost, locale)}</div>
           </div>

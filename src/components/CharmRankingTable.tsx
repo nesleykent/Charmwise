@@ -58,7 +58,7 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
                 </span>
                 <span className="font-semibold text-white">{t.charms[rec.charmId]?.name ?? rec.name}</span>
                 <span className="rounded border border-charm-border px-1.5 py-0.5 text-[10px] text-charm-muted">
-                  T{rec.tier}
+                  {t.characterForm.tierNames[rec.tier - 1]}
                 </span>
                 {!rec.unlocked && (
                   <span className="rounded border border-charm-border px-1.5 py-0.5 text-[10px] text-charm-muted">
