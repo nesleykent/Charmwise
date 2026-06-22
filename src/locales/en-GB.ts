@@ -208,6 +208,8 @@ const en: Dictionary = {
     resistance_unknown: 'Resistance data unavailable - assumed neutral (100%) resistance.',
     heals_from_element: 'This creature heals from {{element}} damage - {{charmName}} is not recommended.',
     immune_to_element: 'This creature is immune to {{element}} damage - {{charmName}} is not recommended.',
+    damage_level_capped:
+      "Damage capped at {{multiplier}}x your character level (the Winter Update 2024 Charm cap) - this creature's hitpoints would otherwise allow more.",
     carnage_aoe_note:
       'Carnage hits other creatures near the kill, not the one that died - this estimate assumes a similar nearby target and is most accurate when hunting in packs.',
     no_mana: 'Character has no mana - Overflux cannot proc.',

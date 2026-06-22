@@ -209,6 +209,8 @@ const ptBR: Dictionary = {
     resistance_unknown: 'Dados de resistencia indisponiveis - assumida resistencia neutra (100%).',
     heals_from_element: 'Esta criatura se cura com dano de {{element}} - {{charmName}} nao e recomendada.',
     immune_to_element: 'Esta criatura e imune a dano de {{element}} - {{charmName}} nao e recomendada.',
+    damage_level_capped:
+      'Dano limitado a {{multiplier}}x o nivel do seu personagem (o limite de Charm do Winter Update 2024) - a vida desta criatura permitiria mais.',
     carnage_aoe_note:
       'Carnage acerta outras criaturas perto da que morreu, nao a propria - esta estimativa assume um alvo proximo semelhante e e mais precisa ao cacar em grupos.',
     no_mana: 'O personagem nao tem mana - Overflux nao pode ser ativada.',

@@ -10,8 +10,12 @@
 // every guess the optimiser makes is visible in one place:
 //
 // - ASSUMED_SECONDS_PER_ATTACK: most direct-damage attacks/spells in Tibia
-//   share a ~2s cooldown across all five supported vocations. Used to turn a
-//   per-attack proc chance into a per-hour rate.
+//   share a ~2s cooldown across all five supported vocations. This sets a
+//   TOTAL attacks/hour budget for the whole session; `optimiseCharms.ts`
+//   splits that budget across species weighted by kills*hitpoints (a
+//   tougher, more-killed species absorbs proportionally more attacks before
+//   dying, the same way TibiaMaps' charm optimizer weights by hitpoints*
+//   kills), not by kill count alone - see `ScoringContext.attacksPerHour`.
 // - incomingDamagePerHourFromMonster (passed in via ScoringContext): approximated
 //   by the optimiser from Healing/h, allocated per creature - see
 //   `optimiseCharms.ts`.
@@ -20,6 +24,16 @@
 //   by the Cripple/Numb paralysis-uptime estimate.
 // - ASSUMED_MANA_DRAIN_SHARE_OF_INCOMING: share of a mana-draining
 //   creature's "incoming damage" assumed to land on mana instead of HP.
+//
+// Elemental Charm level cap (Winter Update 2024)
+// -----------------------------------------------
+// Since the Winter Update 2024, the 7 elemental-damage-on-attack Charms
+// (Curse, Divine Wrath, Enflame, Freeze, Poison, Wound, Zap) cap their base
+// damage at ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER x character level, and
+// Carnage caps at CARNAGE_LEVEL_CAP_MULTIPLIER x character level (3x the
+// elemental cap, matching its 3x higher percentage - 15% vs 5% of HP).
+// Without this cap, a low-level character would be modelled as dealing
+// unrealistically large charm damage against very high-HP creatures.
 import { PERCENT_HP_DAMAGE_CAP } from '@/data/charms';
 import type { CharacterInput } from '@/types/character';
 import type {
@@ -39,6 +53,8 @@ import type { MonsterProfile } from '@/types/monster';
 export const ASSUMED_SECONDS_PER_ATTACK = 2;
 export const ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE = 3600 / ASSUMED_SECONDS_PER_ATTACK;
 export const ASSUMED_MANA_DRAIN_SHARE_OF_INCOMING = 0.3;
+export const ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER = 2;
+export const CARNAGE_LEVEL_CAP_MULTIPLIER = 6;
 export const ASSUMED_RISK_FACTOR_BY_DIFFICULTY: Record<string, number> = {
   harmless: 0.2,
   trivial: 0.4,
@@ -61,6 +77,8 @@ export interface ScoringContext {
   manaDrainReceivedPerHour: number;
   /** True when incomingDamagePerHourFromMonster is a session-wide estimate rather than monster-specific data. */
   incomingDamageIsEstimated: boolean;
+  /** This species' share of the session's total attacks/hour, weighted by kills*hitpoints (see optimiseCharms.ts) - not just kill share, since tougher creatures take more hits to kill. */
+  attacksPerHour: number;
 }
 
 export function emptyEffect(): CharmEffectEstimate {
@@ -76,9 +94,10 @@ export function emptyEffect(): CharmEffectEstimate {
   };
 }
 
-/** Fraction of a session-hour actually spent fighting this species, used to scale per-attack procs into per-session-hour rates. */
-export function estimateAttacksPerHour(killShare: number): number {
-  return killShare * ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE;
+/** Applies the Winter Update 2024 level cap; returns the (possibly capped) base damage and whether the cap actually bound. */
+function applyLevelCap(uncappedBase: number, level: number, multiplier: number): { base: number; wasCapped: boolean } {
+  const cap = level * multiplier;
+  return uncappedBase > cap ? { base: cap, wasCapped: true } : { base: uncappedBase, wasCapped: false };
 }
 
 export function resistanceMultiplier(
@@ -156,9 +175,10 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
       const { multiplier, wasAssumedNeutral } = resistanceMultiplier(monster, element);
       if (wasAssumedNeutral) warnings.push(RESISTANCE_UNKNOWN);
       if (multiplier <= 0) warnings.push(elementLabel(charm.name, element, multiplier));
-      const perAttack = hp * tier.value * activation * multiplier;
-      const attacksPerHour = estimateAttacksPerHour(huntStat.killShare);
-      const damagePerHour = Math.max(0, perAttack * attacksPerHour);
+      const { base: cappedBase, wasCapped } = applyLevelCap(hp * tier.value, character.level, ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER);
+      if (wasCapped) warnings.push({ code: 'damage_level_capped', params: { multiplier: ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER } });
+      const perAttack = cappedBase * activation * multiplier;
+      const damagePerHour = Math.max(0, perAttack * ctx.attacksPerHour);
       return {
         effect: withDerivedXpProfit(damagePerHour, ctx, emptyEffect()),
         warnings,
@@ -174,7 +194,9 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
       const { multiplier, wasAssumedNeutral } = resistanceMultiplier(monster, charm.element ?? 'physical');
       if (wasAssumedNeutral) warnings.push(RESISTANCE_UNKNOWN);
       warnings.push({ code: 'carnage_aoe_note' });
-      const perKill = hp * tier.value * activation * Math.max(0, multiplier);
+      const { base: cappedBase, wasCapped } = applyLevelCap(hp * tier.value, character.level, CARNAGE_LEVEL_CAP_MULTIPLIER);
+      if (wasCapped) warnings.push({ code: 'damage_level_capped', params: { multiplier: CARNAGE_LEVEL_CAP_MULTIPLIER } });
+      const perKill = cappedBase * activation * Math.max(0, multiplier);
       const killsPerHour = huntStat.killsPerHour ?? 0;
       const damagePerHour = Math.max(0, perKill * killsPerHour);
       return {
@@ -191,8 +213,7 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
       }
       const procDamage = Math.min(character.maxHitpoints * tier.value, hp * PERCENT_HP_DAMAGE_CAP);
       const perAttack = procDamage * activation;
-      const attacksPerHour = estimateAttacksPerHour(huntStat.killShare);
-      const damagePerHour = Math.max(0, perAttack * attacksPerHour);
+      const damagePerHour = Math.max(0, perAttack * ctx.attacksPerHour);
       return {
         effect: withDerivedXpProfit(damagePerHour, ctx, emptyEffect()),
         warnings,
@@ -211,8 +232,7 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
       }
       const procDamage = Math.min(character.maxMana * tier.value, hp * PERCENT_HP_DAMAGE_CAP);
       const perAttack = procDamage * activation;
-      const attacksPerHour = estimateAttacksPerHour(huntStat.killShare);
-      const damagePerHour = Math.max(0, perAttack * attacksPerHour);
+      const damagePerHour = Math.max(0, perAttack * ctx.attacksPerHour);
       return {
         effect: withDerivedXpProfit(damagePerHour, ctx, emptyEffect()),
         warnings,

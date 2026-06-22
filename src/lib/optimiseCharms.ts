@@ -3,6 +3,7 @@
 // creature and for the hunt as a whole.
 import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST, getCharmDefinition } from '@/data/charms';
 import {
+  ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE,
   ASSUMED_MANA_DRAIN_SHARE_OF_INCOMING,
   computeCharmEffect,
   computeMaxima,
@@ -274,6 +275,12 @@ export function optimiseCharms(
   // every loot-based formula (deriveXpAndProfitFromDamage, Gut, Scavenge) expects.
   const lootTotalAllocated = allocateByWeight(totals.loot ?? 0, allocationWeights);
   const lootPerKillAllocated = killedMonsters.map((m, i) => (m.kills > 0 ? (lootTotalAllocated[i] ?? 0) / m.kills : null));
+  // Attack opportunities (used by elemental/Overpower/Overflux charms) are
+  // split the same way: a tankier creature takes more hits to kill, so it
+  // soaks up proportionally more of the session's total attacks even at an
+  // identical kill share. ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE is the
+  // session-wide total being redistributed, not a per-species figure.
+  const attacksPerHourAllocated = allocateByWeight(ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE, allocationWeights);
 
   for (const [i, profile] of profiles.entries()) {
     const lootPerKill = lootPerKillAllocated[i] ?? null;
@@ -337,6 +344,7 @@ export function optimiseCharms(
       incomingDamagePerHourFromMonster: incomingDamagePerHourAllocated[i] ?? 0,
       manaDrainReceivedPerHour: manaDrainPerHour,
       incomingDamageIsEstimated: true,
+      attacksPerHour: attacksPerHourAllocated[i] ?? 0,
     };
 
     const majorGroup = rankCharmGroup(MAJOR_CHARM_LIST, 'major', character.unlockedMajorCharms, ctx, weights);

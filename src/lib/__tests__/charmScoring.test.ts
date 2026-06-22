@@ -78,6 +78,8 @@ function makeContext(overrides: Partial<ScoringContext> = {}): ScoringContext {
     incomingDamagePerHourFromMonster: 10_000,
     manaDrainReceivedPerHour: 3_000,
     incomingDamageIsEstimated: true,
+    // Matches the killShare(0.5) * 1800 used throughout the formula comments below.
+    attacksPerHour: 900,
     ...overrides,
   };
 }
@@ -113,6 +115,24 @@ describe('computeCharmEffect - elemental damage charms', () => {
     expect(effect.expectedDamagePerHour).toBe(0);
     expect(confidence).toBe('low');
     expect(warnings.length).toBeGreaterThan(0);
+  });
+
+  it('caps base damage at 2x character level (Winter Update 2024) against very high-HP creatures', () => {
+    // 100,000 hp * 5% = 5,000 uncapped, but level 50 caps it at 50*2=100.
+    const ctx = makeContext({
+      character: { ...character, level: 50 },
+      monster: makeMonster({ hitpoints: 100_000 }),
+    });
+    const { effect, warnings } = computeCharmEffect(getCharmDefinition('wound'), getCharmDefinition('wound').tiers[0], ctx);
+    // capped base 100 * activation 0.05 * resistance 1 * attacksPerHour 900 = 4500, not 5000*0.05*900=225000
+    expect(effect.expectedDamagePerHour).toBeCloseTo(100 * 0.05 * 900, 5);
+    expect(warnings.some((w) => w.code === 'damage_level_capped' && w.params?.multiplier === 2)).toBe(true);
+  });
+
+  it('does not cap or warn when the level cap does not bind', () => {
+    const ctx = makeContext(); // level 200 -> cap 400; monster hp 1000 * 5% = 50, well under the cap
+    const { warnings } = computeCharmEffect(getCharmDefinition('wound'), getCharmDefinition('wound').tiers[0], ctx);
+    expect(warnings.some((w) => w.code === 'damage_level_capped')).toBe(false);
   });
 });
 
@@ -219,6 +239,17 @@ describe('computeCharmEffect - Carnage (on-kill AoE)', () => {
     const ctx = makeContext();
     const { effect } = computeCharmEffect(getCharmDefinition('carnage'), getCharmDefinition('carnage').tiers[0], ctx);
     expect(effect.expectedDamagePerHour).toBeCloseTo(1000 * 0.15 * 0.1 * 1 * 100, 5);
+  });
+
+  it('caps base damage at 6x character level (3x the elemental cap, matching its 3x higher percentage)', () => {
+    // 100,000 hp * 15% = 15,000 uncapped, but level 50 caps it at 50*6=300.
+    const ctx = makeContext({
+      character: { ...character, level: 50 },
+      monster: makeMonster({ hitpoints: 100_000 }),
+    });
+    const { effect, warnings } = computeCharmEffect(getCharmDefinition('carnage'), getCharmDefinition('carnage').tiers[0], ctx);
+    expect(effect.expectedDamagePerHour).toBeCloseTo(300 * 0.1 * 1 * 100, 5);
+    expect(warnings.some((w) => w.code === 'damage_level_capped' && w.params?.multiplier === 6)).toBe(true);
   });
 });
 
