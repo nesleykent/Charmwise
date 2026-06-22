@@ -104,6 +104,8 @@ const ptBR: Dictionary = {
     unlockedMinorCharms: 'Minor Charms desbloqueadas',
     assignedMajorCharms: 'Major Charms atribuidas atualmente',
     assignedMinorCharms: 'Minor Charms atribuidas atualmente',
+    essentialsHelp: 'Esses tres numeros, mais sua sessao do Hunt Analyser, ja sao suficientes para um resultado util. Tudo abaixo e opcional e apenas refina ainda mais os numeros.',
+    advancedToggle: 'Configuracoes avancadas (opcional)',
     vocations: {
       elite_knight: 'Elite Knight',
       royal_paladin: 'Royal Paladin',

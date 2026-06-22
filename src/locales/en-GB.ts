@@ -103,6 +103,8 @@ const en: Dictionary = {
     unlockedMinorCharms: 'Unlocked Minor Charms',
     assignedMajorCharms: 'Currently assigned Major Charms',
     assignedMinorCharms: 'Currently assigned Minor Charms',
+    essentialsHelp: "These three numbers, plus your Hunt Analyser session, are enough for a useful result. Everything below is optional and only sharpens the numbers further.",
+    advancedToggle: 'Advanced settings (optional)',
     vocations: {
       elite_knight: 'Elite Knight',
       royal_paladin: 'Royal Paladin',

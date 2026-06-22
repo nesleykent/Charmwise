@@ -197,170 +197,185 @@ export function CharacterForm({ value, onChange }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <NumberField
-          id={`${idPrefix}-level`}
-          label={t.characterForm.level}
-          value={value.level}
-          onChange={(v) => set('level', v)}
-          error={findError(issues, 'level', t)}
-          min={1}
-        />
-        <div>
-          <label htmlFor={`${idPrefix}-vocation`} className="block text-sm font-medium text-charm-muted">
-            {t.characterForm.vocation}
-          </label>
-          <select
-            id={`${idPrefix}-vocation`}
-            value={value.vocation}
-            onChange={(e) => set('vocation', e.target.value as Vocation)}
-            className="mt-1 w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
-          >
-            {VOCATIONS.map((v) => (
-              <option key={v} value={v}>
-                {t.characterForm.vocations[v]}
-              </option>
-            ))}
-          </select>
+      {/* Essentials: the only inputs that feed the formulas directly (Overpower/Overflux read
+          hitpoints/mana, level drives the gold formulas) - everything else has a working default. */}
+      <section>
+        <p className="mb-3 text-xs text-charm-muted">{t.characterForm.essentialsHelp}</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <NumberField
+            id={`${idPrefix}-level`}
+            label={t.characterForm.level}
+            value={value.level}
+            onChange={(v) => set('level', v)}
+            error={findError(issues, 'level', t)}
+            min={1}
+          />
+          <NumberField
+            id={`${idPrefix}-hp`}
+            label={t.characterForm.maxHitpoints}
+            value={value.maxHitpoints}
+            onChange={(v) => set('maxHitpoints', v)}
+            error={findError(issues, 'maxHitpoints', t)}
+            min={1}
+          />
+          <NumberField
+            id={`${idPrefix}-mana`}
+            label={t.characterForm.maxMana}
+            value={value.maxMana}
+            onChange={(v) => set('maxMana', v)}
+            error={findError(issues, 'maxMana', t)}
+            min={0}
+          />
         </div>
-        <NumberField
-          id={`${idPrefix}-hp`}
-          label={t.characterForm.maxHitpoints}
-          value={value.maxHitpoints}
-          onChange={(v) => set('maxHitpoints', v)}
-          error={findError(issues, 'maxHitpoints', t)}
-          min={1}
-        />
-        <NumberField
-          id={`${idPrefix}-mana`}
-          label={t.characterForm.maxMana}
-          value={value.maxMana}
-          onChange={(v) => set('maxMana', v)}
-          error={findError(issues, 'maxMana', t)}
-          min={0}
-        />
-        <NumberField
-          id={`${idPrefix}-crit-chance`}
-          label={t.characterForm.criticalChance}
-          value={value.criticalChance}
-          onChange={(v) => set('criticalChance', v)}
-          error={findError(issues, 'criticalChance', t)}
-          min={0}
-          step={0.1}
-        />
-        <NumberField
-          id={`${idPrefix}-crit-bonus`}
-          label={t.characterForm.criticalDamageBonus}
-          value={value.criticalDamageBonus}
-          onChange={(v) => set('criticalDamageBonus', v)}
-          error={findError(issues, 'criticalDamageBonus', t)}
-          min={0}
-          step={0.1}
-        />
-        <NumberField
-          id={`${idPrefix}-life-leech`}
-          label={t.characterForm.lifeLeechPercent}
-          value={value.lifeLeechPercent}
-          onChange={(v) => set('lifeLeechPercent', v)}
-          error={findError(issues, 'lifeLeechPercent', t)}
-          min={0}
-          step={0.1}
-        />
-        <NumberField
-          id={`${idPrefix}-mana-leech`}
-          label={t.characterForm.manaLeechPercent}
-          value={value.manaLeechPercent}
-          onChange={(v) => set('manaLeechPercent', v)}
-          error={findError(issues, 'manaLeechPercent', t)}
-          min={0}
-          step={0.1}
-        />
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <NumberField
-          id={`${idPrefix}-cp`}
-          label={t.characterForm.availableCharmPoints}
-          value={value.availableCharmPoints}
-          onChange={(v) => set('availableCharmPoints', v)}
-          error={findError(issues, 'availableCharmPoints', t)}
-          min={0}
-          help={t.characterForm.helpCharmPoints}
-        />
-        <NumberField
-          id={`${idPrefix}-mce`}
-          label={t.characterForm.availableMinorCharmEchoes}
-          value={value.availableMinorCharmEchoes}
-          onChange={(v) => set('availableMinorCharmEchoes', v)}
-          error={findError(issues, 'availableMinorCharmEchoes', t)}
-          min={0}
-          help={t.characterForm.helpMinorEchoes}
-        />
-        <div>
-          <label htmlFor={`${idPrefix}-account`} className="block text-sm font-medium text-charm-muted">
-            {t.characterForm.accountType}
-          </label>
-          <select
-            id={`${idPrefix}-account`}
-            value={value.accountType}
-            onChange={(e) => set('accountType', e.target.value as AccountType)}
-            className="mt-1 w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
-          >
-            <option value="free">{t.characterForm.accountTypes.free}</option>
-            <option value="premium">{t.characterForm.accountTypes.premium}</option>
-          </select>
-        </div>
-        <div className="flex flex-col gap-3 self-end">
-          <label className="flex items-center gap-2 text-sm text-charm-muted">
-            <input
-              type="checkbox"
-              checked={value.hasCharmExpansion}
-              onChange={(e) => set('hasCharmExpansion', e.target.checked)}
-              className="h-4 w-4 rounded border-charm-border bg-charm-bg accent-charm-primary"
+      <details className="group rounded-lg border border-charm-border">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-charm-primary marker:content-none">
+          <span className="inline-block transition-transform group-open:rotate-90">&rsaquo;</span> {t.characterForm.advancedToggle}
+        </summary>
+        <div className="space-y-6 border-t border-charm-border p-4">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor={`${idPrefix}-vocation`} className="block text-sm font-medium text-charm-muted">
+                {t.characterForm.vocation}
+              </label>
+              <select
+                id={`${idPrefix}-vocation`}
+                value={value.vocation}
+                onChange={(e) => set('vocation', e.target.value as Vocation)}
+                className="mt-1 w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
+              >
+                {VOCATIONS.map((v) => (
+                  <option key={v} value={v}>
+                    {t.characterForm.vocations[v]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <NumberField
+              id={`${idPrefix}-crit-chance`}
+              label={t.characterForm.criticalChance}
+              value={value.criticalChance}
+              onChange={(v) => set('criticalChance', v)}
+              error={findError(issues, 'criticalChance', t)}
+              min={0}
+              step={0.1}
             />
-            {t.characterForm.hasCharmExpansion}
-          </label>
-          <label className="flex items-center gap-2 text-sm text-charm-muted">
-            <input
-              type="checkbox"
-              checked={value.hasUsedFreeReset}
-              onChange={(e) => set('hasUsedFreeReset', e.target.checked)}
-              className="h-4 w-4 rounded border-charm-border bg-charm-bg accent-charm-primary"
+            <NumberField
+              id={`${idPrefix}-crit-bonus`}
+              label={t.characterForm.criticalDamageBonus}
+              value={value.criticalDamageBonus}
+              onChange={(v) => set('criticalDamageBonus', v)}
+              error={findError(issues, 'criticalDamageBonus', t)}
+              min={0}
+              step={0.1}
             />
-            {t.characterForm.hasUsedFreeReset}
-          </label>
+            <NumberField
+              id={`${idPrefix}-life-leech`}
+              label={t.characterForm.lifeLeechPercent}
+              value={value.lifeLeechPercent}
+              onChange={(v) => set('lifeLeechPercent', v)}
+              error={findError(issues, 'lifeLeechPercent', t)}
+              min={0}
+              step={0.1}
+            />
+            <NumberField
+              id={`${idPrefix}-mana-leech`}
+              label={t.characterForm.manaLeechPercent}
+              value={value.manaLeechPercent}
+              onChange={(v) => set('manaLeechPercent', v)}
+              error={findError(issues, 'manaLeechPercent', t)}
+              min={0}
+              step={0.1}
+            />
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <NumberField
+              id={`${idPrefix}-cp`}
+              label={t.characterForm.availableCharmPoints}
+              value={value.availableCharmPoints}
+              onChange={(v) => set('availableCharmPoints', v)}
+              error={findError(issues, 'availableCharmPoints', t)}
+              min={0}
+              help={t.characterForm.helpCharmPoints}
+            />
+            <NumberField
+              id={`${idPrefix}-mce`}
+              label={t.characterForm.availableMinorCharmEchoes}
+              value={value.availableMinorCharmEchoes}
+              onChange={(v) => set('availableMinorCharmEchoes', v)}
+              error={findError(issues, 'availableMinorCharmEchoes', t)}
+              min={0}
+              help={t.characterForm.helpMinorEchoes}
+            />
+            <div>
+              <label htmlFor={`${idPrefix}-account`} className="block text-sm font-medium text-charm-muted">
+                {t.characterForm.accountType}
+              </label>
+              <select
+                id={`${idPrefix}-account`}
+                value={value.accountType}
+                onChange={(e) => set('accountType', e.target.value as AccountType)}
+                className="mt-1 w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
+              >
+                <option value="free">{t.characterForm.accountTypes.free}</option>
+                <option value="premium">{t.characterForm.accountTypes.premium}</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-3 self-end">
+              <label className="flex items-center gap-2 text-sm text-charm-muted">
+                <input
+                  type="checkbox"
+                  checked={value.hasCharmExpansion}
+                  onChange={(e) => set('hasCharmExpansion', e.target.checked)}
+                  className="h-4 w-4 rounded border-charm-border bg-charm-bg accent-charm-primary"
+                />
+                {t.characterForm.hasCharmExpansion}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-charm-muted">
+                <input
+                  type="checkbox"
+                  checked={value.hasUsedFreeReset}
+                  onChange={(e) => set('hasUsedFreeReset', e.target.checked)}
+                  className="h-4 w-4 rounded border-charm-border bg-charm-bg accent-charm-primary"
+                />
+                {t.characterForm.hasUsedFreeReset}
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.unlockedMajorCharms}</h3>
+            <UnlockedCharmGrid charms={MAJOR_CHARM_LIST} list={value.unlockedMajorCharms} onChange={(v) => set('unlockedMajorCharms', v)} t={t} />
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.unlockedMinorCharms}</h3>
+            <UnlockedCharmGrid charms={MINOR_CHARM_LIST} list={value.unlockedMinorCharms} onChange={(v) => set('unlockedMinorCharms', v)} t={t} />
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.assignedMajorCharms}</h3>
+            <AssignedCharmRows
+              rows={value.assignedMajorCharms}
+              charmOptions={MAJOR_CHARM_LIST}
+              onChange={(v) => set('assignedMajorCharms', v)}
+              t={t}
+            />
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.assignedMinorCharms}</h3>
+            <AssignedCharmRows
+              rows={value.assignedMinorCharms}
+              charmOptions={MINOR_CHARM_LIST}
+              onChange={(v) => set('assignedMinorCharms', v)}
+              t={t}
+            />
+          </section>
         </div>
-      </section>
-
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.unlockedMajorCharms}</h3>
-        <UnlockedCharmGrid charms={MAJOR_CHARM_LIST} list={value.unlockedMajorCharms} onChange={(v) => set('unlockedMajorCharms', v)} t={t} />
-      </section>
-
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.unlockedMinorCharms}</h3>
-        <UnlockedCharmGrid charms={MINOR_CHARM_LIST} list={value.unlockedMinorCharms} onChange={(v) => set('unlockedMinorCharms', v)} t={t} />
-      </section>
-
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.assignedMajorCharms}</h3>
-        <AssignedCharmRows
-          rows={value.assignedMajorCharms}
-          charmOptions={MAJOR_CHARM_LIST}
-          onChange={(v) => set('assignedMajorCharms', v)}
-          t={t}
-        />
-      </section>
-
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-white">{t.characterForm.assignedMinorCharms}</h3>
-        <AssignedCharmRows
-          rows={value.assignedMinorCharms}
-          charmOptions={MINOR_CHARM_LIST}
-          onChange={(v) => set('assignedMinorCharms', v)}
-          t={t}
-        />
-      </section>
+      </details>
     </div>
   );
 }

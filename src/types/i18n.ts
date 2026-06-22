@@ -58,6 +58,8 @@ export interface Dictionary {
     unlockedMinorCharms: string;
     assignedMajorCharms: string;
     assignedMinorCharms: string;
+    essentialsHelp: string;
+    advancedToggle: string;
     vocations: { elite_knight: string; royal_paladin: string; master_sorcerer: string; elder_druid: string; exalted_monk: string };
     accountTypes: { free: string; premium: string };
     addRow: string;
