@@ -10,7 +10,7 @@
 // every guess the optimiser makes is visible in one place:
 //
 // - ASSUMED_SECONDS_PER_ATTACK: most direct-damage attacks/spells in Tibia
-//   share a ~2s cooldown across all four supported vocations. Used to turn a
+//   share a ~2s cooldown across all five supported vocations. Used to turn a
 //   per-attack proc chance into a per-hour rate.
 // - incomingDamagePerHourFromMonster (passed in via ScoringContext): approximated
 //   by the optimiser from Healing/h, allocated per creature - see

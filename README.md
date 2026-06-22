@@ -65,7 +65,7 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 
 | Field | Meaning |
 | --- | --- |
-| Level, Vocation | Used for the reset/removal gold formulas and to contextualise critical/leech stats. Vocations: Elite Knight, Royal Paladin, Master Sorcerer, Elder Druid. |
+| Level, Vocation | Used for the reset/removal gold formulas. Vocations: Elite Knight, Royal Paladin, Master Sorcerer, Elder Druid, Monk. Vocation itself has no known effect on Charm activation chances or attack cadence, so it is not currently a scoring input - your actual critical/leech stats below are what drive the formulas. |
 | Max. hitpoints / mana | Feed Overpower and Overflux's proc-damage caps. |
 | Critical chance / damage bonus | Your *existing* (gear/talent) values - Low Blow and Savage Blow add to these. |
 | Life Leech % / Mana Leech % | Your *existing* leech - Vampiric Embrace and Void's Call only have an effect once this is above zero. |

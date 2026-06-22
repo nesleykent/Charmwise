@@ -1,7 +1,7 @@
 // Character input types.
 import type { CharmId, CharmTier } from './charm';
 
-export type Vocation = 'elite_knight' | 'royal_paladin' | 'master_sorcerer' | 'elder_druid';
+export type Vocation = 'elite_knight' | 'royal_paladin' | 'master_sorcerer' | 'elder_druid' | 'monk';
 
 export type AccountType = 'free' | 'premium';
 
@@ -45,6 +45,7 @@ export const VOCATIONS: Vocation[] = [
   'royal_paladin',
   'master_sorcerer',
   'elder_druid',
+  'monk',
 ];
 
 export const DEFAULT_CHARACTER_INPUT: CharacterInput = {
