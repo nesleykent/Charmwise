@@ -1,0 +1,44 @@
+'use client';
+
+import { useLocale } from '@/lib/i18n';
+import type { OptimisationMode } from '@/types/charm';
+
+const MODES: OptimisationMode[] = ['balanced', 'xp', 'profit', 'safety', 'low_supplies'];
+
+interface Props {
+  value: OptimisationMode;
+  onChange: (mode: OptimisationMode) => void;
+}
+
+export function OptimisationModeSelector({ value, onChange }: Props) {
+  const { t } = useLocale();
+
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-semibold text-white">{t.optimiser.modeLabel}</legend>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+        {MODES.map((mode) => (
+          <label
+            key={mode}
+            className={`cursor-pointer rounded-lg border p-3 text-sm transition-colors ${
+              value === mode
+                ? 'border-charm-primary bg-charm-primary/10 text-white'
+                : 'border-charm-border bg-charm-surface text-charm-muted hover:border-charm-primary/50'
+            }`}
+          >
+            <input
+              type="radio"
+              name="optimisation-mode"
+              value={mode}
+              checked={value === mode}
+              onChange={() => onChange(mode)}
+              className="sr-only"
+            />
+            <span className="block font-semibold">{t.optimiser.modes[mode]}</span>
+            <span className="mt-1 block text-xs text-charm-muted">{t.optimiser.modeDescriptions[mode]}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
