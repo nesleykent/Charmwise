@@ -82,7 +82,7 @@ export function OptimisationResults({ summary }: Props) {
             <ul className="card divide-y divide-charm-border text-xs">
               {summary.charmPointBudget.suggestions.map((s, i) => (
                 <li key={i} className="p-3">
-                  <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} for{' '}
+                  <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} {t.results.linkingFor}{' '}
                   <span className="text-white">{s.monsterName}</span> - {formatNumber(s.cost, locale)} CP ({formatScore(s.scorePerCost)} pts/CP)
                 </li>
               ))}
@@ -99,7 +99,7 @@ export function OptimisationResults({ summary }: Props) {
             <ul className="card divide-y divide-charm-border text-xs">
               {summary.minorEchoBudget.suggestions.map((s, i) => (
                 <li key={i} className="p-3">
-                  <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} for{' '}
+                  <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} {t.results.linkingFor}{' '}
                   <span className="text-white">{s.monsterName}</span> - {formatNumber(s.cost, locale)} MCE ({formatScore(s.scorePerCost)} pts/MCE)
                 </li>
               ))}

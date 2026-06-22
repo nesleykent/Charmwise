@@ -110,7 +110,7 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
 
             {detailed && (
               <details className="mt-2.5">
-                <summary className="cursor-pointer text-xs font-medium text-charm-primary">{t.optimiser.sectionDetails}</summary>
+                <summary className="cursor-pointer text-xs font-medium text-charm-primary">{t.recommendationsPage.sectionDetails}</summary>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] sm:grid-cols-6">
                   <MetricChip label={t.scoreDimensions.damage} value={formatScore(rec.scores.damageScore)} />
                   <MetricChip label={t.scoreDimensions.xp} value={formatScore(rec.scores.xpScore)} />

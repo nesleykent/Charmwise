@@ -5,39 +5,59 @@ export type Locale = 'en-GB' | 'pt-BR';
 
 export interface Dictionary {
   meta: { title: string; description: string };
-  nav: { home: string; optimiser: string; tagline: string };
+  nav: { dashboard: string; character: string; hunt: string; recommendations: string; charms: string; tagline: string };
   language: { en: string; pt: string };
-  home: {
-    heroEyebrow: string;
-    heroTitle: string;
-    heroSubtitle: string;
-    heroTagline: string;
-    ctaPrimary: string;
-    ctaSecondary: string;
-    inputsTitle: string;
-    inputsSubtitle: string;
-    inputs: { title: string; description: string }[];
-    howTitle: string;
-    howSteps: { title: string; description: string }[];
-    outputsTitle: string;
-    outputsSubtitle: string;
-    outputs: string[];
-    footerNote: string;
+  common: {
+    resetWorkspace: string;
+    resetConfirm: string;
+    privacyNote: string;
   };
-  optimiser: {
+  dataBadge: {
+    measured: string;
+    estimated: string;
+    assumed: string;
+    measuredHint: string;
+    estimatedHint: string;
+    assumedHint: string;
+  };
+  dashboard: {
     title: string;
     subtitle: string;
+    emptyTitle: string;
+    emptyBody: string;
+    emptyCtaHunt: string;
+    emptyCtaCharacter: string;
+    bestAssignmentsTitle: string;
+    upgradeOpportunitiesTitle: string;
+    viewAllLink: string;
+    noUpgrades: string;
+  };
+  characterPage: {
+    title: string;
+    subtitle: string;
+  };
+  huntPage: {
+    title: string;
+    subtitle: string;
+  };
+  recommendationsPage: {
+    title: string;
+    subtitle: string;
+    emptyTitle: string;
+    emptyBody: string;
+    emptyCta: string;
     modeLabel: string;
     modeDescriptions: Record<string, string>;
     modes: { balanced: string; xp: string; profit: string; safety: string; low_supplies: string };
-    sectionCharacter: string;
-    sectionHunt: string;
-    sectionCharms: string;
-    sectionResults: string;
     sectionDetails: string;
-    runButton: string;
-    resetButton: string;
-    emptyState: string;
+  };
+  charmLibrary: {
+    title: string;
+    subtitle: string;
+    bestAgainst: string;
+    worstAgainst: string;
+    backToLibrary: string;
+    tierCosts: string;
   };
   characterForm: {
     title: string;
@@ -91,6 +111,8 @@ export interface Dictionary {
     bestMinor: string;
     allMajorCharms: string;
     allMinorCharms: string;
+    /** Connector word in "{{charm}} for {{creature}}" suggestion rows. */
+    linkingFor: string;
     perCreatureTitle: string;
     fullHuntTitle: string;
     recommendedSetup: string;

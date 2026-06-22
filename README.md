@@ -19,6 +19,16 @@ Charmwise combines four inputs to recommend the best Major Charm and Minor Charm
 
 The app parses the Hunt Analyser text, joins each killed monster against the Bestiary, applies your character's stats, calculates the expected value of every Charm against every creature you fought, and ranks the results. Everything runs client-side - nothing you type is ever uploaded anywhere.
 
+### App structure
+
+Charmwise is five pages sharing one workspace (`src/lib/workspace.tsx`), not one long form - your character, pasted session, and optimisation mode persist to `localStorage` and follow you between pages and across reloads:
+
+- **Dashboard** (`/`) - your current best Charm per creature, expected gains, and upgrade opportunities at a glance.
+- **Character** (`/character`) - the three numbers that actually feed the formulas, with everything else (Leech, account type, unlocked/assigned Charms) behind an optional disclosure.
+- **Hunt Analyser** (`/hunt`) - paste a session; parsing and validation happen instantly, client-side.
+- **Recommendations** (`/recommendations`) - the full ranked breakdown per creature, with the optimisation-mode switch and a "why this, not that" explanation for every Charm.
+- **Charm Library** (`/charms`) - mechanics and costs for all 25 Charms, plus a per-Charm best-against/worst-against creature ranking computed directly from the Bestiary (`src/lib/charmLibrary.ts`) - independent of any pasted hunt.
+
 ## Setup instructions
 
 ```bash
@@ -46,7 +56,7 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 
 - **Bestiary** - [`bestiary-session-analyzer`](https://github.com/nesleykent/bestiary-session-analyzer/blob/main/src/data/bestiary.json), vendored into [`src/data/bestiary.json`](src/data/bestiary.json). It is a [tibiadraptor.com](https://tibiadraptor.com) bestiary export: 800+ creatures with hitpoints, experience, difficulty, resistances, damage types, negative conditions and Charm Point rewards.
 - **Charm mechanics** - transcribed into [`src/data/charms.ts`](src/data/charms.ts) from the in-game Charm system (activation chances, tier costs, effect magnitudes). The Winter Update 2024 level cap on elemental Charm damage, and the attack-opportunity weighting in `charmScoring.ts`, were corrected against the published methodology of [TibiaMaps' Charm Optimizer](https://tibiamaps.io/tools/charms) and [TibiaPal's Charm Calculator](https://tibiapal.com/charm_calculator).
-- **Hunt Analyser** - whatever you paste into the Optimiser page, parsed by [`src/lib/parseHuntAnalyser.ts`](src/lib/parseHuntAnalyser.ts).
+- **Hunt Analyser** - whatever you paste into the Hunt Analyser page, parsed by [`src/lib/parseHuntAnalyser.ts`](src/lib/parseHuntAnalyser.ts).
 - **Character** - whatever you enter into the Character form.
 
 ### A note on what the Bestiary source does *not* contain
@@ -78,7 +88,7 @@ Only Level, Max. hitpoints and Max. mana are asked for up front - together with 
 
 ## Hunt Analyser input explanation
 
-Paste the text Tibia's Hunt Analyser window produces (see the "Load sample session" button on the Optimiser page for a worked example). The parser extracts session totals (XP, loot, damage, healing and their per-hour rates), every line under `Killed Monsters:`, and every line under `Looted Items:`. Lines it cannot recognise are reported as parser warnings rather than silently dropped.
+Paste the text Tibia's Hunt Analyser window produces (see the "Load sample session" button on the Hunt Analyser page for a worked example). The parser extracts session totals (XP, loot, damage, healing and their per-hour rates), every line under `Killed Monsters:`, and every line under `Looted Items:`. Lines it cannot recognise are reported as parser warnings rather than silently dropped.
 
 ## Charm formula explanation
 
@@ -154,17 +164,19 @@ reset_cost   = 0 if the free reset hasn't been used yet
 
 - A real loot/Creature Product/Skinning/Dusting value dataset, so Gut and Scavenge can be scored with reported data instead of session-derived fallbacks.
 - A direct "Damage Taken" and per-monster hit-count parser path for Hunt Analyser exports that include them, removing the attack-rate and incoming-damage estimation heuristics entirely.
-- Persisting character presets (e.g. to `localStorage`) so returning users don't have to re-enter their build.
 - A proper knapsack solver for "best use of available Charm Points" across the whole account (today's greedy, per-charm, best-creature suggestion is simple and deterministic but not globally optimal).
+- Multiple saved characters/hunts (today's workspace holds exactly one of each), and a way to compare two optimisation modes side by side.
 - An optional, opt-in critical chance/damage override (or an Augment picker that derives one) for builds that have invested well beyond the 5%/10% baseline, so Low Blow/Savage Blow scoring can reflect it without asking every user to look the numbers up.
 
 ## Project structure
 
 ```
-src/app                  Next.js App Router pages (Home, Optimiser)
-src/components           CharacterForm, HuntAnalyserInput, OptimisationResults, CharmRankingTable, MissingDataPanel, ...
+src/app                  Dashboard (/), /character, /hunt, /recommendations, /charms + /charms/[charmId]
+src/components           CharacterForm, HuntAnalyserInput, OptimisationResults, CharmRankingTable, CharmDetailView,
+                         MissingDataPanel, DataBadge, EmptyState, nav/AppShell, ...
 src/data                 bestiary.json, charms.ts, sampleHuntAnalyser.ts
-src/lib                  parseHuntAnalyser.ts, normaliseMonster.ts, charmScoring.ts, optimiseCharms.ts, economy.ts, validation.ts, format.ts, i18n.tsx
+src/lib                  parseHuntAnalyser.ts, normaliseMonster.ts, charmScoring.ts, optimiseCharms.ts, charmLibrary.ts,
+                         economy.ts, validation.ts, format.ts, i18n.tsx, workspace.tsx
 src/locales              en-GB.ts, pt-BR.ts
 src/types                character.ts, hunt.ts, monster.ts, charm.ts, optimisation.ts, i18n.ts
 ```

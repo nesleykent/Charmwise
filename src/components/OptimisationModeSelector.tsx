@@ -15,7 +15,7 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
 
   return (
     <fieldset>
-      <legend className="mb-3 text-sm font-semibold text-white">{t.optimiser.modeLabel}</legend>
+      <legend className="mb-3 text-sm font-semibold text-white">{t.recommendationsPage.modeLabel}</legend>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
         {MODES.map((mode) => (
           <label
@@ -34,8 +34,8 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
               onChange={() => onChange(mode)}
               className="sr-only"
             />
-            <span className="block font-semibold">{t.optimiser.modes[mode]}</span>
-            <span className="mt-1 block text-xs leading-relaxed text-charm-subtle">{t.optimiser.modeDescriptions[mode]}</span>
+            <span className="block font-semibold">{t.recommendationsPage.modes[mode]}</span>
+            <span className="mt-1 block text-xs leading-relaxed text-charm-subtle">{t.recommendationsPage.modeDescriptions[mode]}</span>
           </label>
         ))}
       </div>
