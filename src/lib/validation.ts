@@ -27,12 +27,6 @@ export function validateCharacterInput(character: CharacterInput): CharacterVali
   if (!Number.isFinite(character.maxMana) || character.maxMana < 0) {
     issues.push({ field: 'maxMana', code: 'mana_non_negative' });
   }
-  if (!Number.isFinite(character.criticalChance) || character.criticalChance < 0 || character.criticalChance > 100) {
-    issues.push({ field: 'criticalChance', code: 'percent_range' });
-  }
-  if (!Number.isFinite(character.criticalDamageBonus) || character.criticalDamageBonus < 0) {
-    issues.push({ field: 'criticalDamageBonus', code: 'percent_range' });
-  }
   if (!Number.isFinite(character.lifeLeechPercent) || character.lifeLeechPercent < 0) {
     issues.push({ field: 'lifeLeechPercent', code: 'percent_range' });
   }

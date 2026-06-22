@@ -42,11 +42,8 @@ export interface Dictionary {
   characterForm: {
     title: string;
     level: string;
-    vocation: string;
     maxHitpoints: string;
     maxMana: string;
-    criticalChance: string;
-    criticalDamageBonus: string;
     lifeLeechPercent: string;
     manaLeechPercent: string;
     availableCharmPoints: string;
@@ -60,7 +57,6 @@ export interface Dictionary {
     assignedMinorCharms: string;
     essentialsHelp: string;
     advancedToggle: string;
-    vocations: { elite_knight: string; royal_paladin: string; master_sorcerer: string; elder_druid: string; exalted_monk: string };
     accountTypes: { free: string; premium: string };
     addRow: string;
     removeRow: string;

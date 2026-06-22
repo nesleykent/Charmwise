@@ -4,8 +4,7 @@ import { useId } from 'react';
 import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST } from '@/data/charms';
 import { useLocale } from '@/lib/i18n';
 import { validateCharacterInput, type CharacterValidationIssue } from '@/lib/validation';
-import { VOCATIONS } from '@/types/character';
-import type { AccountType, AssignedCharm, CharacterInput, UnlockedCharm, Vocation } from '@/types/character';
+import type { AccountType, AssignedCharm, CharacterInput, UnlockedCharm } from '@/types/character';
 import type { CharmDefinition, CharmId, CharmTier } from '@/types/charm';
 import type { Dictionary } from '@/types/i18n';
 
@@ -235,41 +234,6 @@ export function CharacterForm({ value, onChange }: Props) {
         </summary>
         <div className="space-y-6 border-t border-charm-border p-4">
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor={`${idPrefix}-vocation`} className="block text-sm font-medium text-charm-muted">
-                {t.characterForm.vocation}
-              </label>
-              <select
-                id={`${idPrefix}-vocation`}
-                value={value.vocation}
-                onChange={(e) => set('vocation', e.target.value as Vocation)}
-                className="mt-1 w-full rounded-md border border-charm-border bg-charm-bg px-3 py-2 text-sm text-white focus:border-charm-primary focus:outline-none"
-              >
-                {VOCATIONS.map((v) => (
-                  <option key={v} value={v}>
-                    {t.characterForm.vocations[v]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <NumberField
-              id={`${idPrefix}-crit-chance`}
-              label={t.characterForm.criticalChance}
-              value={value.criticalChance}
-              onChange={(v) => set('criticalChance', v)}
-              error={findError(issues, 'criticalChance', t)}
-              min={0}
-              step={0.1}
-            />
-            <NumberField
-              id={`${idPrefix}-crit-bonus`}
-              label={t.characterForm.criticalDamageBonus}
-              value={value.criticalDamageBonus}
-              onChange={(v) => set('criticalDamageBonus', v)}
-              error={findError(issues, 'criticalDamageBonus', t)}
-              min={0}
-              step={0.1}
-            />
             <NumberField
               id={`${idPrefix}-life-leech`}
               label={t.characterForm.lifeLeechPercent}

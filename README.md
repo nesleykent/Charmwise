@@ -13,7 +13,7 @@ The interface is available in British English and Brazilian Portuguese.
 Charmwise combines four inputs to recommend the best Major Charm and Minor Charm for every creature in a hunt, and for the hunt as a whole:
 
 1. **Bestiary data** - `src/data/bestiary.json`, hitpoints, experience, resistances, difficulty and Charm Points for hundreds of creatures.
-2. **Character information** - level, vocation, hitpoints, mana, critical/leech stats, account type, and which Charms you have unlocked and assigned.
+2. **Character information** - level, hitpoints, mana, leech stats, account type, and which Charms you have unlocked and assigned.
 3. **A pasted Hunt Analyser session** - the plain text block Tibia's "Analyse Hunt" window produces, listing kills, loot and session rates.
 4. **Charm mechanics** - every Major and Minor Charm's real activation chances and Charm Point / Minor Charm Echo costs.
 
@@ -63,12 +63,14 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 
 ## Character input explanation
 
+Only Level, Max. hitpoints and Max. mana are asked for up front - together with a pasted Hunt Analyser session, they're enough for a useful result. Everything else lives behind "Advanced settings".
+
 | Field | Meaning |
 | --- | --- |
-| Level, Vocation | Used for the reset/removal gold formulas. Vocations: Elite Knight, Royal Paladin, Master Sorcerer, Elder Druid, Exalted Monk. Charm activation chances and costs are the same for every vocation, so vocation itself is not a direct scoring input - you enter your character's actual Critical chance/damage and Leech below, and Charmwise uses those numbers directly. Note that since the 15.25 "Vocation Adjustment" Augments, critical bonuses can vary by spell element as well as vocation (e.g. a Sorcerer's Master of Energy/Master of Death Augments only boost specific elements) - Charmwise's flat Critical chance/damage fields don't capture a per-element split, so treat those figures as your typical/average values rather than per-creature-exact. |
+| Level | Feeds the reset/removal gold formulas and the elemental Charm level cap (see below). There is no Vocation field - Charm activation chances, costs, and (as far as we've verified) attack cadence are identical across all five vocations, so it would have had no effect on any calculation. |
 | Max. hitpoints / mana | Feed Overpower and Overflux's proc-damage caps. |
-| Critical chance / damage bonus | Your *existing* (gear/talent) values - Low Blow and Savage Blow add to these. |
-| Life Leech % / Mana Leech % | Your *existing* leech - Vampiric Embrace and Void's Call only have an effect once this is above zero. |
+| Critical chance / damage bonus | Not user-editable. Defaulted to 5% / 10%, the intrinsic baseline every character has had since the Summer Update 2025 Weapon Proficiency System replaced the old gear-based crit bonuses with build-specific Augments (see CipSoft's [Summer Update 2025 notes](https://www.cipsoft.com/en/395-tibia-summer-update-2025-now-available)). Low Blow/Savage Blow scores are therefore typical/average figures, not exact for builds with significant Augment investment in critical hits. |
+| Life Leech % / Mana Leech % | Your *existing* leech - Vampiric Embrace and Void's Call only have an effect once this is above zero. Kept editable since leech varies a lot by equipment and isn't a flat baseline. |
 | Available Charm Points / Minor Charm Echoes | Your unspent budget, used for purchase suggestions. |
 | Account type, Charm Expansion | Free accounts may have 2 active Major Charms at once, Premium 6; Charm Expansion removes that limit and cuts removal cost by 25%. |
 | Unlocked Major/Minor Charms | Which Charms you own and at which tier (Bronze/Silver/Gold) - everything else is scored as a hypothetical Tier 1 purchase. |
@@ -146,7 +148,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
 - Carnage's AoE damages *other* nearby creatures, not the one that died; Charmwise approximates this using the same creature's own physical resistance, which is most accurate when hunting a single species in a pack.
 - Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless are scored from documented heuristic assumptions rather than the spec's explicit EV formulas, since none was given for them.
 - Bestiary "unlocked" status is treated as "this creature has a matching Bestiary entry at all", since per-account completion progress is not exposed by the data source.
-- Critical chance/damage are single flat numbers per character, but since the 15.25 "Vocation Adjustment" Augments (e.g. a Sorcerer's Master of Energy/Master of Death) can grant critical bonuses tied to a specific spell element, your real crit rate may vary by which element you're hitting a creature with. Charmwise has no per-element crit input, so Low Blow/Savage Blow scores are only as accurate as the single Critical chance/damage figure you enter.
+- Critical chance/damage default to the universal 5%/10% baseline and are not user-editable. If your build has invested Augment points into critical hits (e.g. a Sorcerer's Master of Energy/Master of Death, which are tied to a specific spell element), your real crit rate is higher than the default and may vary by which element you're hitting a creature with - Low Blow/Savage Blow scores will then understate your actual gain.
 
 ## Future improvements
 
@@ -154,7 +156,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
 - A direct "Damage Taken" and per-monster hit-count parser path for Hunt Analyser exports that include them, removing the attack-rate and incoming-damage estimation heuristics entirely.
 - Persisting character presets (e.g. to `localStorage`) so returning users don't have to re-enter their build.
 - A proper knapsack solver for "best use of available Charm Points" across the whole account (today's greedy, per-charm, best-creature suggestion is simple and deterministic but not globally optimal).
-- Per-element critical chance/damage inputs (or a vocation + Augment picker that derives them), so Low Blow/Savage Blow scoring reflects element-specific crit bonuses instead of one flat figure.
+- An optional, opt-in critical chance/damage override (or an Augment picker that derives one) for builds that have invested well beyond the 5%/10% baseline, so Low Blow/Savage Blow scoring can reflect it without asking every user to look the numbers up.
 
 ## Project structure
 

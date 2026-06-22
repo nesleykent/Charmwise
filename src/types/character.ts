@@ -1,8 +1,6 @@
 // Character input types.
 import type { CharmId, CharmTier } from './charm';
 
-export type Vocation = 'elite_knight' | 'royal_paladin' | 'master_sorcerer' | 'elder_druid' | 'exalted_monk';
-
 export type AccountType = 'free' | 'premium';
 
 export interface UnlockedCharm {
@@ -17,12 +15,11 @@ export interface AssignedCharm {
 
 export interface CharacterInput {
   level: number;
-  vocation: Vocation;
   maxHitpoints: number;
   maxMana: number;
-  /** Percent, 0-100. Base value from gear/talents, before any charm bonus. */
+  /** Percent, 0-100. Defaults to the intrinsic 5% baseline every character has had since the Summer Update 2025 Weapon Proficiency System - not user-editable in the form, since Charm activation/cost is otherwise identical regardless of build. */
   criticalChance: number;
-  /** Percent, 0-100. Base extra damage on a critical hit, before any charm bonus. */
+  /** Percent, 0-100. Defaults to the intrinsic 10% baseline from the same update. */
   criticalDamageBonus: number;
   /** Percent, 0+. Requires existing leech for Vampiric Embrace to apply. */
   lifeLeechPercent: number;
@@ -40,21 +37,16 @@ export interface CharacterInput {
   hasUsedFreeReset: boolean;
 }
 
-export const VOCATIONS: Vocation[] = [
-  'elite_knight',
-  'royal_paladin',
-  'master_sorcerer',
-  'elder_druid',
-  'exalted_monk',
-];
+/** Intrinsic baseline since the Summer Update 2025 Weapon Proficiency System - see CipSoft's update notes. */
+export const BASELINE_CRITICAL_CHANCE = 5;
+export const BASELINE_CRITICAL_DAMAGE_BONUS = 10;
 
 export const DEFAULT_CHARACTER_INPUT: CharacterInput = {
   level: 200,
-  vocation: 'royal_paladin',
   maxHitpoints: 4200,
   maxMana: 2400,
-  criticalChance: 0,
-  criticalDamageBonus: 100,
+  criticalChance: BASELINE_CRITICAL_CHANCE,
+  criticalDamageBonus: BASELINE_CRITICAL_DAMAGE_BONUS,
   lifeLeechPercent: 0,
   manaLeechPercent: 0,
   availableCharmPoints: 0,

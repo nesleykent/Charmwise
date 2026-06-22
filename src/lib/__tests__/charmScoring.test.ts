@@ -15,7 +15,6 @@ import type { MonsterProfile } from '@/types/monster';
 
 const character: CharacterInput = {
   level: 200,
-  vocation: 'royal_paladin',
   maxHitpoints: 4000,
   maxMana: 2000,
   criticalChance: 20,
