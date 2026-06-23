@@ -12,18 +12,17 @@ export function LanguageSwitcher() {
   const { locale, setLocale, t } = useLocale();
 
   return (
-    <div className="inline-flex shrink-0 rounded-full border border-white/10 bg-white/[0.04] p-1" role="group" aria-label="Language">
+    <div className="inline-flex shrink-0 rounded-lg border border-charm-border bg-white/[0.04] p-1" role="group" aria-label="Language">
       {OPTIONS.map((option) => (
         <button
           key={option.value}
           type="button"
           onClick={() => setLocale(option.value)}
           aria-pressed={locale === option.value}
-          className={`rounded-full px-2 py-1 text-xs font-semibold transition-colors sm:px-3 ${
-            locale === option.value ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
+          className={`rounded-md px-2 py-1 text-xs font-semibold transition-colors sm:px-3 ${
+            locale === option.value ? 'bg-charm-primary text-white shadow-glow' : 'text-charm-muted hover:bg-white/[0.05] hover:text-white'
           }`}
         >
-          {locale === option.value ? '✓ ' : ''}
           {option.flag}
           <span className="sr-only"> {option.value === 'en-GB' ? t.language.en : t.language.pt}</span>
         </button>

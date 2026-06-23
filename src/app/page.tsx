@@ -12,7 +12,7 @@ import { useWorkspace } from '@/lib/workspace';
 
 function SummaryCard({ title, value, accent }: { title: string; value: string; accent?: boolean }) {
   return (
-    <div className={`card p-4 ${accent ? 'border-charm-primary/50 bg-charm-primary/5' : ''}`}>
+    <div className={`card p-4 ${accent ? 'border-charm-primary/45 bg-charm-primary/10' : ''}`}>
       <div className="text-xs uppercase tracking-wide text-charm-subtle">{title}</div>
       <div className="mt-1 text-xl font-bold text-white">{value}</div>
     </div>
@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const { summary, hasHuntData, scope, setScope } = useWorkspace();
 
   return (
-    <div className="mx-auto max-w-5xl animate-fadeIn px-4 py-10 sm:px-6">
+    <div className="page-shell max-w-5xl">
       <PageHeader title={t.dashboard.title} subtitle={t.dashboard.subtitle} />
 
       {!hasHuntData || !summary ? (
@@ -76,7 +76,7 @@ export default function DashboardPage() {
               <RecommendationScopeToggle value={scope} onChange={setScope} ariaLabel={t.dashboard.bestAssignmentsTitle} />
             </div>
 
-            <div className="card divide-y divide-white/10">
+            <div className="card divide-y divide-charm-border">
               {summary.creatureResults.map((result) => {
                 const bestMajor = scope === 'full_analysis' ? result.bestMajorCharmOverall : result.bestMajorCharm;
                 const bestMinor = scope === 'full_analysis' ? result.bestMinorCharmOverall : result.bestMinorCharm;
@@ -116,7 +116,7 @@ export default function DashboardPage() {
             {summary.charmPointBudget.suggestions.length === 0 && summary.minorEchoBudget.suggestions.length === 0 ? (
               <p className="text-sm text-charm-subtle">{t.dashboard.noUpgrades}</p>
             ) : (
-              <ul className="card divide-y divide-white/10 text-xs">
+              <ul className="card divide-y divide-charm-border text-xs">
                 {[...summary.charmPointBudget.suggestions.slice(0, 3), ...summary.minorEchoBudget.suggestions.slice(0, 3)]
                   .sort((a, b) => b.scorePerCost - a.scorePerCost)
                   .slice(0, 5)

@@ -1,14 +1,12 @@
-// Pure decoration: four large, heavily blurred colour spots fixed behind the
-// whole app, blended with `screen` so they read as soft light glowing through
-// the dark surface rather than flat painted shapes. No state, no JS - this
-// renders as static HTML so it costs nothing at runtime.
+// Quiet page depth only. The product surface carries the hierarchy, so the
+// background stays close to native dark-mode graphite.
 export function BackgroundAtmosphere() {
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div className="absolute -left-32 -top-40 h-[34rem] w-[34rem] rounded-full bg-charm-accent/30 mix-blend-screen blur-[110px]" />
-      <div className="absolute -right-24 top-1/4 h-[26rem] w-[26rem] rounded-full bg-charm-rose/25 mix-blend-screen blur-[100px]" />
-      <div className="absolute -right-40 bottom-0 h-[38rem] w-[38rem] rounded-full bg-charm-major/25 mix-blend-screen blur-[120px]" />
-      <div className="absolute -left-20 bottom-1/3 h-[22rem] w-[22rem] rounded-full bg-charm-primary/20 mix-blend-screen blur-[100px]" />
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_30%_-10%,rgba(10,132,255,0.16),transparent_32rem),linear-gradient(180deg,#0b0d11_0%,#080a0d_42%,#06070a_100%)]"
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:64px_64px] opacity-30" />
     </div>
   );
 }

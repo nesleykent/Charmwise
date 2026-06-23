@@ -26,12 +26,12 @@ const CONFIDENCE_CLASS: Record<ConfidenceLevel, string> = {
   high: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
   medium: 'bg-charm-warning/15 text-charm-warning border-charm-warning/30',
   low: 'bg-charm-danger/15 text-charm-danger border-charm-danger/30',
-  unknown: 'bg-white/10 text-charm-muted border-white/15',
+  unknown: 'bg-white/10 text-charm-muted border-charm-border',
 };
 
 function MetricChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5">
+    <div className="rounded-lg border border-charm-border bg-white/[0.025] px-2.5 py-1.5">
       <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{label}</div>
       <div className="text-sm font-semibold text-white">{value}</div>
     </div>
@@ -40,7 +40,7 @@ function MetricChip({ label, value }: { label: string; value: string }) {
 
 function Badge({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${className || 'border-white/15 text-charm-muted'}`}>
+    <span className={`rounded-md border px-2 py-0.5 text-[10px] font-medium ${className || 'border-charm-border text-charm-muted'}`}>
       {children}
     </span>
   );
@@ -74,7 +74,7 @@ function formatFormulaNumber(value: number | null | undefined, locale: Locale, m
 
 function FormulaLine({ label, formula, result }: { label: string; formula: string; result?: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2.5">
+    <div className="rounded-lg border border-charm-border bg-white/[0.025] p-2.5">
       <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{label}</div>
       <div className="mt-1 text-xs leading-relaxed text-charm-muted">{formula}</div>
       {result && <div className="mt-1 text-sm font-semibold text-white">{result}</div>}
@@ -234,7 +234,7 @@ function EffectModelPanel({ rec, t, locale }: { rec: CharmRecommendation; t: Dic
     rec.effect.expectedHealingGainPerHour + rec.effect.expectedManaGainPerHour + rec.effect.expectedManaSavedPerHour > 0.5;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-charm-bg/45 p-3">
+    <div className="rounded-lg border border-charm-border bg-charm-bg/45 p-3">
       <p className="text-xs font-semibold text-white">{t.results.effectModelTitle}</p>
       <div className="mt-2 text-[10px] uppercase tracking-wide text-charm-subtle">{t.results.modelHuntBasis}</div>
       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -248,7 +248,7 @@ function EffectModelPanel({ rec, t, locale }: { rec: CharmRecommendation; t: Dic
         {formulaLines.length > 0 ? (
           formulaLines.map((line, index) => <FormulaLine key={`${line.label}-${index}`} {...line} />)
         ) : (
-          <p className="rounded-lg border border-white/10 bg-white/[0.03] p-2.5 text-xs leading-relaxed text-charm-muted">
+          <p className="rounded-lg border border-charm-border bg-white/[0.025] p-2.5 text-xs leading-relaxed text-charm-muted">
             {t.results.modelNoSpecificFormula}
           </p>
         )}
@@ -337,7 +337,7 @@ function ScoreCalculationPanel({ rec, t, locale }: { rec: CharmRecommendation; t
   return (
     <div className="mt-2.5 space-y-3">
       <EffectModelPanel rec={rec} t={t} locale={locale} />
-      <div className="rounded-xl border border-white/10 bg-charm-bg/45 p-3">
+      <div className="rounded-lg border border-charm-border bg-charm-bg/45 p-3">
       <p className="text-xs font-semibold text-white">
         {t.results.scoreFormula}: {formatScore(rec.scores.rawTotalScore)} {t.results.metrics.rawScore.toLowerCase()} x{' '}
         {rec.scores.confidenceMultiplier.toFixed(2)} {t.results.scoreConfidenceMultiplier.toLowerCase()} ={' '}
@@ -346,14 +346,14 @@ function ScoreCalculationPanel({ rec, t, locale }: { rec: CharmRecommendation; t
       <p className="mt-1 text-[11px] leading-relaxed text-charm-muted">{t.results.scoreNormalisationNote}</p>
 
       <div className="mt-3 text-[11px]">
-        <div className="hidden gap-3 border-b border-white/10 pb-1.5 text-charm-subtle sm:grid sm:grid-cols-[0.9fr_1.35fr_0.9fr_0.8fr_1fr]">
+        <div className="hidden gap-3 border-b border-charm-border pb-1.5 text-charm-subtle sm:grid sm:grid-cols-[0.9fr_1.35fr_0.9fr_0.8fr_1fr]">
           <span>{t.results.scoreMetric}</span>
           <span>{t.results.scoreInputVsBest}</span>
           <span>{t.results.scoreNormalised}</span>
           <span>{t.results.scoreWeight}</span>
           <span className="text-right">{t.results.scoreContribution}</span>
         </div>
-        <div className="divide-y divide-white/10">
+        <div className="divide-y divide-charm-border">
           {rows.map((row) => {
             const contribution = row.score * row.weight;
             return (
@@ -379,7 +379,7 @@ function ScoreCalculationPanel({ rec, t, locale }: { rec: CharmRecommendation; t
             );
           })}
         </div>
-        <div className="border-t border-white/10 pt-2 font-semibold text-white">
+        <div className="border-t border-charm-border pt-2 font-semibold text-white">
           <div className="flex items-center justify-between gap-3">
             <span>{t.results.metrics.rawScore}</span>
             <span>{formatScore(rec.scores.rawTotalScore)}</span>
@@ -456,10 +456,10 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
             // list can run to dozens of rows across creatures, so each row
             // stays cheap and lets the single blurred glass panel it sits
             // inside (see call sites) carry the actual frosted-glass effect.
-            className={`rounded-2xl border p-3.5 transition-colors ${
+            className={`rounded-lg border p-3.5 transition-colors ${
               rank === 1 && rec.unlocked
                 ? 'border-charm-primary/50 bg-charm-primary/10 shadow-glow'
-                : 'border-white/10 bg-white/[0.03]'
+                : 'border-charm-border bg-white/[0.025]'
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">

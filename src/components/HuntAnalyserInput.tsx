@@ -27,14 +27,14 @@ export function HuntAnalyserInput({ value, onChange, parseResult }: Props) {
           <button
             type="button"
             onClick={() => onChange(SAMPLE_HUNT_ANALYSER_TEXT)}
-            className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-primary hover:text-white"
+            className="rounded-md border border-charm-border px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-primary hover:text-white"
           >
             {t.huntAnalyserInput.loadSample}
           </button>
           <button
             type="button"
             onClick={() => onChange('')}
-            className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
+            className="rounded-md border border-charm-border px-3 py-1.5 text-xs text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
           >
             {t.huntAnalyserInput.clear}
           </button>
@@ -75,7 +75,7 @@ export function HuntAnalyserInput({ value, onChange, parseResult }: Props) {
       )}
 
       {parseResult && parseResult.warnings.length > 0 && (
-        <div className="rounded-2xl border border-charm-warning/30 bg-charm-warning/10 p-4 text-xs text-charm-warning">
+        <div className="rounded-lg border border-charm-warning/30 bg-charm-warning/10 p-4 text-xs text-charm-warning">
           <h4 className="font-semibold">{t.huntAnalyserInput.warningsTitle}</h4>
           <ul className="mt-1.5 list-inside list-disc space-y-1">
             {parseResult.warnings.map((w, i) => (

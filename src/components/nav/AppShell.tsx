@@ -14,7 +14,7 @@ import type { Dictionary } from '@/types/i18n';
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 function Logo() {
-  return <Image src={`${BASE_PATH}/logo-32.png`} alt="" width={32} height={32} className="h-8 w-8 rounded-lg" priority />;
+  return <Image src={`${BASE_PATH}/logo-32.png`} alt="" width={32} height={32} className="h-8 w-8 rounded-md" priority />;
 }
 
 function DashboardIcon() {
@@ -84,10 +84,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-r md:border-white/10 md:bg-charm-bg/60 md:backdrop-blur-xl">
-        <Link href="/" className="flex items-center gap-2 px-5 py-5">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:border-r md:border-charm-border md:bg-charm-bg/82 md:backdrop-blur-xl">
+        <Link href="/" className="flex items-center gap-3 px-5 py-5">
           <Logo />
-          <span className="font-display text-lg font-semibold text-white">Charmwise</span>
+          <span className="text-lg font-semibold tracking-tight text-white">Charmwise</span>
         </Link>
         <nav className="flex-1 space-y-1 px-3" aria-label={t.nav.dashboard}>
           {NAV_ITEMS.map(({ href, key, Icon }) => {
@@ -97,8 +97,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                  active ? 'bg-white/[0.07] text-white' : 'text-charm-muted hover:bg-white/[0.04] hover:text-white'
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                  active ? 'bg-charm-primary text-white shadow-glow' : 'text-charm-muted hover:bg-white/[0.05] hover:text-white'
                 }`}
               >
                 <Icon />
@@ -107,16 +107,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="space-y-3 px-5 py-4">
-          <LanguageSwitcher />
+        <div className="mx-3 mb-3 rounded-lg border border-charm-border bg-white/[0.025] p-3">
           <p className="text-[11px] leading-relaxed text-charm-subtle">{t.common.privacyNote}</p>
+        </div>
+        <div className="px-5 pb-4">
+          <LanguageSwitcher />
         </div>
       </aside>
 
-      <header className="flex items-center justify-between border-b border-white/10 bg-charm-bg/70 px-4 py-3 backdrop-blur-xl md:hidden">
+      <header className="flex items-center justify-between border-b border-charm-border bg-charm-bg/85 px-4 py-3 backdrop-blur-xl md:hidden">
         <Link href="/" className="flex items-center gap-2">
           <Logo />
-          <span className="font-display text-lg font-semibold text-white">Charmwise</span>
+          <span className="text-lg font-semibold tracking-tight text-white">Charmwise</span>
         </Link>
         <LanguageSwitcher />
       </header>
@@ -126,7 +128,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-white/10 bg-charm-bg/75 backdrop-blur-xl md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-charm-border bg-charm-bg/88 backdrop-blur-xl md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label={t.nav.dashboard}
       >
@@ -140,7 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               aria-label={t.nav[key]}
               title={t.nav[key]}
               className={`flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-opacity ${
-                active ? 'text-charm-primary' : 'text-charm-muted hover:opacity-80'
+                active ? 'text-charm-primary' : 'text-charm-muted hover:text-white'
               }`}
             >
               <Icon />

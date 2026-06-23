@@ -18,8 +18,8 @@ function CharmCard({ charm }: { charm: CharmDefinition }) {
       <div className="flex items-center justify-between">
         <span className="font-semibold text-white">{t.charms[charm.id]?.name ?? charm.name}</span>
         <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-            charm.category === 'major' ? 'bg-charm-major/15 text-charm-major' : 'bg-charm-minor/15 text-charm-minor'
+          className={`rounded-md border px-2 py-0.5 text-[10px] font-medium ${
+            charm.category === 'major' ? 'border-charm-major/30 bg-charm-major/15 text-charm-major' : 'border-charm-minor/30 bg-charm-minor/15 text-charm-minor'
           }`}
         >
           {charm.category === 'major' ? 'Major' : 'Minor'}
@@ -38,7 +38,7 @@ export default function CharmLibraryPage() {
   const { t } = useLocale();
 
   return (
-    <div className="mx-auto max-w-5xl animate-fadeIn px-4 py-10 sm:px-6">
+    <div className="page-shell max-w-5xl">
       <PageHeader title={t.charmLibrary.title} subtitle={t.charmLibrary.subtitle} />
 
       <section className="mt-8">

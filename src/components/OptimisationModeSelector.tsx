@@ -15,17 +15,17 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
   const { t } = useLocale();
 
   return (
-    <fieldset>
+    <fieldset className="min-w-0">
       <legend className="mb-2 text-sm font-semibold text-white">{t.recommendationsPage.modeLabel}</legend>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid w-full max-w-full grid-cols-2 gap-1 rounded-lg border border-charm-border bg-charm-surfaceAlt/65 p-1 md:grid-cols-4">
         {MODES.map((mode) => (
           <label
             key={mode}
             title={t.recommendationsPage.modeDescriptions[mode]}
-            className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`cursor-pointer rounded-md px-3 py-1.5 text-center text-xs font-semibold transition-colors ${
               value === mode
-                ? 'border-charm-primary bg-charm-primary/10 text-white shadow-glow'
-                : 'border-white/10 bg-white/[0.03] text-charm-muted hover:border-charm-primary/40 hover:bg-white/[0.06]'
+                ? 'bg-charm-primary text-white shadow-glow'
+                : 'text-charm-muted hover:bg-white/[0.05] hover:text-white'
             }`}
           >
             <input
@@ -36,10 +36,7 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
               onChange={() => onChange(mode)}
               className="sr-only"
             />
-            <span className="block font-semibold">
-              {value === mode ? '✓ ' : ''}
-              {t.recommendationsPage.modes[mode]}
-            </span>
+            <span className="block font-semibold">{t.recommendationsPage.modes[mode]}</span>
           </label>
         ))}
       </div>

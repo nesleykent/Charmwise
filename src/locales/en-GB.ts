@@ -9,7 +9,7 @@ const en: Dictionary = {
     dashboard: 'Dashboard',
     character: 'Character',
     hunt: 'Hunt Analyser',
-    recommendations: 'Results',
+    recommendations: 'Recommendations',
     charms: 'Charm Library',
     tagline: 'Smarter Charms. Better Hunts.',
   },
@@ -55,7 +55,7 @@ const en: Dictionary = {
   },
   recommendationsPage: {
     title: 'Recommendations',
-    subtitle: 'Choose the Charms you care about and compare the best unlock, equip, or audit options for this hunt.',
+    subtitle: 'What charm should I use for this hunt? Choose the Charms you care about and compare unlock, equip, or audit options.',
     emptyTitle: 'Nothing to recommend yet',
     emptyBody: 'Add a Hunt Analyser session to generate recommendations.',
     emptyCta: 'Add a Hunt Analyser session',
@@ -81,8 +81,7 @@ const en: Dictionary = {
       custom: 'Advanced custom weights',
     },
     targetTierLabel: 'Target tier for locked Charms',
-    targetTierHint:
-      "Caps how far locked Charms are evaluated and how far purchase suggestions go. Gold is the absolute ceiling, but it's not realistic on every Charm Point budget - lower this if you're not aiming that high.",
+    targetTierHint: "Sets the ceiling for locked Charm previews and upgrade suggestions. Lower it if you're not aiming for Gold yet.",
     sectionDetails: 'Detailed calculations',
     identicalSubScoresNote:
       "Damage, XP gain and profit match because this Charm is the top pick in all three for this creature - XP and profit are both calculated as direct multiples of damage for a single creature, so hitting the maximum in one means hitting it in all three. Not a copy-paste artefact.",
@@ -175,6 +174,9 @@ const en: Dictionary = {
     improvementStateHasGain:
       "Comparing what's currently assigned to each creature against the best achievable from Charms you've already unlocked (not the aspirational \"if I unlocked everything\" numbers shown further down).",
     finalRecommendation: 'Final recommendation',
+    whyThisIsBest: 'Why this is best',
+    whyThisIsBestBody:
+      '{{signal}} is the main signal, with cost and confidence checked before non-damage tradeoffs can win.',
     selectedComparison: 'Selected charm comparison',
     chooseCharmsTitle: 'Choose charms to compare',
     chooseCharmsDefaultNote:

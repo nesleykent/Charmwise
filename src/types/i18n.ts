@@ -145,6 +145,8 @@ export interface Dictionary {
     improvementStateAlreadyOptimal: string;
     improvementStateHasGain: string;
     finalRecommendation: string;
+    whyThisIsBest: string;
+    whyThisIsBestBody: string;
     selectedComparison: string;
     chooseCharmsTitle: string;
     chooseCharmsDefaultNote: string;

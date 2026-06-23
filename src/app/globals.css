@@ -4,24 +4,23 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
-  background-color: #0a0d12;
+  background-color: #080a0d;
   color: #e9edf4;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 * {
-  scrollbar-color: #252b37 #0a0d12;
+  scrollbar-color: #2b313b #080a0d;
 }
 
-/* A visible, consistent focus ring on every interactive element, regardless
-   of whether it picked up Tailwind's focus utilities - HIG treats clear
-   keyboard focus as a baseline accessibility requirement, not an extra. */
 :focus-visible {
-  outline: 2px solid #5eb1ff;
+  outline: 2px solid #0a84ff;
   outline-offset: 2px;
 }
 
@@ -38,32 +37,28 @@ body {
 }
 
 @layer components {
-  /* Shared field chrome so every text/number input looks identical without
-     each component re-typing the same long utility string. Inputs stay
-     mostly opaque (0.85) rather than true glass - they hold typed text, and
-     legibility wins over translucency here. */
   .field-input {
-    @apply w-full rounded-lg border border-white/10 bg-charm-bg/85 px-3 py-2.5 text-sm text-white transition-colors placeholder:text-charm-subtle focus:border-charm-primary focus:outline-none;
+    @apply w-full rounded-lg border border-charm-border bg-charm-surfaceAlt/70 px-3 py-2.5 text-sm text-white transition-colors placeholder:text-charm-subtle focus:border-charm-primary focus:outline-none;
   }
   .field-select {
-    @apply rounded-lg border border-white/10 bg-charm-surface/85 px-3 py-2.5 text-sm text-white transition-colors focus:border-charm-primary focus:outline-none;
+    @apply rounded-lg border border-charm-border bg-charm-surfaceAlt/80 px-3 py-2.5 text-sm text-white transition-colors focus:border-charm-primary focus:outline-none;
   }
   .field-label {
     @apply block text-sm font-medium text-charm-muted;
   }
-  /* The frosted-glass surface: translucent fill + backdrop-blur so the
-     atmosphere blobs in BackgroundAtmosphere read through softly, with a
-     hairline border (10% white) standing in for an "ultra-thin" edge.
-     Reserved for section-level panels with a bounded count on screen - see
-     CharmRankingTable's individual rows for the cheaper, non-blurred
-     treatment used where dozens of these could repeat. */
   .card {
-    @apply rounded-2xl border border-white/10 bg-charm-surface/60 shadow-card backdrop-blur-xl;
+    @apply rounded-lg border border-charm-border bg-charm-surface/75 shadow-card backdrop-blur-xl;
   }
   .btn-primary {
-    @apply rounded-full bg-charm-primary px-6 py-3 text-sm font-semibold text-charm-bg shadow-glow transition-all active:scale-[0.98] hover:scale-[1.02] hover:opacity-90;
+    @apply rounded-lg bg-charm-primary px-4 py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-charm-primaryDark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
-    @apply rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 text-sm font-semibold text-white transition-all hover:border-white/30 hover:bg-white/[0.08] active:scale-[0.98];
+    @apply rounded-lg border border-charm-border bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-charm-borderStrong hover:bg-white/[0.08] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .page-shell {
+    @apply mx-auto w-full max-w-6xl animate-fadeIn px-4 py-8 sm:px-6 lg:px-8;
+  }
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-charm-subtle;
   }
 }

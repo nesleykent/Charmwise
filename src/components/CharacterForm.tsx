@@ -58,7 +58,7 @@ function CharacterLookup({
         <span className="inline-block text-charm-muted transition-transform group-open:rotate-90">&rsaquo;</span>
         {t.characterForm.lookupToggle}
       </summary>
-      <div className="flex flex-col gap-2 border-t border-white/10 p-4 sm:flex-row">
+      <div className="flex flex-col gap-2 border-t border-charm-border p-4 sm:flex-row">
         <input
           id={id}
           type="text"
@@ -170,7 +170,7 @@ function UnlockedCharmGrid({
       {charms.map((charm) => (
         <div
           key={charm.id}
-          className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm"
+          className="flex items-center justify-between gap-2 rounded-lg border border-charm-border bg-white/[0.025] px-3 py-2 text-sm"
         >
           <span className="truncate text-charm-muted">{t.charms[charm.id].name}</span>
           <select
@@ -237,7 +237,7 @@ function AssignedCharmRows({
             type="button"
             onClick={() => removeRow(i)}
             aria-label={t.characterForm.removeRow}
-            className="rounded-lg border border-white/10 px-3 text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
+            className="rounded-lg border border-charm-border px-3 text-charm-muted transition-colors hover:border-charm-danger hover:text-charm-danger"
           >
             &times;
           </button>
@@ -246,7 +246,7 @@ function AssignedCharmRows({
       <button
         type="button"
         onClick={addRow}
-        className="w-full rounded-lg border border-dashed border-white/15 px-3 py-2 text-sm text-charm-muted transition-colors hover:border-charm-primary hover:text-white sm:w-auto"
+        className="w-full rounded-lg border border-dashed border-charm-borderStrong px-3 py-2 text-sm text-charm-muted transition-colors hover:border-charm-primary hover:text-white sm:w-auto"
       >
         + {t.characterForm.addRow}
       </button>
@@ -330,7 +330,7 @@ export function CharacterForm({ value, onChange }: Props) {
           <span className="inline-block text-charm-muted transition-transform group-open:rotate-90">&rsaquo;</span>
           {t.characterForm.advancedToggle}
         </summary>
-        <div className="space-y-7 border-t border-white/10 p-4 sm:p-5">
+        <div className="space-y-7 border-t border-charm-border p-4 sm:p-5">
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <NumberField
               id={`${idPrefix}-crit-chance`}

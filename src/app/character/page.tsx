@@ -14,7 +14,7 @@ export default function CharacterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl animate-fadeIn px-4 py-10 sm:px-6">
+    <div className="page-shell max-w-3xl">
       <PageHeader
         title={t.characterPage.title}
         subtitle={t.characterPage.subtitle}

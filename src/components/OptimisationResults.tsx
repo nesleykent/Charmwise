@@ -20,7 +20,7 @@ interface Props {
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-charm-subtle">{children}</h3>;
+  return <h3 className="mb-3 section-label">{children}</h3>;
 }
 
 function roleLabel(role: CharmRole, t: ReturnType<typeof useLocale>['t']): string {
@@ -92,7 +92,7 @@ function CharmSelection({
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+    <div className="rounded-lg border border-charm-border bg-charm-surfaceAlt/55 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold text-white">{t.results.chooseCharmsTitle}</p>
         {selectedCharmIds.length > 0 && (
@@ -104,7 +104,7 @@ function CharmSelection({
       <p className="mt-1 text-xs leading-relaxed text-charm-muted">
         {selectedCharmIds.length > 0 ? t.results.chooseCharmsManualNote : manualMode ? t.results.chooseCharmsManualEmptyNote : t.results.chooseCharmsDefaultNote}
       </p>
-      <div className="mt-3 flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1">
+      <div className="mt-3 flex max-h-36 flex-wrap gap-2 overflow-y-auto pr-1">
         {ALL_CHARM_LIST.map((charm) => {
           const active = selected.has(charm.id);
           return (
@@ -113,10 +113,10 @@ function CharmSelection({
               type="button"
               onClick={() => toggle(charm.id)}
               aria-pressed={active}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
                 active
-                  ? 'border-charm-primary bg-charm-primary text-charm-bg'
-                  : 'border-white/10 bg-charm-bg/40 text-charm-muted hover:border-charm-primary/50 hover:text-white'
+                  ? 'border-charm-primary bg-charm-primary text-white shadow-glow'
+                  : 'border-charm-border bg-charm-bg/45 text-charm-muted hover:border-charm-primary/50 hover:bg-white/[0.05] hover:text-white'
               }`}
             >
               {active ? '✓ ' : '+ '}
@@ -140,7 +140,7 @@ function CustomWeightsEditor({ value, onChange }: { value: ScoreWeights; onChang
   ];
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+    <div className="rounded-lg border border-charm-border bg-charm-surfaceAlt/55 p-4">
       <p className="text-sm font-semibold text-white">{t.results.customWeightsTitle}</p>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-5">
         {entries.map(({ key, label }) => (
@@ -162,41 +162,59 @@ function CustomWeightsEditor({ value, onChange }: { value: ScoreWeights; onChang
   );
 }
 
-function FinalRecommendation({ row }: { row: ComparisonRow | undefined }) {
+function FinalRecommendation({ row, showNoUnlockedNotice }: { row: ComparisonRow | undefined; showNoUnlockedNotice: boolean }) {
   const { t, locale } = useLocale();
   if (!row) {
     return (
-      <section className="card border-charm-warning/30 p-5">
+      <section className="card border-charm-warning/35 p-5">
         <SectionHeading>{t.results.finalRecommendation}</SectionHeading>
+        {showNoUnlockedNotice && (
+          <p className="mb-3 rounded-lg border border-charm-primary/30 bg-charm-primary/10 p-3 text-sm text-white">{t.results.noUnlockedCharmNotice}</p>
+        )}
         <p className="text-sm text-charm-muted">{t.results.noMeaningfulComparison}</p>
       </section>
     );
   }
 
   return (
-    <section className="card border-charm-primary/50 bg-charm-primary/5 p-5">
+    <section className="card border-charm-primary/45 bg-[linear-gradient(135deg,rgba(10,132,255,0.14),rgba(17,20,25,0.72)_38%)] p-5 sm:p-6">
       <SectionHeading>{t.results.finalRecommendation}</SectionHeading>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-2xl font-bold text-white">{t.charms[row.recommendation.charmId]?.name ?? row.recommendation.name}</p>
-          <p className="mt-1 text-sm text-charm-muted">
-            {toTitleCase(row.recommendation.monsterName)} · {roleLabel(row.role, t)} · {t.characterForm.tierNames[row.recommendation.tier - 1]}
-            {!row.recommendation.unlocked ? ` · ${t.characterForm.tierLocked}` : ''}
-          </p>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-charm-muted">{comparisonReason(row, t)}</p>
-          {row.role !== 'damage' && row.role !== 'budget_damage' && (
-            <p className="mt-2 text-xs leading-relaxed text-charm-warning">{t.results.nonDamageReasonDisclosure}</p>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:min-w-80">
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{primaryGainLabel(row, t)}</div>
-            <div className="mt-1 text-lg font-bold text-white">{formatGain(row, locale)}</div>
+      {showNoUnlockedNotice && (
+        <p className="mb-4 rounded-lg border border-charm-primary/30 bg-charm-primary/10 p-3 text-sm text-white">{t.results.noUnlockedCharmNotice}</p>
+      )}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.72fr)] lg:items-center">
+        <div className="flex gap-4">
+          <div
+            aria-hidden="true"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-charm-primary/35 bg-charm-primary/15 text-xl font-semibold text-charm-primary shadow-glow"
+          >
+            {row.recommendation.category === 'major' ? 'M' : 'm'}
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{t.results.comparisonCost}</div>
-            <div className="mt-1 text-lg font-bold text-white">
-              {formatNumber(row.cost, locale)} {row.recommendation.category === 'major' ? 'CP' : 'MCE'}
+          <div className="min-w-0">
+            <p className="text-2xl font-semibold tracking-tight text-white">{t.charms[row.recommendation.charmId]?.name ?? row.recommendation.name}</p>
+            <p className="mt-1 text-sm text-charm-muted">
+              {toTitleCase(row.recommendation.monsterName)} · {roleLabel(row.role, t)} · {t.characterForm.tierNames[row.recommendation.tier - 1]}
+              {!row.recommendation.unlocked ? ` · ${t.characterForm.tierLocked}` : ''}
+            </p>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-charm-muted">{comparisonReason(row, t)}</p>
+            {row.role !== 'damage' && row.role !== 'budget_damage' && (
+              <p className="mt-2 text-xs leading-relaxed text-charm-warning">{t.results.nonDamageReasonDisclosure}</p>
+            )}
+          </div>
+        </div>
+        <div className="border-charm-border lg:border-l lg:pl-5">
+          <p className="text-sm font-semibold text-white">{t.results.whyThisIsBest}</p>
+          <p className="mt-1 text-sm text-charm-muted">{t.results.whyThisIsBestBody.replace('{{signal}}', primaryGainLabel(row, t))}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-charm-border bg-charm-bg/45 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{primaryGainLabel(row, t)}</div>
+              <div className="mt-1 text-lg font-semibold text-white">{formatGain(row, locale)}</div>
+            </div>
+            <div className="rounded-lg border border-charm-border bg-charm-bg/45 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{t.results.comparisonCost}</div>
+              <div className="mt-1 text-lg font-semibold text-white">
+                {formatNumber(row.cost, locale)} {row.recommendation.category === 'major' ? 'CP' : 'MCE'}
+              </div>
             </div>
           </div>
         </div>
@@ -208,12 +226,12 @@ function FinalRecommendation({ row }: { row: ComparisonRow | undefined }) {
 function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
   const { t, locale } = useLocale();
 
-  if (rows.length === 0) return <p className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-charm-muted">{t.results.noMeaningfulComparison}</p>;
+  if (rows.length === 0) return <p className="rounded-lg border border-charm-border bg-white/[0.025] p-4 text-sm text-charm-muted">{t.results.noMeaningfulComparison}</p>;
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10">
-      <table className="min-w-[920px] w-full text-left text-xs">
-        <thead className="bg-white/[0.04] text-[10px] uppercase tracking-wide text-charm-subtle">
+    <div className="overflow-x-auto rounded-lg border border-charm-border bg-charm-surface/55">
+      <table className="w-full min-w-full text-left text-xs sm:min-w-[920px]">
+        <thead className="bg-white/[0.035] text-[10px] uppercase tracking-wide text-charm-subtle">
           <tr>
             <th className="px-3 py-2">{t.results.comparisonCharm}</th>
             <th className="px-3 py-2">{t.results.comparisonCreature}</th>
@@ -226,7 +244,7 @@ function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
             <th className="px-3 py-2">{t.results.comparisonReason}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/10">
+        <tbody className="divide-y divide-charm-border">
           {rows.map((row) => {
             const rec = row.recommendation;
             return (
@@ -234,7 +252,7 @@ function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
                 <td className="px-3 py-3 font-semibold text-white">
                   {t.charms[rec.charmId]?.name ?? rec.name}
                   {row.tieState && (
-                    <span className="ml-2 rounded-full border border-charm-primary/40 px-1.5 py-0.5 text-[10px] font-medium text-charm-primary">
+                    <span className="ml-2 rounded-md border border-charm-primary/40 px-1.5 py-0.5 text-[10px] font-medium text-charm-primary">
                       {row.tieState === 'same_rank' ? t.results.sameRank : t.results.effectivelyTied}
                     </span>
                   )}
@@ -274,7 +292,7 @@ function PerCreatureSummary({ summary, view, selectedCharmIds, customWeights }: 
         {summary.creatureResults.map((result) => {
           if (!result.hasBestiaryData) {
             return (
-              <div key={result.monsterName} className="rounded-xl border border-charm-danger/30 bg-charm-danger/5 p-3 text-sm text-charm-danger">
+              <div key={result.monsterName} className="rounded-lg border border-charm-danger/30 bg-charm-danger/5 p-3 text-sm text-charm-danger">
                 {toTitleCase(result.monsterName)}: {t.messages.no_bestiary_match}
               </div>
             );
@@ -282,7 +300,7 @@ function PerCreatureSummary({ summary, view, selectedCharmIds, customWeights }: 
           const creatureRows = buildComparisonRows([...result.rankedMajorCharms, ...result.rankedMinorCharms], view, selectedCharmIds, customWeights, 1);
           const row = creatureRows[0];
           return (
-            <div key={result.monsterName} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div key={result.monsterName} className="rounded-lg border border-charm-border bg-white/[0.025] p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="font-semibold text-white">{toTitleCase(result.monsterName)}</p>
                 <span className="text-xs text-charm-subtle">
@@ -324,9 +342,9 @@ function PurchaseSuggestions({ title, suggestions, recommendations, currency }: 
     <section>
       <SectionHeading>{title}</SectionHeading>
       {actionable.length === 0 ? (
-        <p className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-charm-subtle">{t.results.noActionableUpgrades}</p>
+        <p className="rounded-lg border border-charm-border bg-white/[0.025] p-4 text-sm text-charm-subtle">{t.results.noActionableUpgrades}</p>
       ) : (
-        <ul className="divide-y divide-white/10 rounded-xl border border-white/10 bg-white/[0.03] text-sm">
+        <ul className="divide-y divide-charm-border rounded-lg border border-charm-border bg-white/[0.025] text-sm">
           {actionable.map((s) => (
             <li key={`${s.charmId}-${s.monsterName}-${s.toTier}`} className="p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -356,13 +374,7 @@ export function OptimisationResults({ summary }: Props) {
 
   return (
     <div className="space-y-6">
-      {!hasAnyUnlockedCharms && (
-        <div className="rounded-xl border border-charm-primary/30 bg-charm-primary/10 p-4 text-sm text-white">
-          {t.results.noUnlockedCharmNotice}
-        </div>
-      )}
-
-      <FinalRecommendation row={finalRows[0]} />
+      <FinalRecommendation row={finalRows[0]} showNoUnlockedNotice={!hasAnyUnlockedCharms} />
 
       <section className="space-y-3">
         <SectionHeading>{t.results.selectedComparison}</SectionHeading>
@@ -388,15 +400,21 @@ export function OptimisationResults({ summary }: Props) {
         />
       </div>
 
-      <details className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-        <summary className="cursor-pointer text-sm font-semibold text-white">{t.results.advancedFullRanking}</summary>
+      <details className="group rounded-lg border border-charm-border bg-white/[0.025] p-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-white marker:content-none">
+          {t.results.advancedFullRanking}
+          <span className="text-charm-subtle transition-transform group-open:rotate-90">&rsaquo;</span>
+        </summary>
         <div className="mt-4">
           <CharmRankingTable recommendations={summary.rankedAlternatives} showCreatureName />
         </div>
       </details>
 
-      <details className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-        <summary className="cursor-pointer text-sm font-semibold text-white">{t.results.formulaDebugDetails}</summary>
+      <details className="group rounded-lg border border-charm-border bg-white/[0.025] p-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-white marker:content-none">
+          {t.results.formulaDebugDetails}
+          <span className="text-charm-subtle transition-transform group-open:rotate-90">&rsaquo;</span>
+        </summary>
         <div className="mt-4">
           <CharmRankingTable recommendations={comparisonRows.map((row) => row.recommendation)} showCreatureName detailed />
         </div>

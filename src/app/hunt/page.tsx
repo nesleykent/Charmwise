@@ -11,7 +11,7 @@ export default function HuntPage() {
   const { huntText, setHuntText, parseResult, hasHuntData } = useWorkspace();
 
   return (
-    <div className="mx-auto max-w-3xl animate-fadeIn px-4 py-10 sm:px-6">
+    <div className="page-shell max-w-3xl">
       <PageHeader title={t.huntPage.title} subtitle={t.huntPage.subtitle} />
 
       <div className="card mt-8 p-5 sm:p-6">

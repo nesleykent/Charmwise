@@ -15,9 +15,9 @@ export function TargetTierSelector({ value, onChange }: Props) {
   const { t } = useLocale();
 
   return (
-    <fieldset>
+    <fieldset className="min-w-0 xl:w-64">
       <legend className="mb-2 text-sm font-semibold text-white">{t.recommendationsPage.targetTierLabel}</legend>
-      <p className="mb-3 max-w-xl text-xs leading-relaxed text-charm-muted">{t.recommendationsPage.targetTierHint}</p>
+      <p className="sr-only">{t.recommendationsPage.targetTierHint}</p>
       <SegmentedControl
         ariaLabel={t.recommendationsPage.targetTierLabel}
         value={value}

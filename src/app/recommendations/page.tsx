@@ -13,10 +13,10 @@ export default function RecommendationsPage() {
   const { summary, hasHuntData, mode, setMode, targetTier, setTargetTier } = useWorkspace();
 
   return (
-    <div className="mx-auto max-w-6xl animate-fadeIn px-4 py-10 sm:px-6">
+    <div className="page-shell">
       <PageHeader title={t.recommendationsPage.title} subtitle={t.recommendationsPage.subtitle} />
 
-      <div className="mt-7 flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <div className="mt-5 grid min-w-0 gap-4 rounded-lg border border-charm-border bg-white/[0.025] p-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <OptimisationModeSelector value={mode} onChange={setMode} />
         <TargetTierSelector value={targetTier} onChange={setTargetTier} />
       </div>

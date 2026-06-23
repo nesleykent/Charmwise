@@ -10,7 +10,7 @@ const ptBR: Dictionary = {
     dashboard: 'Painel',
     character: 'Personagem',
     hunt: 'Hunt Analyser',
-    recommendations: 'Resultados',
+    recommendations: 'Recomendações',
     charms: 'Biblioteca de Charms',
     tagline: 'Charms mais inteligentes. Hunts melhores.',
   },
@@ -56,7 +56,7 @@ const ptBR: Dictionary = {
   },
   recommendationsPage: {
     title: 'Recomendações',
-    subtitle: 'Escolha as Charms que importam e compare as melhores opções para desbloquear, equipar ou auditar nesta hunt.',
+    subtitle: 'Que Charm devo usar nesta hunt? Escolha as Charms que importam e compare opções para desbloquear, equipar ou auditar.',
     emptyTitle: 'Nada para recomendar ainda',
     emptyBody: 'Adicione uma sessão do Hunt Analyser para gerar recomendações.',
     emptyCta: 'Adicionar sessão do Hunt Analyser',
@@ -83,7 +83,7 @@ const ptBR: Dictionary = {
     },
     targetTierLabel: 'Nível-alvo para Charms bloqueadas',
     targetTierHint:
-      'Limita até onde Charms bloqueadas são avaliadas e até onde as sugestões de compra vão. Ouro é o limite absoluto, mas não é realista para todo orçamento de Charm Points - reduza se você não está visando tão alto.',
+      'Define o limite para prévias de Charms bloqueadas e sugestões de upgrade. Reduza se você ainda não está mirando Ouro.',
     sectionDetails: 'Cálculos detalhados',
     identicalSubScoresNote:
       'Dano, ganho de XP e lucro coincidem porque esta Charm é a melhor escolha nos três para esta criatura - XP e lucro são calculados como múltiplos diretos do dano para uma única criatura, então atingir o máximo em um significa atingir o máximo nos três. Não é um artefato de cópia.',
@@ -176,6 +176,9 @@ const ptBR: Dictionary = {
     improvementStateHasGain:
       'Comparando o que está atribuído atualmente a cada criatura com o melhor alcançável a partir das Charms que você já desbloqueou (não os números aspiracionais de "se eu desbloqueasse tudo" mostrados mais abaixo).',
     finalRecommendation: 'Recomendação final',
+    whyThisIsBest: 'Por que esta é a melhor',
+    whyThisIsBestBody:
+      '{{signal}} é o sinal principal, com custo e confiança conferidos antes de qualquer troca que não seja de dano poder vencer.',
     selectedComparison: 'Comparação de Charms selecionadas',
     chooseCharmsTitle: 'Escolha Charms para comparar',
     chooseCharmsDefaultNote:

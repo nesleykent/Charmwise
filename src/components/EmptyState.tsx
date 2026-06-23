@@ -12,11 +12,10 @@ interface Props {
   actions?: Action[];
 }
 
-/** Shared empty-state pattern: every page that depends on missing data (no hunt, no character customisation) explains what's missing and links straight to where it's fixed, instead of a bare "-". */
 export function EmptyState({ title, body, actions }: Props) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-white/15 px-6 py-16 text-center backdrop-blur-sm">
-      <h2 className="font-display text-2xl font-semibold text-white">{title}</h2>
+    <div className="flex flex-col items-center rounded-lg border border-dashed border-charm-borderStrong bg-white/[0.025] px-6 py-16 text-center">
+      <h2 className="text-2xl font-semibold tracking-tight text-white">{title}</h2>
       <p className="mt-2 max-w-md text-sm leading-relaxed text-charm-muted">{body}</p>
       {actions && actions.length > 0 && (
         <div className="mt-6 flex flex-wrap justify-center gap-3">

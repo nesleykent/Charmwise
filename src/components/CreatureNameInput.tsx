@@ -89,7 +89,7 @@ export function CreatureNameInput({ value, onChange, placeholder, ariaLabel }: P
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-30 mt-1.5 max-h-60 w-full overflow-auto rounded-lg border border-white/10 bg-charm-surface/95 py-1 shadow-card backdrop-blur-xl"
+          className="absolute z-30 mt-1.5 max-h-60 w-full overflow-auto rounded-lg border border-charm-border bg-charm-surface/95 py-1 shadow-card backdrop-blur-xl"
         >
           {suggestions.map((name, index) => (
             <li
