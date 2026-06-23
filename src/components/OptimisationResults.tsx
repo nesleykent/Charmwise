@@ -46,6 +46,68 @@ export function OptimisationResults({ summary }: Props) {
       </section>
 
       <section>
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
+          <SectionHeading>{t.results.perCreatureTitle}</SectionHeading>
+          <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1" role="group" aria-label={t.results.perCreatureTitle}>
+            {(['full_analysis', 'my_charms'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setScope(option)}
+                aria-pressed={scope === option}
+                title={option === 'full_analysis' ? t.dashboard.scopeFullAnalysisHint : t.dashboard.scopeMyCharmsHint}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  scope === option ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
+                }`}
+              >
+                {option === 'full_analysis' ? t.dashboard.scopeFullAnalysis : t.dashboard.scopeMyCharms}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="mb-3 max-w-2xl text-xs leading-relaxed text-charm-muted">{t.results.perCreatureDescription}</p>
+        <div className="space-y-4">
+          {summary.creatureResults.map((result) => {
+            const bestMajor = scope === 'full_analysis' ? result.bestMajorCharmOverall : result.bestMajorCharm;
+            const bestMinor = scope === 'full_analysis' ? result.bestMinorCharmOverall : result.bestMinorCharm;
+            // The best alternative that ISN'T the recommended pick - whether
+            // that's simply the #2 ranked Charm, or (when this creature lost
+            // its independent #1 pick to a stronger claim elsewhere) the #1
+            // ranked Charm itself. Showing it alongside the recommendation is
+            // the actual answer to "why this Charm and not that one."
+            const runnerUpMajor = result.rankedMajorCharms.find((r) => r.charmId !== bestMajor?.charmId) ?? null;
+            const runnerUpMinor = result.rankedMinorCharms.find((r) => r.charmId !== bestMinor?.charmId) ?? null;
+            const majorRows = [bestMajor, runnerUpMajor].filter((r): r is NonNullable<typeof r> => r !== null);
+            const minorRows = [bestMinor, runnerUpMinor].filter((r): r is NonNullable<typeof r> => r !== null);
+            return (
+              <div key={result.monsterName} className="card p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-white">{toTitleCase(result.monsterName)}</h4>
+                  <span className="text-xs text-charm-subtle">
+                    {formatNumber(result.huntStat.kills, locale)} kills ({(result.huntStat.killShare * 100).toFixed(1)}%)
+                  </span>
+                </div>
+                {!result.hasBestiaryData ? (
+                  <p className="mt-2 text-xs text-charm-danger">{result.warnings[0] ? formatMessage(t, result.warnings[0]) : null}</p>
+                ) : (
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMajor}</p>
+                      <CharmRankingTable recommendations={majorRows} emptyMessage={t.results.noMajorUnlocked} />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMinor}</p>
+                      <CharmRankingTable recommendations={minorRows} emptyMessage={t.results.noMinorUnlocked} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
         <SectionHeading>{t.results.slotLimitTitle}</SectionHeading>
         <p className="mb-2 text-xs text-charm-muted">{t.results.slotLimitDescription}</p>
         <div className="card p-4 text-sm">
@@ -135,6 +197,7 @@ export function OptimisationResults({ summary }: Props) {
 
       <section>
         <SectionHeading>{t.results.rankedAlternatives}</SectionHeading>
+        <p className="mb-3 max-w-2xl text-xs leading-relaxed text-charm-muted">{t.results.rankedAlternativesDescription}</p>
         <div className="card p-3.5 sm:p-4">
           <CharmRankingTable recommendations={summary.rankedAlternatives} showCreatureName />
         </div>
@@ -145,58 +208,6 @@ export function OptimisationResults({ summary }: Props) {
           creaturesLackingBestiaryData={summary.creaturesLackingBestiaryData}
           creaturesNeedingManualReview={summary.creaturesNeedingManualReview}
         />
-      </section>
-
-      <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <SectionHeading>{t.results.perCreatureTitle}</SectionHeading>
-          <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1" role="group" aria-label={t.results.perCreatureTitle}>
-            {(['full_analysis', 'my_charms'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setScope(option)}
-                aria-pressed={scope === option}
-                title={option === 'full_analysis' ? t.dashboard.scopeFullAnalysisHint : t.dashboard.scopeMyCharmsHint}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  scope === option ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
-                }`}
-              >
-                {option === 'full_analysis' ? t.dashboard.scopeFullAnalysis : t.dashboard.scopeMyCharms}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-4">
-          {summary.creatureResults.map((result) => {
-            const bestMajor = scope === 'full_analysis' ? result.bestMajorCharmOverall : result.bestMajorCharm;
-            const bestMinor = scope === 'full_analysis' ? result.bestMinorCharmOverall : result.bestMinorCharm;
-            return (
-              <div key={result.monsterName} className="card p-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-white">{toTitleCase(result.monsterName)}</h4>
-                  <span className="text-xs text-charm-subtle">
-                    {formatNumber(result.huntStat.kills, locale)} kills ({(result.huntStat.killShare * 100).toFixed(1)}%)
-                  </span>
-                </div>
-                {!result.hasBestiaryData ? (
-                  <p className="mt-2 text-xs text-charm-danger">{result.warnings[0] ? formatMessage(t, result.warnings[0]) : null}</p>
-                ) : (
-                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                      <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMajor}</p>
-                      <CharmRankingTable recommendations={bestMajor ? [bestMajor] : []} emptyMessage={t.results.noMajorUnlocked} />
-                    </div>
-                    <div>
-                      <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMinor}</p>
-                      <CharmRankingTable recommendations={bestMinor ? [bestMinor] : []} emptyMessage={t.results.noMinorUnlocked} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </section>
     </div>
   );

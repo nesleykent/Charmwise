@@ -81,6 +81,8 @@ A specific unlocked Charm can only be actively assigned to one creature at a tim
 
 Because the same Charm legitimately scores differently per creature, it can show up more than once in a cross-creature list like "Ranked alternatives" - once per creature it's good for. Each row there names the creature it was scored against, so two entries for the same Charm read as "this Charm is great for both of these creatures" rather than looking like a duplicate-data bug.
 
+The Recommendations page leads with the per-creature recommendation (the solved assignment above), shown together with the next-best alternative for that creature - the score gap between the two is the actual, visible case for picking one Charm over the other, rather than a bare assertion. Cross-creature exploration ("Ranked alternatives," every Charm vs every creature) comes after, since it's supplementary - useful for "what else is out there," not the headline answer.
+
 ### Target tier
 
 Recommendations Center has a Bronze/Silver/Gold **target tier** selector (default Gold). It caps two things: the ceiling locked Charms are evaluated at in the full ranking (so "what's worth pursuing" reflects a tier you're actually aiming for, not always the absolute maximum), and how far purchase suggestions walk before stopping - Gold is rarely realistic on every Charm given how steeply its cost scales versus Bronze/Silver, so this exists for anyone whose Charm Point budget isn't going to stretch that far.

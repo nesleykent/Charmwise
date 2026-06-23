@@ -130,9 +130,11 @@ export interface Dictionary {
     /** Connector word in "{{charm}} for {{creature}}" suggestion rows. */
     linkingFor: string;
     perCreatureTitle: string;
+    perCreatureDescription: string;
     fullHuntTitle: string;
     recommendedSetup: string;
     rankedAlternatives: string;
+    rankedAlternativesDescription: string;
     charmPointBudget: string;
     minorEchoBudget: string;
     improvementSummary: string;
