@@ -67,6 +67,196 @@ function formatInputVsBest(row: ScoreCalculationRow, t: Dictionary, locale: Loca
   return `${input} / ${basis}`;
 }
 
+function formatFormulaNumber(value: number | null | undefined, locale: Locale, maximumFractionDigits = 1): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '-';
+  return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
+}
+
+function FormulaLine({ label, formula, result }: { label: string; formula: string; result?: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2.5">
+      <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{label}</div>
+      <div className="mt-1 text-xs leading-relaxed text-charm-muted">{formula}</div>
+      {result && <div className="mt-1 text-sm font-semibold text-white">{result}</div>}
+    </div>
+  );
+}
+
+function EffectModelPanel({ rec, t, locale }: { rec: CharmRecommendation; t: Dictionary; locale: Locale }) {
+  const c = rec.calculation;
+  const formulaLines: { label: string; formula: string; result?: string }[] = [];
+  const triggerLabel =
+    c.triggerUnit === 'kill'
+      ? t.results.modelKillsPerHour.toLowerCase()
+      : c.triggerUnit === 'attack'
+        ? t.results.modelAttacksPerHour.toLowerCase()
+        : t.results.modelHuntBasis.toLowerCase();
+
+  if (c.baseDamage !== null) {
+    const baseSource =
+      c.effectKind === 'percent_hitpoints_damage_on_attack'
+        ? `${formatFormulaNumber(c.characterMaxHitpoints, locale, 0)} character HP`
+        : c.effectKind === 'percent_mana_damage_on_attack'
+          ? `${formatFormulaNumber(c.characterMaxMana, locale, 0)} character mana`
+          : `${formatFormulaNumber(c.hitpoints, locale, 0)} creature HP`;
+
+    formulaLines.push({
+      label: t.results.modelBaseDamage,
+      formula: `${baseSource} x ${formatPercent(c.tierValue, 1)} = ${formatFormulaNumber(c.uncappedBaseDamage, locale)}`,
+    });
+
+    if (c.levelCapDamage !== null) {
+      const capSource =
+        c.levelCapMultiplier !== null
+          ? `level ${formatFormulaNumber(c.characterLevel, locale, 0)} x ${formatFormulaNumber(c.levelCapMultiplier, locale, 0)}`
+          : `${formatFormulaNumber(c.hitpoints, locale, 0)} creature HP x ${formatPercent(0.08, 0)}`;
+      formulaLines.push({
+        label: t.results.modelDamageCap,
+        formula: `${capSource} = ${formatFormulaNumber(c.levelCapDamage, locale)} (${c.wasLevelCapped ? t.results.modelUsed : t.results.modelNotUsed})`,
+      });
+    }
+
+    formulaLines.push({
+      label: t.results.modelSelectedBaseDamage,
+      formula: c.wasLevelCapped ? `${t.results.modelDamageCap} < ${t.results.modelBaseDamage.toLowerCase()}` : `${t.results.modelBaseDamage} <= ${t.results.modelDamageCap.toLowerCase()}`,
+      result: formatFormulaNumber(c.baseDamage, locale),
+    });
+
+    if (c.hitpoints !== null) {
+      const impactFactor = c.baseDamage * c.hitpoints * c.kills;
+      formulaLines.push({
+        label: t.results.modelCharmImpactFactor,
+        formula: `${formatFormulaNumber(c.baseDamage, locale)} base x ${formatFormulaNumber(c.hitpoints, locale, 0)} creature HP x ${formatFormulaNumber(c.kills, locale, 0)} kills`,
+        result: formatFormulaNumber(impactFactor, locale, 0),
+      });
+    }
+
+    if (c.resistanceMultiplier !== null) {
+      formulaLines.push({
+        label: t.results.modelPerProcDamage,
+        formula: `${formatFormulaNumber(c.baseDamage, locale)} base x ${formatPercent(c.resistanceMultiplier, 0)} ${c.element ?? ''} multiplier = ${formatFormulaNumber(c.perProcDamage, locale)}`,
+      });
+    } else {
+      formulaLines.push({
+        label: t.results.modelPerProcDamage,
+        formula: `${formatFormulaNumber(c.baseDamage, locale)} base damage`,
+      });
+    }
+
+    if (c.activationChance !== null && c.triggersPerHour !== null) {
+      formulaLines.push({
+        label: t.results.modelHourlyEstimate,
+        formula: `${formatFormulaNumber(c.perProcDamage, locale)} x ${formatPercent(c.activationChance, 1)} proc chance x ${formatFormulaNumber(c.triggersPerHour, locale)} ${triggerLabel}`,
+        result: `${formatNumber(rec.effect.expectedDamagePerHour, locale)} ${t.results.metrics.expectedDamagePerHour.toLowerCase()}`,
+      });
+    }
+  } else if (c.effectKind === 'dodge_incoming_damage') {
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatNumber(c.incomingDamagePerHourFromMonster, locale)} incoming damage/h x ${formatPercent(c.activationChance ?? 0, 1)} proc chance`,
+      result: `${formatNumber(rec.effect.expectedDamagePreventedPerHour, locale)} ${t.results.metrics.expectedDamagePreventedPerHour.toLowerCase()}`,
+    });
+  } else if (c.effectKind === 'reflect_incoming_damage') {
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatNumber(c.incomingDamagePerHourFromMonster, locale)} incoming damage/h x ${formatPercent(c.activationChance ?? 0, 1)} proc chance`,
+      result: `${formatNumber(rec.effect.expectedDamagePerHour, locale)} ${t.results.metrics.expectedDamagePerHour.toLowerCase()}`,
+    });
+  } else if (c.effectKind === 'critical_chance_bonus') {
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatNumber(c.baseDamagePerHourAgainstMonster, locale)} baseline damage/h x ${formatPercent(c.tierValue, 1)} crit chance gain x ${formatPercent(c.criticalDamageBonus / 100, 1)} crit damage`,
+      result: `${formatNumber(rec.effect.expectedDamagePerHour, locale)} ${t.results.metrics.expectedDamagePerHour.toLowerCase()}`,
+    });
+  } else if (c.effectKind === 'critical_damage_bonus') {
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatNumber(c.baseDamagePerHourAgainstMonster, locale)} baseline damage/h x ${formatPercent(c.criticalChance / 100, 1)} crit chance x ${formatPercent(c.tierValue, 1)} crit damage gain`,
+      result: `${formatNumber(rec.effect.expectedDamagePerHour, locale)} ${t.results.metrics.expectedDamagePerHour.toLowerCase()}`,
+    });
+  } else if (c.effectKind === 'life_leech_bonus') {
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatNumber(c.baseDamagePerHourAgainstMonster, locale)} baseline damage/h x ${formatPercent(c.tierValue, 1)} added life leech`,
+      result: `${formatNumber(rec.effect.expectedHealingGainPerHour, locale)} ${t.results.metrics.expectedHealingSavedPerHour.toLowerCase()}`,
+    });
+  } else if (c.effectKind === 'mana_leech_bonus') {
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatNumber(c.baseDamagePerHourAgainstMonster, locale)} baseline damage/h x ${formatPercent(c.tierValue, 1)} added mana leech`,
+      result: `${formatNumber(rec.effect.expectedManaGainPerHour, locale)} ${t.results.metrics.expectedHealingSavedPerHour.toLowerCase()}`,
+    });
+  } else if (c.effectKind === 'mana_drain_inversion') {
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatNumber(c.manaDrainReceivedPerHour, locale)} estimated mana drain/h x ${formatPercent(c.activationChance ?? 0, 1)} proc chance`,
+      result: `${formatNumber(rec.effect.expectedManaSavedPerHour, locale)} ${t.results.metrics.expectedHealingSavedPerHour.toLowerCase()}`,
+    });
+  } else if (c.effectKind === 'paralyse_creature_on_attack' || c.effectKind === 'paralyse_creature_on_hit_received') {
+    const averageSecondsPerKill = c.killsPerHour && c.killsPerHour > 0 ? 3600 / c.killsPerHour : null;
+    const uptime = averageSecondsPerKill ? Math.min(1, ((c.activationChance ?? 0) * c.tierValue) / averageSecondsPerKill) : null;
+    formulaLines.push({
+      label: t.results.modelHourlyEstimate,
+      formula: `${formatPercent(c.activationChance ?? 0, 1)} proc chance x ${formatFormulaNumber(c.tierValue, locale, 0)}s paralysis / ${formatFormulaNumber(averageSecondsPerKill, locale, 1)}s average between kills = ${formatPercent(uptime ?? 0, 1)} uptime`,
+      result: `${formatNumber(rec.effect.expectedDamagePreventedPerHour, locale)} ${t.results.metrics.expectedDamagePreventedPerHour.toLowerCase()}`,
+    });
+  }
+
+  const hasDerivedOutput =
+    rec.effect.expectedDamagePerHour > 0.5 ||
+    rec.effect.expectedXpPerHour > 0.5 ||
+    rec.effect.expectedProfitPerHour > 0.5 ||
+    rec.effect.expectedDamagePreventedPerHour > 0.5 ||
+    rec.effect.expectedHealingGainPerHour + rec.effect.expectedManaGainPerHour + rec.effect.expectedManaSavedPerHour > 0.5;
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-charm-bg/45 p-3">
+      <p className="text-xs font-semibold text-white">{t.results.effectModelTitle}</p>
+      <div className="mt-2 text-[10px] uppercase tracking-wide text-charm-subtle">{t.results.modelHuntBasis}</div>
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <MetricChip label={t.results.modelKillShare} value={formatPercent(c.killShare, 1)} />
+        <MetricChip label={t.results.modelKillsPerHour} value={formatFormulaNumber(c.killsPerHour, locale)} />
+        <MetricChip label={t.results.modelAttacksPerHour} value={formatFormulaNumber(c.attacksPerHour, locale)} />
+      </div>
+
+      <div className="mt-3 text-[10px] uppercase tracking-wide text-charm-subtle">{t.results.modelEffectFormula}</div>
+      <div className="mt-3 space-y-2">
+        {formulaLines.length > 0 ? (
+          formulaLines.map((line, index) => <FormulaLine key={`${line.label}-${index}`} {...line} />)
+        ) : (
+          <p className="rounded-lg border border-white/10 bg-white/[0.03] p-2.5 text-xs leading-relaxed text-charm-muted">
+            {t.results.modelNoSpecificFormula}
+          </p>
+        )}
+      </div>
+
+      {hasDerivedOutput && (
+        <div className="mt-3">
+          <div className="mb-1.5 text-[10px] uppercase tracking-wide text-charm-subtle">{t.results.modelDerivedOutputs}</div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {rec.effect.expectedDamagePerHour > 0.5 && (
+              <MetricChip label={t.results.metrics.expectedDamagePerHour} value={formatNumber(rec.effect.expectedDamagePerHour, locale)} />
+            )}
+            {rec.effect.expectedXpPerHour > 0.5 && <MetricChip label={t.scoreDimensions.xp} value={formatNumber(rec.effect.expectedXpPerHour, locale)} />}
+            {rec.effect.expectedProfitPerHour > 0.5 && (
+              <MetricChip label={t.results.metrics.expectedProfitPerHour} value={formatNumber(rec.effect.expectedProfitPerHour, locale)} />
+            )}
+            {rec.effect.expectedDamagePreventedPerHour > 0.5 && (
+              <MetricChip label={t.results.metrics.expectedDamagePreventedPerHour} value={formatNumber(rec.effect.expectedDamagePreventedPerHour, locale)} />
+            )}
+            {rec.effect.expectedHealingGainPerHour + rec.effect.expectedManaGainPerHour + rec.effect.expectedManaSavedPerHour > 0.5 && (
+              <MetricChip
+                label={t.results.metrics.expectedHealingSavedPerHour}
+                value={formatNumber(rec.effect.expectedHealingGainPerHour + rec.effect.expectedManaGainPerHour + rec.effect.expectedManaSavedPerHour, locale)}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ScoreCalculationPanel({ rec, t, locale }: { rec: CharmRecommendation; t: Dictionary; locale: Locale }) {
   const supplyInput = rec.effect.expectedHealingGainPerHour + rec.effect.expectedManaGainPerHour + rec.effect.expectedManaSavedPerHour;
   const rows: ScoreCalculationRow[] = [
@@ -121,7 +311,9 @@ function ScoreCalculationPanel({ rec, t, locale }: { rec: CharmRecommendation; t
   ];
 
   return (
-    <div className="mt-2.5 rounded-xl border border-white/10 bg-charm-bg/45 p-3">
+    <div className="mt-2.5 space-y-3">
+      <EffectModelPanel rec={rec} t={t} locale={locale} />
+      <div className="rounded-xl border border-white/10 bg-charm-bg/45 p-3">
       <p className="text-xs font-semibold text-white">
         {t.results.scoreFormula}: {formatScore(rec.scores.rawTotalScore)} {t.results.metrics.rawScore.toLowerCase()} x{' '}
         {rec.scores.confidenceMultiplier.toFixed(2)} {t.results.scoreConfidenceMultiplier.toLowerCase()} ={' '}
@@ -177,6 +369,7 @@ function ScoreCalculationPanel({ rec, t, locale }: { rec: CharmRecommendation; t
             </span>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

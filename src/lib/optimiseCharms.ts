@@ -2,7 +2,7 @@
 // input + bestiary profiles -> ranked Charm recommendations for each
 // creature and for the hunt as a whole.
 import { solveAssignment } from '@/lib/assignmentSolver';
-import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST, getCharmDefinition } from '@/data/charms';
+import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST, PERCENT_HP_DAMAGE_CAP, getCharmDefinition } from '@/data/charms';
 import {
   ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE,
   ASSUMED_MANA_DRAIN_SHARE_OF_INCOMING,
@@ -11,6 +11,9 @@ import {
   emptyEffect,
   scoreEffect,
   MODE_WEIGHTS,
+  resistanceMultiplier,
+  ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER,
+  CARNAGE_LEVEL_CAP_MULTIPLIER,
   type ScoreMaxima,
   type ScoringContext,
 } from '@/lib/charmScoring';
@@ -23,6 +26,7 @@ import type {
   CharmDefinition,
   CharmEffectEstimate,
   CharmId,
+  CharmModelBreakdown,
   CharmRecommendation,
   CharmTier,
   CharmTierDefinition,
@@ -96,6 +100,100 @@ function buildReason(rankIndex: number, unlocked: boolean, dominant: string, loc
   if (rankIndex === 0 && !unlocked) return { code: 'reason_top_locked', params: { dominant, tier: lockedAtTier } };
   if (unlocked) return { code: 'reason_ranked_unlocked', params: { rank: rankIndex + 1, dominant } };
   return { code: 'reason_ranked_locked', params: { rank: rankIndex + 1, dominant, tier: lockedAtTier } };
+}
+
+function buildCalculationBreakdown(
+  charm: CharmDefinition,
+  tier: CharmTierDefinition,
+  ctx: ScoringContext,
+  effect: CharmEffectEstimate,
+): CharmModelBreakdown {
+  const hp = ctx.monster.hitpoints;
+  const activationChance = tier.activationChance ?? null;
+  const base: CharmModelBreakdown = {
+    effectKind: charm.effectKind,
+    element: charm.element,
+    hitpoints: hp,
+    characterLevel: ctx.character.level,
+    characterMaxHitpoints: ctx.character.maxHitpoints,
+    characterMaxMana: ctx.character.maxMana,
+    criticalChance: ctx.character.criticalChance,
+    criticalDamageBonus: ctx.character.criticalDamageBonus,
+    lifeLeechPercent: ctx.character.lifeLeechPercent,
+    manaLeechPercent: ctx.character.manaLeechPercent,
+    tierValue: tier.value,
+    activationChance,
+    resistanceMultiplier: null,
+    levelCapMultiplier: null,
+    uncappedBaseDamage: null,
+    levelCapDamage: null,
+    baseDamage: null,
+    wasLevelCapped: null,
+    perProcDamage: null,
+    expectedPerTrigger: null,
+    triggersPerHour: null,
+    triggerUnit: 'none',
+    kills: ctx.huntStat.kills,
+    killShare: ctx.huntStat.killShare,
+    killsPerHour: ctx.huntStat.killsPerHour,
+    attacksPerHour: ctx.attacksPerHour,
+    baseDamagePerHourAgainstMonster: ctx.baseDamagePerHourAgainstMonster,
+    incomingDamagePerHourFromMonster: ctx.incomingDamagePerHourFromMonster,
+    manaDrainReceivedPerHour: ctx.manaDrainReceivedPerHour,
+  };
+
+  if (hp === null) return base;
+
+  if (charm.effectKind === 'elemental_damage_on_attack' || charm.effectKind === 'aoe_damage_on_kill') {
+    const capMultiplier = charm.effectKind === 'aoe_damage_on_kill' ? CARNAGE_LEVEL_CAP_MULTIPLIER : ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER;
+    const uncappedBaseDamage = hp * tier.value;
+    const levelCapDamage = ctx.character.level * capMultiplier;
+    const baseDamage = Math.min(uncappedBaseDamage, levelCapDamage);
+    const { multiplier } = resistanceMultiplier(ctx.monster, charm.element ?? 'physical');
+    const perProcDamage = baseDamage * Math.max(0, multiplier);
+    return {
+      ...base,
+      resistanceMultiplier: multiplier,
+      levelCapMultiplier: capMultiplier,
+      uncappedBaseDamage,
+      levelCapDamage,
+      baseDamage,
+      wasLevelCapped: uncappedBaseDamage > levelCapDamage,
+      perProcDamage,
+      expectedPerTrigger: activationChance === null ? perProcDamage : perProcDamage * activationChance,
+      triggersPerHour: charm.effectKind === 'aoe_damage_on_kill' ? ctx.huntStat.killsPerHour : ctx.attacksPerHour,
+      triggerUnit: charm.effectKind === 'aoe_damage_on_kill' ? 'kill' : 'attack',
+    };
+  }
+
+  if (charm.effectKind === 'percent_hitpoints_damage_on_attack' || charm.effectKind === 'percent_mana_damage_on_attack') {
+    const resource = charm.effectKind === 'percent_hitpoints_damage_on_attack' ? ctx.character.maxHitpoints : ctx.character.maxMana;
+    const uncappedBaseDamage = resource * tier.value;
+    const levelCapDamage = hp * PERCENT_HP_DAMAGE_CAP;
+    const baseDamage = Math.min(uncappedBaseDamage, levelCapDamage);
+    return {
+      ...base,
+      uncappedBaseDamage,
+      levelCapDamage,
+      baseDamage,
+      wasLevelCapped: uncappedBaseDamage > levelCapDamage,
+      perProcDamage: baseDamage,
+      expectedPerTrigger: activationChance === null ? baseDamage : baseDamage * activationChance,
+      triggersPerHour: ctx.attacksPerHour,
+      triggerUnit: 'attack',
+    };
+  }
+
+  if (charm.effectKind === 'dodge_incoming_damage' || charm.effectKind === 'reflect_incoming_damage') {
+    return {
+      ...base,
+      expectedPerTrigger:
+        charm.effectKind === 'dodge_incoming_damage' ? effect.expectedDamagePreventedPerHour : effect.expectedDamagePerHour,
+      triggerUnit: 'incoming_hit',
+    };
+  }
+
+  return base;
 }
 
 function addEffects(a: CharmEffectEstimate, b: CharmEffectEstimate): CharmEffectEstimate {
@@ -185,6 +283,7 @@ function rankCharmGroup(
       tier: entry.tier,
       unlocked: entry.unlocked,
       effect: entry.effect,
+      calculation: buildCalculationBreakdown(entry.charm, getTierDefinition(entry.charm, entry.tier), ctx, entry.effect),
       scores: entry.scores,
       scorePerCharmPoint: entry.charm.currency === 'charm_points' ? entry.scores.totalScore / totalCostToTier : null,
       scorePerMinorCharmEcho: entry.charm.currency === 'minor_charm_echoes' ? entry.scores.totalScore / totalCostToTier : null,

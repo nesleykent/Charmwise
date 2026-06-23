@@ -115,6 +115,38 @@ export interface ScoreNormalisationBasis {
   utility: number;
 }
 
+export interface CharmModelBreakdown {
+  effectKind: CharmEffectKind;
+  element?: ElementType;
+  hitpoints: number | null;
+  characterLevel: number;
+  characterMaxHitpoints: number;
+  characterMaxMana: number;
+  criticalChance: number;
+  criticalDamageBonus: number;
+  lifeLeechPercent: number;
+  manaLeechPercent: number;
+  tierValue: number;
+  activationChance: number | null;
+  resistanceMultiplier: number | null;
+  levelCapMultiplier: number | null;
+  uncappedBaseDamage: number | null;
+  levelCapDamage: number | null;
+  baseDamage: number | null;
+  wasLevelCapped: boolean | null;
+  perProcDamage: number | null;
+  expectedPerTrigger: number | null;
+  triggersPerHour: number | null;
+  triggerUnit: 'attack' | 'kill' | 'incoming_hit' | 'none';
+  kills: number;
+  killShare: number;
+  killsPerHour: number | null;
+  attacksPerHour: number;
+  baseDamagePerHourAgainstMonster: number;
+  incomingDamagePerHourFromMonster: number;
+  manaDrainReceivedPerHour: number;
+}
+
 export type OptimisationMode = 'balanced' | 'xp' | 'profit' | 'safety' | 'low_supplies';
 
 /** Which charms count as candidates for "best charm": every Charm regardless of unlock status (`full_analysis`, the default - useful before filling in Unlocked Charms at all), or only what the player has actually unlocked (`my_charms`). */
@@ -167,6 +199,7 @@ export interface CharmRecommendation {
   tier: CharmTier;
   unlocked: boolean;
   effect: CharmEffectEstimate;
+  calculation: CharmModelBreakdown;
   scores: ScoreBreakdown;
   /** total_score divided by the cumulative Charm Point cost to reach `tier` from scratch, null for minor charms or zero-cost cases. */
   scorePerCharmPoint: number | null;

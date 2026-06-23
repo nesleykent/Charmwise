@@ -27,6 +27,22 @@ describe('optimiseCharms - end to end with the sample session', () => {
     expect(crusader.bestMinorCharm).toBeNull();
   });
 
+  it('includes model-calculation inputs on recommendations, not only final scores', () => {
+    const summary = optimiseHuntFromText(baseCharacter({ unlockedMajorCharms: [], unlockedMinorCharms: [] }), SAMPLE_HUNT_ANALYSER_TEXT);
+    const crusader = summary.creatureResults.find((r) => r.monsterName === 'crusader')!;
+    const carnage = crusader.rankedMajorCharms.find((r) => r.charmId === 'carnage')!;
+
+    expect(carnage.calculation.effectKind).toBe('aoe_damage_on_kill');
+    expect(carnage.calculation.hitpoints).toBe(3400);
+    expect(carnage.calculation.kills).toBe(440);
+    expect(carnage.calculation.uncappedBaseDamage).toBeCloseTo(510, 5);
+    expect(carnage.calculation.levelCapDamage).toBe(1200);
+    expect(carnage.calculation.baseDamage).toBeCloseTo(510, 5);
+    expect(carnage.calculation.wasLevelCapped).toBe(false);
+    expect(carnage.calculation.perProcDamage).toBeGreaterThan(0);
+    expect(carnage.calculation.triggersPerHour).toBe(carnage.calculation.killsPerHour);
+  });
+
   it('picks the only unlocked charm as "best" for whichever single creature it helps most, never both at once', () => {
     // A Charm can only be active on one creature at a time, so with only one
     // Major and one Minor Charm unlocked, exactly one of the two creatures in
