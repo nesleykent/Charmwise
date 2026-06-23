@@ -15,7 +15,7 @@ interface Props<T extends string | number> {
 
 export function SegmentedControl<T extends string | number>({ ariaLabel, value, options, onChange }: Props<T>) {
   return (
-    <div className="inline-flex max-w-full rounded-lg border border-charm-border bg-charm-surfaceAlt/65 p-1" role="group" aria-label={ariaLabel}>
+    <div className="inline-flex max-w-full rounded-xl border border-white/15 bg-white/[0.08] p-1 shadow-card backdrop-blur-xl" role="group" aria-label={ariaLabel}>
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -25,8 +25,8 @@ export function SegmentedControl<T extends string | number>({ ariaLabel, value, 
             onClick={() => onChange(option.value)}
             aria-pressed={active}
             title={option.hint}
-            className={`min-h-8 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors sm:px-4 ${
-              active ? 'bg-charm-primary text-white shadow-glow' : 'text-charm-muted hover:bg-white/[0.05] hover:text-white'
+            className={`min-h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all sm:px-4 ${
+              active ? 'bg-white/[0.2] text-white shadow-glow' : 'text-charm-muted hover:bg-white/[0.08] hover:text-white hover:opacity-90'
             }`}
           >
             {option.label}

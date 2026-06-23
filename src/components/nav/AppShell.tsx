@@ -14,7 +14,7 @@ import type { Dictionary } from '@/types/i18n';
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 function Logo() {
-  return <Image src={`${BASE_PATH}/logo-32.png`} alt="" width={32} height={32} className="h-8 w-8 rounded-md" priority />;
+  return <Image src={`${BASE_PATH}/logo-32.png`} alt="" width={32} height={32} className="h-8 w-8 rounded-xl shadow-glow" priority />;
 }
 
 function DashboardIcon() {
@@ -84,10 +84,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:border-r md:border-charm-border md:bg-charm-bg/82 md:backdrop-blur-xl">
-        <Link href="/" className="flex items-center gap-3 px-5 py-5">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:border-r md:border-white/15 md:bg-white/[0.055] md:shadow-card md:backdrop-blur-xl">
+        <Link href="/" className="flex items-center gap-3 px-6 py-7 transition-opacity hover:opacity-80">
           <Logo />
-          <span className="text-lg font-semibold tracking-tight text-white">Charmwise</span>
+          <span className="font-display text-2xl font-semibold tracking-tight text-white">Charmwise</span>
         </Link>
         <nav className="flex-1 space-y-1 px-3" aria-label={t.nav.dashboard}>
           {NAV_ITEMS.map(({ href, key, Icon }) => {
@@ -97,8 +97,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-                  active ? 'bg-charm-primary text-white shadow-glow' : 'text-charm-muted hover:bg-white/[0.05] hover:text-white'
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${
+                  active
+                    ? 'border-white/20 bg-white/[0.18] text-white shadow-glow backdrop-blur-xl'
+                    : 'border-transparent text-charm-muted hover:bg-white/[0.07] hover:text-white hover:opacity-90'
                 }`}
               >
                 <Icon />
@@ -107,18 +109,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="mx-3 mb-3 rounded-lg border border-charm-border bg-white/[0.025] p-3">
+        <div className="mx-3 mb-4 rounded-2xl border border-white/15 bg-white/[0.055] p-3 shadow-card backdrop-blur-xl">
           <p className="text-[11px] leading-relaxed text-charm-subtle">{t.common.privacyNote}</p>
         </div>
-        <div className="px-5 pb-4">
+        <div className="px-5 pb-5">
           <LanguageSwitcher />
         </div>
       </aside>
 
-      <header className="flex items-center justify-between border-b border-charm-border bg-charm-bg/85 px-4 py-3 backdrop-blur-xl md:hidden">
+      <header className="flex items-center justify-between border-b border-white/15 bg-white/[0.065] px-4 py-3 shadow-card backdrop-blur-xl md:hidden">
         <Link href="/" className="flex items-center gap-2">
           <Logo />
-          <span className="text-lg font-semibold tracking-tight text-white">Charmwise</span>
+          <span className="font-display text-xl font-semibold tracking-tight text-white">Charmwise</span>
         </Link>
         <LanguageSwitcher />
       </header>
@@ -128,7 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-charm-border bg-charm-bg/88 backdrop-blur-xl md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-white/15 bg-white/[0.07] shadow-card backdrop-blur-xl md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label={t.nav.dashboard}
       >
@@ -142,7 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               aria-label={t.nav[key]}
               title={t.nav[key]}
               className={`flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-opacity ${
-                active ? 'text-charm-primary' : 'text-charm-muted hover:text-white'
+                active ? 'text-charm-accent' : 'text-charm-muted hover:text-white hover:opacity-80'
               }`}
             >
               <Icon />

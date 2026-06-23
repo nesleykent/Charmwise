@@ -16,7 +16,7 @@ export default function RecommendationsPage() {
     <div className="page-shell">
       <PageHeader title={t.recommendationsPage.title} subtitle={t.recommendationsPage.subtitle} />
 
-      <div className="mt-5 grid min-w-0 gap-4 rounded-lg border border-charm-border bg-white/[0.025] p-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+      <div className="glass-panel mt-1 grid min-w-0 gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <OptimisationModeSelector value={mode} onChange={setMode} />
         <TargetTierSelector value={targetTier} onChange={setTargetTier} />
       </div>
@@ -30,7 +30,7 @@ export default function RecommendationsPage() {
           />
         </div>
       ) : (
-        <div className="mt-8">
+        <div className="mt-6">
           <OptimisationResults summary={summary} />
         </div>
       )}

@@ -17,15 +17,15 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
   return (
     <fieldset className="min-w-0">
       <legend className="mb-2 text-sm font-semibold text-white">{t.recommendationsPage.modeLabel}</legend>
-      <div className="grid w-full max-w-full grid-cols-2 gap-1 rounded-lg border border-charm-border bg-charm-surfaceAlt/65 p-1 md:grid-cols-4">
+      <div className="grid w-full max-w-full grid-cols-2 gap-1 rounded-xl border border-white/15 bg-white/[0.08] p-1 shadow-card backdrop-blur-xl md:grid-cols-4">
         {MODES.map((mode) => (
           <label
             key={mode}
             title={t.recommendationsPage.modeDescriptions[mode]}
-            className={`cursor-pointer rounded-md px-3 py-1.5 text-center text-xs font-semibold transition-colors ${
+            className={`cursor-pointer rounded-lg px-3 py-1.5 text-center text-xs font-semibold transition-all ${
               value === mode
-                ? 'bg-charm-primary text-white shadow-glow'
-                : 'text-charm-muted hover:bg-white/[0.05] hover:text-white'
+                ? 'bg-white/[0.2] text-white shadow-glow'
+                : 'text-charm-muted hover:bg-white/[0.08] hover:text-white hover:opacity-90'
             }`}
           >
             <input

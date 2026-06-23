@@ -1,9 +1,17 @@
 import type { Metadata } from 'next';
+import { Playfair_Display } from 'next/font/google';
 import { AppShell } from '@/components/nav/AppShell';
 import { BackgroundAtmosphere } from '@/components/BackgroundAtmosphere';
 import { LocaleProvider } from '@/lib/i18n';
 import { WorkspaceProvider } from '@/lib/workspace';
 import './globals.css';
+
+const displayFont = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-display',
+  display: 'swap',
+});
 
 // See AppShell.tsx - basePath must be prepended by hand for asset URLs
 // Next doesn't run through its own build pipeline.
@@ -20,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={displayFont.variable}>
       <body className="font-sans antialiased">
         <BackgroundAtmosphere />
         <LocaleProvider>
