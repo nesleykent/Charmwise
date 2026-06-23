@@ -79,11 +79,11 @@ export function OptimisationResults({ summary }: Props) {
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                       <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMajor}</p>
-                      <CharmRankingTable recommendations={majorRows} emptyMessage={t.results.noMajorUnlocked} />
+                      <CharmRankingTable recommendations={majorRows} emptyMessage={t.results.noMajorUnlocked} detailed />
                     </div>
                     <div>
                       <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMinor}</p>
-                      <CharmRankingTable recommendations={minorRows} emptyMessage={t.results.noMinorUnlocked} />
+                      <CharmRankingTable recommendations={minorRows} emptyMessage={t.results.noMinorUnlocked} detailed />
                     </div>
                   </div>
                 )}
@@ -185,7 +185,7 @@ export function OptimisationResults({ summary }: Props) {
         <SectionHeading>{t.results.rankedAlternatives}</SectionHeading>
         <p className="mb-3 max-w-2xl text-xs leading-relaxed text-charm-muted">{t.results.rankedAlternativesDescription}</p>
         <div className="card p-3.5 sm:p-4">
-          <CharmRankingTable recommendations={summary.rankedAlternatives} showCreatureName />
+          <CharmRankingTable recommendations={summary.rankedAlternatives} showCreatureName detailed />
         </div>
       </section>
 

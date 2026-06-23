@@ -161,6 +161,18 @@ const en: Dictionary = {
     economicsTitle: 'Economics',
     reassignmentsTitle: 'Suggested reassignments',
     confidence: { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence', unknown: 'Unknown data' },
+    scoreDetailsTitle: 'Score calculation',
+    scoreFormula: 'Final score',
+    scoreNormalisationNote:
+      'Each metric is normalised against the best candidate of the same Charm category for this creature, then multiplied by the current optimisation-mode weight.',
+    scoreMetric: 'Metric',
+    scoreInputVsBest: 'Input / best',
+    scoreNormalised: 'Normalised',
+    scoreWeight: 'Weight',
+    scoreContribution: 'Contribution',
+    scoreNoBestValue: 'none',
+    scoreConfidenceMultiplier: 'Confidence multiplier',
+    scoreConfidenceAdjustment: 'Confidence adjustment',
     metrics: {
       expectedDamagePerHour: 'Expected charm damage / hour',
       expectedProfitPerHour: 'Expected profit gain / hour',

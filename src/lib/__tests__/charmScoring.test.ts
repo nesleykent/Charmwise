@@ -397,6 +397,8 @@ describe('scoring normalisation', () => {
     expect(scores[1]?.damageScore).toBeCloseTo(50, 5);
     expect(scores[0]?.rawTotalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
     expect(scores[0]?.totalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
+    expect(scores[0]?.normalisationBasis.damage).toBe(1000);
+    expect(scores[0]?.weights).toEqual(MODE_WEIGHTS.balanced);
   });
 
   it('applies confidence multipliers only to total ranking score', () => {
@@ -415,8 +417,10 @@ describe('scoring normalisation', () => {
     const unknown = scoreEffect(effect, maxima, MODE_WEIGHTS.balanced, 'unknown');
 
     expect(low.rawTotalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
+    expect(low.confidenceMultiplier).toBe(0.6);
     expect(low.totalScore).toBeCloseTo(low.rawTotalScore * 0.6, 5);
     expect(unknown.rawTotalScore).toBeCloseTo(low.rawTotalScore, 5);
+    expect(unknown.confidenceMultiplier).toBe(0);
     expect(unknown.totalScore).toBe(0);
   });
 });

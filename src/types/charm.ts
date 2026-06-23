@@ -94,10 +94,25 @@ export interface ScoreBreakdown {
   safetyScore: number;
   supplySavingScore: number;
   utilityScore: number;
+  /** Per-dimension maxima from the comparison set used to normalise raw effect values to 0-100. */
+  normalisationBasis: ScoreNormalisationBasis;
+  /** Optimisation-mode weights applied to the normalised dimension scores. */
+  weights: ScoreWeights;
   /** Weighted score before confidence adjustment. */
   rawTotalScore: number;
+  /** Multiplier applied to the raw score for data confidence. */
+  confidenceMultiplier: number;
   /** Weighted score after confidence adjustment; this is what ranking uses. */
   totalScore: number;
+}
+
+export interface ScoreNormalisationBasis {
+  damage: number;
+  xp: number;
+  profit: number;
+  safety: number;
+  supplySaving: number;
+  utility: number;
 }
 
 export type OptimisationMode = 'balanced' | 'xp' | 'profit' | 'safety' | 'low_supplies';

@@ -45,6 +45,7 @@ import type {
   LocalisedMessage,
   OptimisationMode,
   ScoreBreakdown,
+  ScoreNormalisationBasis,
   ScoreWeights,
 } from '@/types/charm';
 import type { KilledMonsterStat } from '@/types/hunt';
@@ -480,14 +481,7 @@ export interface ScorableCandidate {
   confidence?: ConfidenceLevel;
 }
 
-export interface ScoreMaxima {
-  damage: number;
-  xp: number;
-  profit: number;
-  safety: number;
-  supply: number;
-  utility: number;
-}
+export type ScoreMaxima = ScoreNormalisationBasis;
 
 /** The normalisation basis for one comparison set (e.g. "all Major Charms for Crusader"). Exposed separately so purchase suggestions can score a hypothetical tier upgrade against the same basis without re-normalising the whole set. */
 export function computeMaxima(effects: CharmEffectEstimate[]): ScoreMaxima {
@@ -497,7 +491,7 @@ export function computeMaxima(effects: CharmEffectEstimate[]): ScoreMaxima {
     xp: maxOf((e) => e.expectedXpPerHour),
     profit: maxOf((e) => e.expectedProfitPerHour),
     safety: maxOf((e) => e.expectedDamagePreventedPerHour),
-    supply: maxOf((e) => e.expectedHealingGainPerHour + e.expectedManaGainPerHour + e.expectedManaSavedPerHour),
+    supplySaving: maxOf((e) => e.expectedHealingGainPerHour + e.expectedManaGainPerHour + e.expectedManaSavedPerHour),
     utility: maxOf((e) => e.utilityMagnitude),
   };
 }
@@ -519,7 +513,7 @@ export function scoreEffect(
   const safetyScore = (effect.expectedDamagePreventedPerHour / maxima.safety) * 100;
   const supplySavingScore =
     ((effect.expectedHealingGainPerHour + effect.expectedManaGainPerHour + effect.expectedManaSavedPerHour) /
-      maxima.supply) *
+      maxima.supplySaving) *
     100;
   const utilityScore = (effect.utilityMagnitude / maxima.utility) * 100;
 
@@ -530,9 +524,22 @@ export function scoreEffect(
     safetyScore * weights.safety +
     supplySavingScore * weights.supplySaving +
     utilityScore * weights.utility;
-  const totalScore = rawTotalScore * CONFIDENCE_SCORE_MULTIPLIER[confidence];
+  const confidenceMultiplier = CONFIDENCE_SCORE_MULTIPLIER[confidence];
+  const totalScore = rawTotalScore * confidenceMultiplier;
 
-  return { damageScore, xpScore, profitScore, safetyScore, supplySavingScore, utilityScore, rawTotalScore, totalScore };
+  return {
+    damageScore,
+    xpScore,
+    profitScore,
+    safetyScore,
+    supplySavingScore,
+    utilityScore,
+    normalisationBasis: { ...maxima },
+    weights: { ...weights },
+    rawTotalScore,
+    confidenceMultiplier,
+    totalScore,
+  };
 }
 
 /**

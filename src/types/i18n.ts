@@ -141,6 +141,17 @@ export interface Dictionary {
     economicsTitle: string;
     reassignmentsTitle: string;
     confidence: { high: string; medium: string; low: string; unknown: string };
+    scoreDetailsTitle: string;
+    scoreFormula: string;
+    scoreNormalisationNote: string;
+    scoreMetric: string;
+    scoreInputVsBest: string;
+    scoreNormalised: string;
+    scoreWeight: string;
+    scoreContribution: string;
+    scoreNoBestValue: string;
+    scoreConfidenceMultiplier: string;
+    scoreConfidenceAdjustment: string;
     metrics: {
       expectedDamagePerHour: string;
       expectedProfitPerHour: string;

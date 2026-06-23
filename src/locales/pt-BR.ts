@@ -162,6 +162,18 @@ const ptBR: Dictionary = {
     economicsTitle: 'Economia',
     reassignmentsTitle: 'Reatribuicoes sugeridas',
     confidence: { high: 'Confianca alta', medium: 'Confianca media', low: 'Confianca baixa', unknown: 'Dados desconhecidos' },
+    scoreDetailsTitle: 'Calculo da pontuacao',
+    scoreFormula: 'Pontuacao final',
+    scoreNormalisationNote:
+      'Cada metrica e normalizada contra a melhor candidata da mesma categoria de Charm para esta criatura, depois multiplicada pelo peso do modo de otimizacao atual.',
+    scoreMetric: 'Metrica',
+    scoreInputVsBest: 'Entrada / melhor',
+    scoreNormalised: 'Normalizada',
+    scoreWeight: 'Peso',
+    scoreContribution: 'Contribuicao',
+    scoreNoBestValue: 'nenhuma',
+    scoreConfidenceMultiplier: 'Multiplicador de confianca',
+    scoreConfidenceAdjustment: 'Ajuste de confianca',
     metrics: {
       expectedDamagePerHour: 'Dano esperado da Charm / hora',
       expectedProfitPerHour: 'Lucro esperado / hora',
