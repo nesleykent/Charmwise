@@ -147,27 +147,77 @@ describe('normaliseMonster against the bundled bestiary.json', () => {
     expect(headwalker.hitpoints).toBe(2460);
   });
 
-  it('hydrates Skinning, Dusting, and Creature Product mappings for priority creatures', () => {
+  it('hydrates Skinning and Dusting with verified success chances from TibiaWiki community statistics', () => {
     const dragon = normaliseMonster('Dragon');
     expect(dragon.skinning?.productItemId).toBe('green_dragon_leather');
-    expect(dragon.skinning?.baseSuccessChance).toBeNull();
-    expect(dragon.missingFields).toContain('skinning.baseSuccessChance');
-    expect(dragon.creatureProducts.some((product) => product.itemId === 'green_dragon_leather')).toBe(true);
+    expect(dragon.skinning?.baseSuccessChance).toBeCloseTo(0.0426, 4);
+    expect(dragon.missingFields).not.toContain('skinning.baseSuccessChance');
 
     const dragonLord = normaliseMonster('Dragon Lord');
     expect(dragonLord.skinning?.productItemId).toBe('red_dragon_leather');
-    expect(dragonLord.creatureProducts.some((product) => product.itemId === 'red_dragon_leather')).toBe(true);
+    expect(dragonLord.skinning?.baseSuccessChance).toBeCloseTo(0.0789, 4);
 
     const vampire = normaliseMonster('Vampire');
     expect(vampire.dusting?.productItemId).toBe('vampire_dust');
-    expect(vampire.dusting?.baseSuccessChance).toBeNull();
-    expect(vampire.missingFields).toContain('dusting.baseSuccessChance');
+    expect(vampire.dusting?.baseSuccessChance).toBeCloseTo(0.0501, 4);
+    expect(vampire.missingFields).not.toContain('dusting.baseSuccessChance');
 
     const demon = normaliseMonster('Demon');
     expect(demon.dusting?.productItemId).toBe('demon_dust');
+    expect(demon.dusting?.baseSuccessChance).toBeCloseTo(0.096, 4);
 
+    // Sample size was too small to be meaningful (n=3) - correctly left unverified.
     const albinoDragon = normaliseMonster('Albino Dragon');
     expect(albinoDragon.skinning?.productItemId).toBe('albino_dragon_leather');
-    expect(albinoDragon.creatureProducts.some((product) => product.itemId === 'albino_dragon_leather')).toBe(true);
+    expect(albinoDragon.skinning?.baseSuccessChance).toBeNull();
+  });
+
+  it('never lists a skin-exclusive item under creatureProducts (Gut), since Gut only boosts regular loot rolls, not the separate Skinning/Dusting action', () => {
+    // Verified directly against Dragon's and Dragon Lord's own wiki loot
+    // tables: both explicitly list their Dragon Leather only under "can be
+    // skinned with an Obsidian Knife", never under the regular Loot section.
+    const dragon = normaliseMonster('Dragon');
+    expect(dragon.creatureProducts.some((product) => product.itemId === 'green_dragon_leather')).toBe(false);
+
+    const dragonLord = normaliseMonster('Dragon Lord');
+    expect(dragonLord.creatureProducts.some((product) => product.itemId === 'red_dragon_leather')).toBe(false);
+
+    const albinoDragon = normaliseMonster('Albino Dragon');
+    expect(albinoDragon.creatureProducts.some((product) => product.itemId === 'albino_dragon_leather')).toBe(false);
+  });
+
+  it('hydrates regular-loot Creature Products (Gut) for priority creatures', () => {
+    // Demon Outcast genuinely drops Demon Dust via regular loot, separate
+    // from (and in addition to) Demon's dusting-only mechanic - verified on
+    // Demon Outcast's own creature page.
+    const demonOutcast = normaliseMonster('Demon Outcast');
+    expect(demonOutcast.creatureProducts.some((product) => product.itemId === 'demon_dust')).toBe(true);
+
+    const behemoth = normaliseMonster('Behemoth');
+    expect(behemoth.creatureProducts.some((product) => product.itemId === 'behemoth_claw')).toBe(true);
+
+    const bear = normaliseMonster('Bear');
+    expect(bear.creatureProducts.some((product) => product.itemId === 'bear_paw')).toBe(true);
+  });
+
+  it('extends Skinning eligibility across every variant in a creature family that shares one product', () => {
+    // Lizard Leather and Minotaur Leather are each dropped by ~10-15 named
+    // variants per TibiaWiki's own item page - eligibility is extended to
+    // every variant present in the bundled Bestiary, with a verified
+    // per-variant success chance only where a community sample was found.
+    const lizardHighGuard = normaliseMonster('Lizard High Guard');
+    expect(lizardHighGuard.skinning?.productItemId).toBe('lizard_leather');
+    expect(lizardHighGuard.skinning?.baseSuccessChance).toBeCloseTo(0.10, 4);
+
+    const lizardNoble = normaliseMonster('Lizard Noble');
+    expect(lizardNoble.skinning?.productItemId).toBe('lizard_leather');
+    expect(lizardNoble.skinning?.baseSuccessChance).toBeNull();
+
+    const minotaurMage = normaliseMonster('Minotaur Mage');
+    expect(minotaurMage.skinning?.productItemId).toBe('minotaur_leather');
+    expect(minotaurMage.skinning?.baseSuccessChance).toBeCloseTo(0.0642, 4);
+
+    const clomp = normaliseMonster('Clomp');
+    expect(clomp.skinning?.productItemId).toBe('hardened_bone');
   });
 });

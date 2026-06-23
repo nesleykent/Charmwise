@@ -9,16 +9,16 @@
       "tool": "blessed_wooden_stake",
       "productItemId": "vampire_dust",
       "productItemName": "Vampire Dust",
-      "baseSuccessChance": null,
-      "baseSuccessChanceConfidence": "unknown",
+      "baseSuccessChance": 0.0501,
+      "baseSuccessChanceConfidence": "high",
       "npcPrice": 100,
       "marketPriceByWorld": {},
       "corpseEligibleSeconds": 300,
       "specialCaseMultipleAttempts": false,
       "specialCaseGuaranteedSuccess": false,
-      "sourceUrl": "https://tibia.fandom.com/wiki/Dusting",
+      "sourceUrl": "https://tibia.fandom.com/wiki/Vampire_Dust/Dusting",
       "lastVerifiedAt": "2026-06-23",
-      "confidence": "low"
+      "confidence": "high"
     },
     {
       "creatureId": "demon",
@@ -27,16 +27,16 @@
       "tool": "blessed_wooden_stake",
       "productItemId": "demon_dust",
       "productItemName": "Demon Dust",
-      "baseSuccessChance": null,
-      "baseSuccessChanceConfidence": "unknown",
+      "baseSuccessChance": 0.096,
+      "baseSuccessChanceConfidence": "medium",
       "npcPrice": 300,
       "marketPriceByWorld": {},
       "corpseEligibleSeconds": 300,
       "specialCaseMultipleAttempts": false,
       "specialCaseGuaranteedSuccess": false,
-      "sourceUrl": "https://tibia.fandom.com/wiki/Dusting",
+      "sourceUrl": "https://tibia.fandom.com/wiki/Demon_Dust/Dusting",
       "lastVerifiedAt": "2026-06-23",
-      "confidence": "low"
+      "confidence": "medium"
     }
   ]
 }

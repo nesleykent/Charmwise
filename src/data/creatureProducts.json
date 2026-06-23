@@ -3,50 +3,6 @@
   "lastVerifiedAt": "2026-06-23",
   "items": [
     {
-      "itemId": "green_dragon_leather",
-      "itemName": "Green Dragon Leather",
-      "npcPrice": 100,
-      "marketPriceByWorld": {},
-      "weight": 0.6,
-      "sourceUrl": "https://tibia.fandom.com/wiki/Green_Dragon_Leather",
-      "lastVerifiedAt": "2026-06-23",
-      "droppedBy": [
-        {
-          "creatureId": "dragon",
-          "creatureName": "Dragon",
-          "dropChance": null,
-          "dropChanceConfidence": "unknown"
-        }
-      ]
-    },
-    {
-      "itemId": "red_dragon_leather",
-      "itemName": "Red Dragon Leather",
-      "npcPrice": 200,
-      "marketPriceByWorld": {},
-      "weight": 0.6,
-      "sourceUrl": "https://tibia.fandom.com/wiki/Red_Dragon_Leather",
-      "lastVerifiedAt": "2026-06-23",
-      "droppedBy": [
-        {
-          "creatureId": "dragon_lord",
-          "creatureName": "Dragon Lord",
-          "dropChance": null,
-          "dropChanceConfidence": "unknown"
-        }
-      ]
-    },
-    {
-      "itemId": "vampire_dust",
-      "itemName": "Vampire Dust",
-      "npcPrice": 100,
-      "marketPriceByWorld": {},
-      "weight": 1,
-      "sourceUrl": "https://tibia.fandom.com/wiki/Vampire_Dust",
-      "lastVerifiedAt": "2026-06-23",
-      "droppedBy": []
-    },
-    {
       "itemId": "demon_dust",
       "itemName": "Demon Dust",
       "npcPrice": 300,
@@ -64,17 +20,80 @@
       ]
     },
     {
-      "itemId": "albino_dragon_leather",
-      "itemName": "Albino Dragon Leather",
-      "npcPrice": null,
+      "itemId": "behemoth_claw",
+      "itemName": "Behemoth Claw",
+      "npcPrice": 2000,
       "marketPriceByWorld": {},
-      "weight": 0.6,
-      "sourceUrl": "https://tibia.fandom.com/wiki/Albino_Dragon_Leather",
+      "weight": 12.5,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Behemoth_Claw",
       "lastVerifiedAt": "2026-06-23",
       "droppedBy": [
         {
-          "creatureId": "albino_dragon",
-          "creatureName": "Albino Dragon",
+          "creatureId": "behemoth",
+          "creatureName": "Behemoth",
+          "dropChance": null,
+          "dropChanceConfidence": "unknown"
+        }
+      ]
+    },
+    {
+      "itemId": "bear_paw",
+      "itemName": "Bear Paw",
+      "npcPrice": 100,
+      "marketPriceByWorld": {},
+      "weight": 1.2,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Bear_Paw",
+      "lastVerifiedAt": "2026-06-23",
+      "droppedBy": [
+        {
+          "creatureId": "bear",
+          "creatureName": "Bear",
+          "dropChance": null,
+          "dropChanceConfidence": "unknown"
+        },
+        {
+          "creatureId": "polar_bear",
+          "creatureName": "Polar Bear",
+          "dropChance": null,
+          "dropChanceConfidence": "unknown"
+        },
+        {
+          "creatureId": "werebear",
+          "creatureName": "Werebear",
+          "dropChance": null,
+          "dropChanceConfidence": "unknown"
+        }
+      ]
+    },
+    {
+      "itemId": "carrion_worm_fang",
+      "itemName": "Carrion Worm Fang",
+      "npcPrice": 35,
+      "marketPriceByWorld": {},
+      "weight": 0.88,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Carrion_Worm_Fang",
+      "lastVerifiedAt": "2026-06-23",
+      "droppedBy": [
+        {
+          "creatureId": "carrion_worm",
+          "creatureName": "Carrion Worm",
+          "dropChance": null,
+          "dropChanceConfidence": "unknown"
+        }
+      ]
+    },
+    {
+      "itemId": "centipede_leg",
+      "itemName": "Centipede Leg",
+      "npcPrice": 28,
+      "marketPriceByWorld": {},
+      "weight": 0.69,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Centipede_Leg",
+      "lastVerifiedAt": "2026-06-23",
+      "droppedBy": [
+        {
+          "creatureId": "centipede",
+          "creatureName": "Centipede",
           "dropChance": null,
           "dropChanceConfidence": "unknown"
         }
