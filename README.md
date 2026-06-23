@@ -10,25 +10,23 @@ The interface is available in British English and Brazilian Portuguese.
 
 ## Project overview
 
-Charmwise combines four inputs to recommend the best Major Charm and Minor Charm for every creature in a hunt, and for the hunt as a whole:
+Charmwise combines four inputs to answer the practical hunt question: which Charm should you unlock, equip, or compare next?
 
 1. **Bestiary data** - `src/data/bestiary.json`, hitpoints, experience, resistances, difficulty and Charm Points for hundreds of creatures.
 2. **Character information** - level, hitpoints, mana, leech stats, account type, and which Charms you have unlocked and assigned.
 3. **A pasted Hunt Analyser session** - the plain text block Tibia's "Analyse Hunt" window produces, listing kills, loot and session rates.
 4. **Charm mechanics** - every Major and Minor Charm's real activation chances and Charm Point / Minor Charm Echo costs.
 
-The app parses the Hunt Analyser text, joins each killed monster against the Bestiary, applies your character's stats, calculates the expected value of every Charm against every creature you fought, and ranks the results. Everything runs client-side - nothing you type is ever uploaded anywhere.
-
-The Dashboard and Recommendations pages both have a **Full analysis / My charms** toggle. Full analysis (the default) shows the best Charm for each creature regardless of whether you've unlocked it yet - useful the moment you've pasted a hunt, before filling in anything under Character. My charms narrows that down to only what you've actually unlocked, for "what should I equip right now."
+The app parses the Hunt Analyser text, joins each killed monster against the Bestiary, applies your character's stats, calculates the expected value of every Charm against every creature you fought, then presents a damage-first recommendation and a user-selected comparison table. Everything runs client-side - nothing you type is ever uploaded anywhere.
 
 ### App structure
 
-Charmwise is five pages sharing one workspace (`src/lib/workspace.tsx`), not one long form - your character, pasted session, and optimisation mode persist to `localStorage` and follow you between pages and across reloads:
+Charmwise is five pages sharing one workspace (`src/lib/workspace.tsx`), not one long form - your character, pasted session, recommendation view, selected comparison Charms, and target tier persist to `localStorage` and follow you between pages and across reloads:
 
 - **Dashboard** (`/`) - your current best Charm per creature, expected gains, and upgrade opportunities at a glance.
 - **Character** (`/character`) - the three numbers that actually feed the formulas, with everything else (Leech, account type, unlocked/assigned Charms) behind an optional disclosure.
 - **Hunt Analyser** (`/hunt`) - paste a session; parsing and validation happen instantly, client-side.
-- **Recommendations** (`/recommendations`) - the full ranked breakdown per creature, with the optimisation-mode switch and a "why this, not that" explanation for every Charm.
+- **Recommendations** (`/recommendations`) - a damage-first final recommendation, selected Charm comparison, per-creature summary, top actionable Charm Point / Minor Charm Echo upgrades, and collapsed advanced ranking/formula details.
 - **Charm Library** (`/charms`) - mechanics and costs for all 25 Charms, plus a per-Charm best-against/worst-against creature ranking computed directly from the Bestiary (`src/lib/charmLibrary.ts`) - independent of any pasted hunt.
 
 ## Setup instructions
@@ -57,7 +55,7 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 ## Data sources
 
 - **Bestiary** - [`bestiary-session-analyzer`](https://github.com/nesleykent/bestiary-session-analyzer/blob/main/src/data/bestiary.json), vendored into [`src/data/bestiary.json`](src/data/bestiary.json). It is a [tibiadraptor.com](https://tibiadraptor.com) bestiary export: 800+ creatures with hitpoints, experience, difficulty, resistances, damage types, negative conditions and Charm Point rewards.
-- **Charm mechanics** - transcribed into [`src/data/charms.ts`](src/data/charms.ts) from the in-game Charm system (activation chances, tier costs, effect magnitudes). [`src/data/charms.json`](src/data/charms.json) is a vendored export of the same data in its original tier-cost/value shape; [`charmsData.test.ts`](src/lib/__tests__/charmsData.test.ts) loads it and asserts every tier in `charms.ts` matches exactly, so the two can never silently drift apart. The Winter Update 2024 level cap on elemental Charm damage, and the attack-opportunity weighting in `charmScoring.ts`, were corrected against the published methodology of [TibiaMaps' Charm Optimizer](https://tibiamaps.io/tools/charms) and [TibiaPal's Charm Calculator](https://tibiapal.com/charm_calculator).
+- **Charm mechanics** - transcribed into [`src/data/charms.ts`](src/data/charms.ts) from the in-game Charm system (activation chances, tier costs, effect magnitudes). [`src/data/charms.json`](src/data/charms.json) is a vendored export of the same data in its original tier-cost/value shape; [`charmsData.test.ts`](src/lib/__tests__/charmsData.test.ts) loads it and asserts every tier in `charms.ts` matches exactly, so the two can never silently drift apart. The Winter Update 2024 level cap on elemental Charm damage, and the attack-opportunity weighting in `charmScoring.ts`, were corrected against the published methodology of [TibiaMaps' Charm Optimizer](https://tibiamaps.io/tools/charms) and [TibiaPal's Charm Calculator](https://tibiapal.com/charm_calculator). The latest UI refactor research note is in [`docs/charm-mechanics-research.md`](docs/charm-mechanics-research.md).
 - **Creature Products and corpse actions** - [`src/data/creatureProducts.json`](src/data/creatureProducts.json), [`src/data/skinning.json`](src/data/skinning.json), and [`src/data/dusting.json`](src/data/dusting.json) are separate from the Bestiary because loot/product mechanics have different source quality and update cadence. They currently include the priority Dragon, Dragon Lord, Vampire, Demon and Albino Dragon mappings, NPC price fallbacks where known, and source metadata. Unknown drop or success chances are stored as `null` and excluded from EV rather than guessed.
 - **Market prices** - [`src/data/marketPrices.sample.json`](src/data/marketPrices.sample.json) documents the override shape for world-specific prices; the app falls back to NPC prices until real market data is wired in.
 - **Hunt Analyser** - whatever you paste into the Hunt Analyser page, parsed by [`src/lib/parseHuntAnalyser.ts`](src/lib/parseHuntAnalyser.ts).
@@ -72,8 +70,8 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 1. **Parse** - [`parseHuntAnalyser.ts`](src/lib/parseHuntAnalyser.ts) turns the pasted text into session totals, a list of killed monsters (with kill share and a naive per-kill estimate), and looted items.
 2. **Join** - [`normaliseMonster.ts`](src/lib/normaliseMonster.ts) matches each killed monster against `bestiary.json` (case/whitespace-insensitive, with a Levenshtein-distance fuzzy fallback for typos) and maps it to a normalised `MonsterProfile`.
 3. **Refine** - `optimiseCharms.ts` refines the parser's naive, evenly-split per-kill estimates once Bestiary data is available: outgoing/incoming damage *and* attack opportunities are all allocated across creatures weighted by `kills x hitpoints` (a tougher, more-killed creature absorbs proportionally more of your attacks before it dies, the same weighting [TibiaMaps' Charm Optimizer](https://tibiamaps.io/tools/charms) uses), and per-kill XP uses the creature's real Bestiary experience value scaled by the session's own XP boost multiplier (`XP Gain / Raw XP Gain`).
-4. **Score** - [`charmScoring.ts`](src/lib/charmScoring.ts) computes every Charm's expected value against every creature using the formulas below, then min-max normalises the results into six 0-100 scores (`damage`, `xp`, `profit`, `safety`, `supply_saving`, `utility`) so charms with wildly different natural units (gold/hour vs. a 0-1 utility magnitude) can be weighted together fairly.
-5. **Recommend** - [`optimiseCharms.ts`](src/lib/optimiseCharms.ts) solves the actual assignment of unlocked Major and Minor Charms to creatures (see below), respects your account's active-Major-Charm slot limit, proposes the best use of unspent Charm Points / Minor Charm Echoes, suggests reassignments (with gold cost), and compares total removal cost against a full reset.
+4. **Score** - [`charmScoring.ts`](src/lib/charmScoring.ts) computes every Charm's expected value against every creature using the formulas below, then min-max normalises the results into six 0-100 audit scores (`damage`, `xp`, `profit`, `safety`, `supply_saving`, `utility`) so charms with wildly different natural units (gold/hour vs. a 0-1 utility magnitude) can still be inspected consistently.
+5. **Recommend** - [`optimiseCharms.ts`](src/lib/optimiseCharms.ts) solves the actual assignment of unlocked Major and Minor Charms to creatures (see below), respects your account's active-Major-Charm slot limit, and proposes Charm Point / Minor Charm Echo upgrades. [`recommendationViews.ts`](src/lib/recommendationViews.ts) then builds the product-facing decision views: damage-first by default, plus budget damage, defensive, sustain, control, manual comparison, and custom-weight audit views.
 
 ### Why "best charm per creature" isn't just an independent lookup
 
@@ -83,7 +81,7 @@ A specific unlocked Charm can only be actively assigned to one creature at a tim
 
 Because the same Charm legitimately scores differently per creature, it can show up more than once in a cross-creature list like "Ranked alternatives" - once per creature it's good for. Each row there names the creature it was scored against, so two entries for the same Charm read as "this Charm is great for both of these creatures" rather than looking like a duplicate-data bug.
 
-The Recommendations page leads with the per-creature recommendation (the solved assignment above), shown together with the next-best alternative for that creature - the score gap between the two is the actual, visible case for picking one Charm over the other, rather than a bare assertion. Cross-creature exploration ("Ranked alternatives," every Charm vs every creature) comes after, since it's supplementary - useful for "what else is out there," not the headline answer.
+The Recommendations page now leads with the hunt-level final recommendation and a **Choose charms to compare** step. Full rankings still exist, but only inside **Advanced full ranking** and **Formula/debug details** collapsed sections, because the default product question is "what should I unlock, equip, or compare," not "show every calculation."
 
 ### Target tier
 
@@ -155,12 +153,19 @@ Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless have no currency-
 
 ### Scoring
 
+The primary product view is **Recommended: Damage first**. Its main sort key is expected effective Charm damage/hour, with smaller modifiers for concrete survival, sustain, loot utility, control value, spawn density, confidence, and unlock-cost efficiency. Damage wins by default because extra damage usually improves XP, profit, safety, supply efficiency, spawn control, and consistency at the same time.
+
+Defense, sustain, and utility are exposed as alternate views. They should beat damage only when the data supports a concrete reason: high incoming damage, low healing or mana margin, mana drain, low-health fleeing, valuable product/corpse-action value, or the user's explicit defensive/sustain/control/manual selection.
+
+The older normalised score model is retained for assignment solving and audit panels:
+
 ```
-total_score = damage_score * 0.40 + profit_score * 0.25 + safety_score * 0.20
-            + supply_saving_score * 0.10 + utility_score * 0.05   (Balanced mode)
+total_score = damage_score * weight.damage + profit_score * weight.profit
+            + safety_score * weight.safety + supply_saving_score * weight.supplySaving
+            + utility_score * weight.utility
 ```
 
-`xp`, `profit`, `safety` and `low_supplies` optimisation modes use different weight sets (see `MODE_WEIGHTS` in `charmScoring.ts`); all weight sets sum to 1.
+Current primary views and compatibility weights live in `MODE_WEIGHTS` in `charmScoring.ts`; decision-view ordering lives in `recommendationViews.ts`.
 
 The raw weighted score is then adjusted by formula/data confidence for ranking only:
 

@@ -26,7 +26,7 @@ export function SegmentedControl<T extends string | number>({ ariaLabel, value, 
             aria-pressed={active}
             title={option.hint}
             className={`min-h-8 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors sm:px-4 ${
-              active ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
+              active ? 'bg-charm-primary text-white' : 'text-charm-muted hover:text-white'
             }`}
           >
             {active ? '✓ ' : ''}

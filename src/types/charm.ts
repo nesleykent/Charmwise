@@ -149,7 +149,22 @@ export interface CharmModelBreakdown {
   fleeHealthPercent: number | null;
 }
 
-export type OptimisationMode = 'balanced' | 'xp' | 'profit' | 'safety' | 'low_supplies';
+export type RecommendationView =
+  | 'damage_first'
+  | 'damage'
+  | 'budget_damage'
+  | 'defensive'
+  | 'sustain'
+  | 'control'
+  | 'manual'
+  | 'custom';
+
+/** Legacy values remain accepted for old localStorage payloads and existing tests, but the UI no longer exposes them as primary choices. */
+export type LegacyOptimisationMode = 'balanced' | 'xp' | 'profit' | 'safety' | 'low_supplies';
+
+export type OptimisationMode = RecommendationView | LegacyOptimisationMode;
+
+export type CharmRole = 'damage' | 'budget_damage' | 'defensive' | 'sustain' | 'control' | 'loot_utility' | 'utility';
 
 /** Which charms count as candidates for "best charm": every Charm regardless of unlock status (`full_analysis`, the default - useful before filling in Unlocked Charms at all), or only what the player has actually unlocked (`my_charms`). */
 export type RecommendationScope = 'full_analysis' | 'my_charms';

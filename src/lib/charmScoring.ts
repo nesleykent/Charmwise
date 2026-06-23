@@ -508,7 +508,21 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
 }
 
 export const MODE_WEIGHTS: Record<OptimisationMode, ScoreWeights> = {
-  // Mirrors the spec's default total_score formula exactly (xp excluded).
+  // Product-default view: damage wins unless concrete incoming damage,
+  // sustain, utility, or confidence data gives another role a real reason
+  // to compete. The Recommendations UI also sorts its main comparison by
+  // raw expected damage-first EV (see recommendationViews.ts); these weights
+  // remain for assignment, purchase, and audit-score calculations.
+  damage_first: { damage: 0.8, xp: 0, profit: 0.05, safety: 0.06, supplySaving: 0.06, utility: 0.03 },
+  damage: { damage: 1, xp: 0, profit: 0, safety: 0, supplySaving: 0, utility: 0 },
+  budget_damage: { damage: 0.85, xp: 0, profit: 0, safety: 0, supplySaving: 0, utility: 0.15 },
+  defensive: { damage: 0.15, xp: 0, profit: 0, safety: 0.75, supplySaving: 0.05, utility: 0.05 },
+  sustain: { damage: 0.15, xp: 0, profit: 0, safety: 0.1, supplySaving: 0.7, utility: 0.05 },
+  control: { damage: 0.15, xp: 0, profit: 0, safety: 0.2, supplySaving: 0.05, utility: 0.6 },
+  manual: { damage: 0.8, xp: 0, profit: 0.05, safety: 0.06, supplySaving: 0.06, utility: 0.03 },
+  custom: { damage: 0.7, xp: 0, profit: 0.05, safety: 0.1, supplySaving: 0.1, utility: 0.05 },
+  // Legacy modes retained for old saved state and tests. They are no longer
+  // shown as the primary product model.
   balanced: { damage: 0.4, xp: 0, profit: 0.25, safety: 0.2, supplySaving: 0.1, utility: 0.05 },
   xp: { damage: 0.3, xp: 0.45, profit: 0.1, safety: 0.1, supplySaving: 0.025, utility: 0.025 },
   profit: { damage: 0.2, xp: 0, profit: 0.55, safety: 0.1, supplySaving: 0.1, utility: 0.05 },

@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { optimiseCharms } from '@/lib/optimiseCharms';
 import { parseHuntAnalyser } from '@/lib/parseHuntAnalyser';
 import { DEFAULT_CHARACTER_INPUT, type CharacterInput } from '@/types/character';
-import type { CharmTier, OptimisationMode, RecommendationScope } from '@/types/charm';
+import type { CharmId, CharmTier, OptimisationMode, RecommendationScope, ScoreWeights } from '@/types/charm';
 import type { HuntAnalyserParseResult } from '@/types/hunt';
 import type { HuntOptimisationSummary } from '@/types/optimisation';
 
@@ -22,13 +22,23 @@ interface PersistedState {
   scope: RecommendationScope;
   /** Ceiling locked Charms are evaluated at, and how far purchase suggestions walk - see optimiseCharms.ts. Gold by default; not everyone's Charm Point budget realistically reaches Gold on everything. */
   targetTier: CharmTier;
+  selectedCharmIds: CharmId[];
+  customWeights: ScoreWeights;
 }
 
 function defaultState(): PersistedState {
   // Full Analysis by default - someone who hasn't filled in Unlocked Charms
   // yet should still see a comprehensive "what's the best Charm here"
   // answer, not an empty "nothing unlocked" result.
-  return { character: DEFAULT_CHARACTER_INPUT, huntText: '', mode: 'balanced', scope: 'full_analysis', targetTier: 3 };
+  return {
+    character: DEFAULT_CHARACTER_INPUT,
+    huntText: '',
+    mode: 'damage_first',
+    scope: 'full_analysis',
+    targetTier: 3,
+    selectedCharmIds: [],
+    customWeights: { damage: 0.7, xp: 0, profit: 0.05, safety: 0.1, supplySaving: 0.1, utility: 0.05 },
+  };
 }
 
 interface WorkspaceContextValue {
@@ -42,6 +52,10 @@ interface WorkspaceContextValue {
   setScope: (scope: RecommendationScope) => void;
   targetTier: CharmTier;
   setTargetTier: (tier: CharmTier) => void;
+  selectedCharmIds: CharmId[];
+  setSelectedCharmIds: (charmIds: CharmId[]) => void;
+  customWeights: ScoreWeights;
+  setCustomWeights: (weights: ScoreWeights) => void;
   parseResult: HuntAnalyserParseResult | null;
   summary: HuntOptimisationSummary | null;
   hasHuntData: boolean;
@@ -59,10 +73,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw) as Partial<PersistedState>;
+        const defaults = defaultState();
         setState((prev) => ({
           ...prev,
           ...saved,
+          mode: saved.mode === 'balanced' ? defaults.mode : (saved.mode ?? prev.mode),
           character: { ...prev.character, ...saved.character },
+          selectedCharmIds: saved.selectedCharmIds ?? prev.selectedCharmIds,
+          customWeights: { ...prev.customWeights, ...saved.customWeights },
         }));
       }
     } catch {
@@ -98,6 +116,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setScope: (scope) => setState((s) => ({ ...s, scope })),
       targetTier: state.targetTier,
       setTargetTier: (targetTier) => setState((s) => ({ ...s, targetTier })),
+      selectedCharmIds: state.selectedCharmIds,
+      setSelectedCharmIds: (selectedCharmIds) => setState((s) => ({ ...s, selectedCharmIds })),
+      customWeights: state.customWeights,
+      setCustomWeights: (customWeights) => setState((s) => ({ ...s, customWeights })),
       parseResult,
       summary,
       hasHuntData: (parseResult?.killedMonsters.length ?? 0) > 0,

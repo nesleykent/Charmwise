@@ -1,9 +1,10 @@
 'use client';
 
 import { useLocale } from '@/lib/i18n';
-import type { OptimisationMode } from '@/types/charm';
+import { PRIMARY_RECOMMENDATION_VIEWS } from '@/lib/recommendationViews';
+import type { OptimisationMode, RecommendationView } from '@/types/charm';
 
-const MODES: OptimisationMode[] = ['balanced', 'xp', 'profit', 'safety', 'low_supplies'];
+const MODES: RecommendationView[] = PRIMARY_RECOMMENDATION_VIEWS;
 
 interface Props {
   value: OptimisationMode;
@@ -15,12 +16,13 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
 
   return (
     <fieldset>
-      <legend className="mb-3 text-sm font-semibold text-white">{t.recommendationsPage.modeLabel}</legend>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+      <legend className="mb-2 text-sm font-semibold text-white">{t.recommendationsPage.modeLabel}</legend>
+      <div className="flex flex-wrap gap-2">
         {MODES.map((mode) => (
           <label
             key={mode}
-            className={`cursor-pointer rounded-2xl border p-3.5 text-sm transition-all ${
+            title={t.recommendationsPage.modeDescriptions[mode]}
+            className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
               value === mode
                 ? 'border-charm-primary bg-charm-primary/10 text-white shadow-glow'
                 : 'border-white/10 bg-white/[0.03] text-charm-muted hover:border-charm-primary/40 hover:bg-white/[0.06]'
@@ -38,7 +40,6 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
               {value === mode ? '✓ ' : ''}
               {t.recommendationsPage.modes[mode]}
             </span>
-            <span className="mt-1 block text-xs leading-relaxed text-charm-subtle">{t.recommendationsPage.modeDescriptions[mode]}</span>
           </label>
         ))}
       </div>
