@@ -237,6 +237,8 @@ const ptBR: Dictionary = {
     missing_fields_note: 'Campos do Bestiario faltando: {{fields}}.',
     slot_limit_reached:
       'Limite de slots de Major Charm atingido ({{slotCount}} ativas). Faca upgrade para Premium, libere um slot, ou adquira a Charm Expansion para slots ilimitados.',
+    charm_in_use_elsewhere:
+      'Toda Charm que ajudaria aqui pontua ainda mais em outra criatura, e uma Charm so pode estar ativa em uma criatura por vez - por isso esta ficou sem. Desbloquear uma Charm diferente para ela, ou mover uma das Charms disputadas para aqui, sao as unicas formas de mudar isso.',
     no_session_header: 'Nenhuma linha "Session data: From ... to ..." encontrada.',
     zero_duration: 'A duracao da sessao e zero - nao e possivel calcular kills/hora e dano/hora.',
     no_killed_monsters: 'Nenhuma secao "Killed Monsters:" encontrada - o otimizador nao tem o que classificar.',
@@ -250,7 +252,7 @@ const ptBR: Dictionary = {
     suitability_no_product_data: 'Nenhuma criatura na fonte de dados do Bestiario tem dados de Produto de Criatura ou Skinning/Dusting ainda.',
     suitability_not_creature_specific: 'O valor desta Charm nao depende de qual criatura voce esta enfrentando.',
     lookup_success:
-      'Encontrado {{name}} - nivel {{level}} {{vocation}}. Vida e mana maximas abaixo sao estimadas pela sua vocacao - ajuste-as se seus valores reais forem diferentes (Promotion, Wheel of Destiny e Loyalty aumentam ainda mais).',
+      'Encontrado {{name}} - nivel {{level}} {{vocation}}. Vida e mana maximas abaixo sao estimadas pela sua vocacao - ajuste-as se seus valores reais forem diferentes (Wheel of Destiny e Gems podem aumentar ainda mais).',
     lookup_success_no_estimate: 'Encontrado {{name}} - nivel {{level}}. Informe sua vida e mana maximas manualmente abaixo.',
     lookup_error: 'Nao foi possivel encontrar esse personagem - confira a grafia, ou informe seus dados manualmente abaixo.',
   },

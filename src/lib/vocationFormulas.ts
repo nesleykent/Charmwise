@@ -1,7 +1,10 @@
 // Base-vocation Hit Point / Mana growth, used only to prefill a sensible
 // starting estimate when looking up a character by name - the result stays
-// fully editable, since Promotion, the Wheel of Destiny, and Loyalty bonuses
-// all push real characters above this baseline and aren't modelled here.
+// fully editable, since the Wheel of Destiny (Dedication perks) and Gems
+// (Basic Mods) can both push real characters above this baseline and aren't
+// modelled here. Promotion and Loyalty do NOT affect max HP/Mana (verified -
+// Promotion only improves regen rate/soul points/death penalty, Loyalty only
+// affects skills), so they're correctly absent from this list.
 //
 // Verified against three independent sources before implementing (see the
 // chat for the research trail): Tibia.com's own game manual (per-level HP/

@@ -1,6 +1,7 @@
 // Orchestrates the whole pipeline: parsed Hunt Analyser data + character
 // input + bestiary profiles -> ranked Charm recommendations for each
 // creature and for the hunt as a whole.
+import { solveAssignment } from '@/lib/assignmentSolver';
 import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST, getCharmDefinition } from '@/data/charms';
 import {
   ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE,
@@ -177,6 +178,44 @@ interface CreatureContext {
   ctx: ScoringContext;
   majorMaxima: ScoreMaxima;
   minorMaxima: ScoreMaxima;
+}
+
+/**
+ * A specific unlocked Charm can only be actively assigned to one creature at
+ * a time (confirmed - see README); ranking charms independently per creature,
+ * as `rankedMajorCharms`/`rankedMinorCharms` still does for exploration, can
+ * recommend the same charm for two different creatures at once, which the
+ * player cannot actually act on. This solves the real one-charm-per-creature,
+ * one-creature-per-charm assignment globally across the whole hunt -
+ * optionally capped at `slotLimit` total assignments - and returns the
+ * winning `CharmRecommendation` per creature, keyed by monster name.
+ */
+function solveGlobalCharmAssignment(
+  creatureResults: CreatureOptimisationResult[],
+  unlockedCharmIds: CharmId[],
+  category: CharmCategory,
+  slotLimit: number | undefined,
+): Map<string, CharmRecommendation> {
+  const assignment = new Map<string, CharmRecommendation>();
+  const eligible = creatureResults.filter((r) => r.hasBestiaryData);
+  if (eligible.length === 0 || unlockedCharmIds.length === 0) return assignment;
+
+  const rankedList = (r: CreatureOptimisationResult) => (category === 'major' ? r.rankedMajorCharms : r.rankedMinorCharms);
+  const scoreMatrix = eligible.map((result) =>
+    unlockedCharmIds.map((charmId) => rankedList(result).find((r) => r.charmId === charmId && r.unlocked)?.scores.totalScore ?? 0),
+  );
+
+  const { assignedItem } = solveAssignment(scoreMatrix, slotLimit);
+
+  eligible.forEach((result, i) => {
+    const itemIndex = assignedItem[i];
+    if (itemIndex === null || itemIndex === undefined) return;
+    const charmId = unlockedCharmIds[itemIndex]!;
+    const recommendation = rankedList(result).find((r) => r.charmId === charmId && r.unlocked);
+    if (recommendation && recommendation.scores.totalScore > 0) assignment.set(result.monsterName, recommendation);
+  });
+
+  return assignment;
 }
 
 /**
@@ -408,57 +447,97 @@ export function optimiseCharms(
     const needsManualReview = profile.wasFuzzyMatched || profile.hitpoints === null || profile.resistances === null;
     if (needsManualReview) creaturesNeedingManualReview.push(huntStat.monsterName);
 
-    const combinedEffect = addEffects(majorGroup.best?.effect ?? emptyEffect(), minorGroup.best?.effect ?? emptyEffect());
-    const warnings: LocalisedMessage[] = [...(majorGroup.best?.warnings ?? []), ...(minorGroup.best?.warnings ?? [])];
+    const dataWarnings: LocalisedMessage[] = [];
     if (profile.wasFuzzyMatched) {
-      warnings.push({ code: 'fuzzy_match_note', params: { matchedName: profile.matchedBestiaryName ?? '' } });
+      dataWarnings.push({ code: 'fuzzy_match_note', params: { matchedName: profile.matchedBestiaryName ?? '' } });
     }
     if (profile.missingFields.length > 0) {
-      warnings.push({ code: 'missing_fields_note', params: { fields: profile.missingFields.join(', ') } });
+      dataWarnings.push({ code: 'missing_fields_note', params: { fields: profile.missingFields.join(', ') } });
     }
 
+    // bestMajorCharm/bestMinorCharm/expectedXPerHour are placeholders here -
+    // a single charm can only go to one creature at a time, so "best" can't
+    // be decided per creature in isolation. Finalised below once the global
+    // assignment across every creature has been solved.
     creatureResults.push({
       monsterName: huntStat.monsterName,
       matchedProfile: profile,
       huntStat: refinedHuntStat,
       hasBestiaryData: true,
-      bestMajorCharm: majorGroup.best,
-      bestMinorCharm: minorGroup.best,
+      bestMajorCharm: null,
+      bestMinorCharm: null,
       bestMajorCharmOverall: majorGroup.bestOverall,
       bestMinorCharmOverall: minorGroup.bestOverall,
       rankedMajorCharms: majorGroup.recommendations,
       rankedMinorCharms: minorGroup.recommendations,
-      expectedDamagePerHour: combinedEffect.expectedDamagePerHour,
-      expectedProfitPerHour: combinedEffect.expectedProfitPerHour,
-      expectedDamagePreventedPerHour: combinedEffect.expectedDamagePreventedPerHour,
-      expectedHealingSavedPerHour: combinedEffect.expectedHealingGainPerHour,
+      expectedDamagePerHour: 0,
+      expectedProfitPerHour: 0,
+      expectedDamagePreventedPerHour: 0,
+      expectedHealingSavedPerHour: 0,
       needsManualReview,
-      warnings,
+      warnings: dataWarnings,
     });
   });
 
-  // --- Major Charm slot plan (account-limited; Minor Charms are not limited
-  // by account type beyond the usual one-per-creature rule).
+  // --- Solve the real one-charm-per-creature assignment for Major and Minor
+  // charms separately (Major is additionally capped at the account's slot
+  // limit; Minor Charms have no overall cap beyond the one-per-creature rule).
   const slotLimit = calculateMajorCharmSlotLimit(character.accountType, character.hasCharmExpansion);
-  const eligibleForMajorSlot = creatureResults
+  const majorAssignment = solveGlobalCharmAssignment(
+    creatureResults,
+    character.unlockedMajorCharms.map((u) => u.charmId),
+    'major',
+    slotLimit ?? undefined,
+  );
+  const minorAssignment = solveGlobalCharmAssignment(
+    creatureResults,
+    character.unlockedMinorCharms.map((u) => u.charmId),
+    'minor',
+    undefined,
+  );
+
+  for (const result of creatureResults) {
+    if (!result.hasBestiaryData) continue;
+    const bestMajorCharm = majorAssignment.get(result.monsterName) ?? null;
+    const bestMinorCharm = minorAssignment.get(result.monsterName) ?? null;
+    const combinedEffect = addEffects(bestMajorCharm?.effect ?? emptyEffect(), bestMinorCharm?.effect ?? emptyEffect());
+
+    result.bestMajorCharm = bestMajorCharm;
+    result.bestMinorCharm = bestMinorCharm;
+    result.expectedDamagePerHour = combinedEffect.expectedDamagePerHour;
+    result.expectedProfitPerHour = combinedEffect.expectedProfitPerHour;
+    result.expectedDamagePreventedPerHour = combinedEffect.expectedDamagePreventedPerHour;
+    result.expectedHealingSavedPerHour = combinedEffect.expectedHealingGainPerHour;
+    result.warnings = [...(bestMajorCharm?.warnings ?? []), ...(bestMinorCharm?.warnings ?? []), ...result.warnings];
+  }
+
+  // --- Major Charm slot plan: directly from the solved assignment - no
+  // separate greedy fill needed, the solver already respects slotLimit.
+  const recommendedSlots = creatureResults
     .filter((r) => r.bestMajorCharm !== null)
-    .sort(
-      (a, b) =>
-        b.bestMajorCharm!.scores.totalScore - a.bestMajorCharm!.scores.totalScore || a.monsterName.localeCompare(b.monsterName),
-    );
-  const slotCount = slotLimit ?? eligibleForMajorSlot.length;
-  const majorCharmSlotPlan: MajorCharmSlotPlan = {
-    recommendedSlots: eligibleForMajorSlot
-      .slice(0, slotCount)
-      .map((r) => ({ monsterName: r.monsterName, charmId: r.bestMajorCharm!.charmId })),
-    unassignedCandidates: eligibleForMajorSlot.slice(slotCount).map((r) => ({
-      monsterName: r.monsterName,
-      charmId: r.bestMajorCharm!.charmId,
-      reason: { code: 'slot_limit_reached', params: { slotCount } },
-    })),
-    slotLimit,
-  };
-  const majorSlotMonsterSet = new Set(majorCharmSlotPlan.recommendedSlots.map((s) => s.monsterName));
+    .map((r) => ({ monsterName: r.monsterName, charmId: r.bestMajorCharm!.charmId }));
+  const slotsAreFull = slotLimit !== null && recommendedSlots.length >= slotLimit;
+
+  const unassignedCandidates = creatureResults
+    .filter((r) => r.hasBestiaryData && r.bestMajorCharm === null)
+    .map((r) => {
+      // Best UNLOCKED major charm this creature could have used, ignoring the
+      // assignment problem - tells us *why* it ended up with nothing: every
+      // slot is full (a real cap), or every charm that could have helped it
+      // went to a creature that valued it even more (contention).
+      const bestIndependentUnlocked = r.rankedMajorCharms.find((rec) => rec.unlocked) ?? null;
+      if (!bestIndependentUnlocked) return null;
+      return {
+        monsterName: r.monsterName,
+        charmId: bestIndependentUnlocked.charmId,
+        reason: slotsAreFull
+          ? { code: 'slot_limit_reached', params: { slotCount: slotLimit } }
+          : { code: 'charm_in_use_elsewhere' },
+      };
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+
+  const majorCharmSlotPlan: MajorCharmSlotPlan = { recommendedSlots, unassignedCandidates, slotLimit };
 
   // --- Ranked alternatives across the whole hunt (top charms regardless of creature).
   const rankedAlternatives = creatureResults
@@ -489,7 +568,7 @@ export function optimiseCharms(
   for (const result of creatureResults) {
     if (!result.hasBestiaryData) continue;
 
-    const recommendedMajor = majorSlotMonsterSet.has(result.monsterName) ? result.bestMajorCharm : null;
+    const recommendedMajor = result.bestMajorCharm;
     const currentMajorId = getAssignedCharmId(character.assignedMajorCharms, result.monsterName);
     if (recommendedMajor && recommendedMajor.charmId !== currentMajorId) {
       const currentScore = result.rankedMajorCharms.find((r) => r.charmId === currentMajorId)?.scores.totalScore ?? 0;
@@ -558,9 +637,11 @@ export function optimiseCharms(
         ).effect
       : emptyEffect();
 
-    // Major charm gains only count for creatures that actually have a slot under the account's limit.
-    const recommendedMajorEffect = majorSlotMonsterSet.has(result.monsterName) ? result.bestMajorCharm?.effect ?? emptyEffect() : currentMajorEffect;
-    const recommendedMinorEffect = result.bestMinorCharm?.effect ?? emptyEffect();
+    // bestMajorCharm is already null for any creature that didn't win a slot
+    // in the global assignment, so falling back to its current effect here
+    // correctly contributes a zero delta for it, with no separate slot check needed.
+    const recommendedMajorEffect = result.bestMajorCharm?.effect ?? currentMajorEffect;
+    const recommendedMinorEffect = result.bestMinorCharm?.effect ?? currentMinorEffect;
 
     const delta = addEffects(
       {

@@ -236,6 +236,8 @@ const en: Dictionary = {
     missing_fields_note: 'Missing Bestiary fields: {{fields}}.',
     slot_limit_reached:
       'Major Charm slot limit reached ({{slotCount}} active). Upgrade to Premium, free up a slot, or acquire the Charm Expansion for unlimited slots.',
+    charm_in_use_elsewhere:
+      'Every Charm that would help here scores even higher on another creature, and a Charm can only be active on one creature at a time - so this one lost out. Unlocking a different Charm for it, or moving one of the contested Charms here instead, are the only ways to change that.',
     no_session_header: 'No "Session data: From ... to ..." line found.',
     zero_duration: 'Session duration is zero - kills/hour and damage/hour figures cannot be derived.',
     no_killed_monsters: 'No "Killed Monsters:" section found - the optimiser has nothing to rank.',
@@ -249,7 +251,7 @@ const en: Dictionary = {
     suitability_no_product_data: 'No creature in the Bestiary data source has Creature Product or Skinning/Dusting data yet.',
     suitability_not_creature_specific: "This Charm's value doesn't depend on which creature you're fighting.",
     lookup_success:
-      'Found {{name}} - level {{level}} {{vocation}}. Max. hitpoints and mana below are estimated from your vocation - adjust them if your real values differ (Promotion, the Wheel of Destiny and Loyalty all add more).',
+      'Found {{name}} - level {{level}} {{vocation}}. Max. hitpoints and mana below are estimated from your vocation - adjust them if your real values differ (the Wheel of Destiny and Gems can add more).',
     lookup_success_no_estimate: 'Found {{name}} - level {{level}}. Enter your Max. hitpoints and mana manually below.',
     lookup_error: "Couldn't find that character - check the spelling, or enter your stats manually below.",
   },

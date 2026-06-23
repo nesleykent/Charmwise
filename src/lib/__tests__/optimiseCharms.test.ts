@@ -27,25 +27,47 @@ describe('optimiseCharms - end to end with the sample session', () => {
     expect(crusader.bestMinorCharm).toBeNull();
   });
 
-  it('picks the only unlocked charm as "best" regardless of its rank, and proposes purchases for the rest', () => {
+  it('picks the only unlocked charm as "best" for whichever single creature it helps most, never both at once', () => {
+    // A Charm can only be active on one creature at a time, so with only one
+    // Major and one Minor Charm unlocked, exactly one of the two creatures in
+    // the sample session gets each - not both, even though both would
+    // independently rank it as their best option.
     const character = baseCharacter({
       unlockedMajorCharms: [{ charmId: 'wound', tier: 3 }],
-      unlockedMinorCharms: [{ charmId: 'gut', tier: 3 }],
+      // Cripple (paralyse on attack) scores from kills/hour and incoming
+      // damage, both always present in a parsed session - unlike Gut, which
+      // needs Creature Product data the Bestiary doesn't have for either
+      // sample creature, so it would score zero (and rightly go unassigned)
+      // for both, defeating the point of this test.
+      unlockedMinorCharms: [{ charmId: 'cripple', tier: 3 }],
       availableCharmPoints: 10_000,
       availableMinorCharmEchoes: 1_000,
     });
     const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT));
-    for (const result of summary.creatureResults) {
-      expect(result.bestMajorCharm?.charmId).toBe('wound');
-      expect(result.bestMinorCharm?.charmId).toBe('gut');
-    }
+
+    const majorRecipients = summary.creatureResults.filter((r) => r.bestMajorCharm?.charmId === 'wound');
+    const minorRecipients = summary.creatureResults.filter((r) => r.bestMinorCharm?.charmId === 'cripple');
+    expect(majorRecipients).toHaveLength(1);
+    expect(minorRecipients).toHaveLength(1);
+
     expect(summary.charmPointBudget.suggestions.length).toBeGreaterThan(0);
     expect(summary.charmPointBudget.suggestions.every((s) => s.charmId !== 'wound' || s.toTier !== 3)).toBe(true);
   });
 
   it('respects the free account Major Charm slot limit across creatures', () => {
+    // Three distinct unlocked charms, one per creature, so the slot limit
+    // (not charm contention - each charm here is only good for one creature
+    // anyway) is the constraint actually being exercised.
     const text = ['Killed Monsters:', '  10x Crusader', '  10x Headwalker', '  10x Dragon'].join('\n');
-    const character = baseCharacter({ accountType: 'free', hasCharmExpansion: false, unlockedMajorCharms: [{ charmId: 'wound', tier: 3 }] });
+    const character = baseCharacter({
+      accountType: 'free',
+      hasCharmExpansion: false,
+      unlockedMajorCharms: [
+        { charmId: 'wound', tier: 3 },
+        { charmId: 'poison', tier: 3 },
+        { charmId: 'freeze', tier: 3 },
+      ],
+    });
     const summary = optimiseCharms(character, parseHuntAnalyser(text));
 
     expect(summary.majorCharmSlotPlan.slotLimit).toBe(2);
@@ -56,12 +78,36 @@ describe('optimiseCharms - end to end with the sample session', () => {
 
   it('lifts the Major Charm slot limit entirely with the Charm Expansion', () => {
     const text = ['Killed Monsters:', '  10x Crusader', '  10x Headwalker', '  10x Dragon'].join('\n');
-    const character = baseCharacter({ accountType: 'free', hasCharmExpansion: true, unlockedMajorCharms: [{ charmId: 'wound', tier: 3 }] });
+    const character = baseCharacter({
+      accountType: 'free',
+      hasCharmExpansion: true,
+      unlockedMajorCharms: [
+        { charmId: 'wound', tier: 3 },
+        { charmId: 'poison', tier: 3 },
+        { charmId: 'freeze', tier: 3 },
+      ],
+    });
     const summary = optimiseCharms(character, parseHuntAnalyser(text));
 
     expect(summary.majorCharmSlotPlan.slotLimit).toBeNull();
     expect(summary.majorCharmSlotPlan.recommendedSlots).toHaveLength(3);
     expect(summary.majorCharmSlotPlan.unassignedCandidates).toHaveLength(0);
+  });
+
+  it('never assigns the same Major Charm to two different creatures at once', () => {
+    const character = baseCharacter({
+      unlockedMajorCharms: [
+        { charmId: 'wound', tier: 3 },
+        { charmId: 'poison', tier: 3 },
+        { charmId: 'freeze', tier: 3 },
+      ],
+    });
+    const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT));
+
+    const assignedCharmIds = summary.creatureResults
+      .map((r) => r.bestMajorCharm?.charmId)
+      .filter((id): id is NonNullable<typeof id> => id != null);
+    expect(new Set(assignedCharmIds).size).toBe(assignedCharmIds.length);
   });
 
   it('flags creatures with no matching Bestiary entry instead of guessing', () => {
@@ -159,8 +205,11 @@ describe('optimiseCharms - end to end with the sample session', () => {
 
     const frail = summary.creatureResults.find((r) => r.monsterName === 'Frail Critter')!;
     const tanky = summary.creatureResults.find((r) => r.monsterName === 'Tanky Critter')!;
-    const frailDamage = frail.bestMajorCharm!.effect.expectedDamagePerHour;
-    const tankyDamage = tanky.bestMajorCharm!.effect.expectedDamagePerHour;
+    // Independent per-creature score, not bestMajorCharm - this one Charm can
+    // only end up actively assigned to one of the two creatures, but this
+    // test is about how it *scores* for each of them in isolation.
+    const frailDamage = frail.rankedMajorCharms.find((r) => r.charmId === 'wound')!.effect.expectedDamagePerHour;
+    const tankyDamage = tanky.rankedMajorCharms.find((r) => r.charmId === 'wound')!.effect.expectedDamagePerHour;
 
     expect(tankyDamage / frailDamage).toBeCloseTo(81, 1);
   });
