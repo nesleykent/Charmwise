@@ -29,6 +29,7 @@ export function SegmentedControl<T extends string | number>({ ariaLabel, value, 
               active ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
             }`}
           >
+            {active ? '✓ ' : ''}
             {option.label}
           </button>
         );
