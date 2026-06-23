@@ -139,11 +139,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               aria-current={active ? 'page' : undefined}
               aria-label={t.nav[key]}
               title={t.nav[key]}
-              className={`flex flex-1 items-center justify-center py-3.5 transition-opacity ${
+              className={`flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-opacity ${
                 active ? 'text-charm-primary' : 'text-charm-muted hover:opacity-80'
               }`}
             >
               <Icon />
+              <span className="max-w-full truncate text-[10px] font-medium leading-none">{t.nav[key]}</span>
             </Link>
           );
         })}

@@ -168,6 +168,8 @@ const en: Dictionary = {
       expectedHealingSavedPerHour: 'Expected healing saved / hour',
       scorePerCharmPoint: 'Score per Charm Point',
       scorePerMinorCharmEcho: 'Score per Minor Charm Echo',
+      adjustedScore: 'Adjusted score',
+      rawScore: 'Raw score',
     },
     noMajorUnlocked: 'No unlocked Major Charm is useful here yet - see purchase suggestions below.',
     noMinorUnlocked: 'No unlocked Minor Charm is useful here yet - see purchase suggestions below.',

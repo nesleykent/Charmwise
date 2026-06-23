@@ -2,6 +2,7 @@
 
 import { CharmRankingTable } from '@/components/CharmRankingTable';
 import { MissingDataPanel } from '@/components/MissingDataPanel';
+import { RecommendationScopeToggle } from '@/components/RecommendationScopeToggle';
 import { useLocale } from '@/lib/i18n';
 import { formatNumber, formatScore, toTitleCase } from '@/lib/format';
 import { formatMessage } from '@/lib/messages';
@@ -48,22 +49,7 @@ export function OptimisationResults({ summary }: Props) {
       <section>
         <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
           <SectionHeading>{t.results.perCreatureTitle}</SectionHeading>
-          <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1" role="group" aria-label={t.results.perCreatureTitle}>
-            {(['full_analysis', 'my_charms'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setScope(option)}
-                aria-pressed={scope === option}
-                title={option === 'full_analysis' ? t.dashboard.scopeFullAnalysisHint : t.dashboard.scopeMyCharmsHint}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  scope === option ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
-                }`}
-              >
-                {option === 'full_analysis' ? t.dashboard.scopeFullAnalysis : t.dashboard.scopeMyCharms}
-              </button>
-            ))}
-          </div>
+          <RecommendationScopeToggle value={scope} onChange={setScope} ariaLabel={t.results.perCreatureTitle} />
         </div>
         <p className="mb-3 max-w-2xl text-xs leading-relaxed text-charm-muted">{t.results.perCreatureDescription}</p>
         <div className="space-y-4">

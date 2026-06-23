@@ -148,6 +148,8 @@ export interface Dictionary {
       expectedHealingSavedPerHour: string;
       scorePerCharmPoint: string;
       scorePerMinorCharmEcho: string;
+      adjustedScore: string;
+      rawScore: string;
     };
     noMajorUnlocked: string;
     noMinorUnlocked: string;

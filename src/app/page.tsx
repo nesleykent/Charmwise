@@ -5,6 +5,7 @@ import { DataBadge } from '@/components/DataBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { MissingDataPanel } from '@/components/MissingDataPanel';
 import { PageHeader } from '@/components/PageHeader';
+import { RecommendationScopeToggle } from '@/components/RecommendationScopeToggle';
 import { creatureSlug, formatNumber, formatScore, toTitleCase } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { useWorkspace } from '@/lib/workspace';
@@ -71,21 +72,8 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1" role="group" aria-label={t.dashboard.bestAssignmentsTitle}>
-              {(['full_analysis', 'my_charms'] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setScope(option)}
-                  aria-pressed={scope === option}
-                  title={option === 'full_analysis' ? t.dashboard.scopeFullAnalysisHint : t.dashboard.scopeMyCharmsHint}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    scope === option ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
-                  }`}
-                >
-                  {option === 'full_analysis' ? t.dashboard.scopeFullAnalysis : t.dashboard.scopeMyCharms}
-                </button>
-              ))}
+            <div className="mb-3">
+              <RecommendationScopeToggle value={scope} onChange={setScope} ariaLabel={t.dashboard.bestAssignmentsTitle} />
             </div>
 
             <div className="card divide-y divide-white/10">

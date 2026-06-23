@@ -169,6 +169,8 @@ const ptBR: Dictionary = {
       expectedHealingSavedPerHour: 'Cura economizada esperada / hora',
       scorePerCharmPoint: 'Pontuacao por Charm Point',
       scorePerMinorCharmEcho: 'Pontuacao por Minor Charm Echo',
+      adjustedScore: 'Pontuacao ajustada',
+      rawScore: 'Pontuacao bruta',
     },
     noMajorUnlocked: 'Nenhuma Major Charm desbloqueada ainda e util aqui - veja as sugestoes de compra abaixo.',
     noMinorUnlocked: 'Nenhuma Minor Charm desbloqueada ainda e util aqui - veja as sugestoes de compra abaixo.',

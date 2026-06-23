@@ -56,6 +56,7 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
     <ol className="space-y-2.5">
       {recommendations.map((rec, index) => {
         const e = rec.effect;
+        const scoreWasAdjusted = Math.abs(rec.scores.rawTotalScore - rec.scores.totalScore) > 0.05;
         return (
           <li
             // The same recommendations array can be a per-creature ranking
@@ -89,7 +90,12 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
                 </Badge>
                 <Badge className={CONFIDENCE_CLASS[rec.confidence]}>{t.results.confidence[rec.confidence]}</Badge>
               </div>
-              <span className="text-sm font-bold text-charm-primary">{formatScore(rec.scores.totalScore)} pts</span>
+              <span className="text-right">
+                <span className="block text-sm font-bold text-charm-primary">{formatScore(rec.scores.totalScore)} pts</span>
+                {scoreWasAdjusted && (
+                  <span className="block text-[10px] font-medium text-charm-subtle">{t.results.metrics.adjustedScore}</span>
+                )}
+              </span>
             </div>
 
             <p className="mt-2 text-xs leading-relaxed text-charm-muted">{formatMessage(t, rec.reason)}</p>
@@ -139,6 +145,8 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
                   <MetricChip label={t.scoreDimensions.safety} value={formatScore(rec.scores.safetyScore)} />
                   <MetricChip label={t.scoreDimensions.supplySaving} value={formatScore(rec.scores.supplySavingScore)} />
                   <MetricChip label={t.scoreDimensions.utility} value={formatScore(rec.scores.utilityScore)} />
+                  <MetricChip label={t.results.metrics.rawScore} value={formatScore(rec.scores.rawTotalScore)} />
+                  <MetricChip label={t.results.metrics.adjustedScore} value={formatScore(rec.scores.totalScore)} />
                 </div>
               </details>
             )}
