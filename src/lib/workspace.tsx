@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { optimiseCharms } from '@/lib/optimiseCharms';
 import { parseHuntAnalyser } from '@/lib/parseHuntAnalyser';
 import { DEFAULT_CHARACTER_INPUT, type CharacterInput } from '@/types/character';
-import type { OptimisationMode, RecommendationScope } from '@/types/charm';
+import type { CharmTier, OptimisationMode, RecommendationScope } from '@/types/charm';
 import type { HuntAnalyserParseResult } from '@/types/hunt';
 import type { HuntOptimisationSummary } from '@/types/optimisation';
 
@@ -20,13 +20,15 @@ interface PersistedState {
   huntText: string;
   mode: OptimisationMode;
   scope: RecommendationScope;
+  /** Ceiling locked Charms are evaluated at, and how far purchase suggestions walk - see optimiseCharms.ts. Gold by default; not everyone's Charm Point budget realistically reaches Gold on everything. */
+  targetTier: CharmTier;
 }
 
 function defaultState(): PersistedState {
   // Full Analysis by default - someone who hasn't filled in Unlocked Charms
   // yet should still see a comprehensive "what's the best Charm here"
   // answer, not an empty "nothing unlocked" result.
-  return { character: DEFAULT_CHARACTER_INPUT, huntText: '', mode: 'balanced', scope: 'full_analysis' };
+  return { character: DEFAULT_CHARACTER_INPUT, huntText: '', mode: 'balanced', scope: 'full_analysis', targetTier: 3 };
 }
 
 interface WorkspaceContextValue {
@@ -38,6 +40,8 @@ interface WorkspaceContextValue {
   setMode: (mode: OptimisationMode) => void;
   scope: RecommendationScope;
   setScope: (scope: RecommendationScope) => void;
+  targetTier: CharmTier;
+  setTargetTier: (tier: CharmTier) => void;
   parseResult: HuntAnalyserParseResult | null;
   summary: HuntOptimisationSummary | null;
   hasHuntData: boolean;
@@ -79,8 +83,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const summary = useMemo(() => {
     if (!parseResult || !parseResult.isValid) return null;
-    return optimiseCharms(state.character, parseResult, state.mode);
-  }, [state.character, parseResult, state.mode]);
+    return optimiseCharms(state.character, parseResult, state.mode, undefined, state.targetTier);
+  }, [state.character, parseResult, state.mode, state.targetTier]);
 
   const value = useMemo<WorkspaceContextValue>(
     () => ({
@@ -92,6 +96,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setMode: (mode) => setState((s) => ({ ...s, mode })),
       scope: state.scope,
       setScope: (scope) => setState((s) => ({ ...s, scope })),
+      targetTier: state.targetTier,
+      setTargetTier: (targetTier) => setState((s) => ({ ...s, targetTier })),
       parseResult,
       summary,
       hasHuntData: (parseResult?.killedMonsters.length ?? 0) > 0,

@@ -116,13 +116,16 @@ interface RankedGroup {
 
 /**
  * Ranks every charm in `charmList` for one creature: unlocked charms use the
- * tier the player owns, locked charms are evaluated at Tier 3/Gold - their
- * true ceiling - not Tier 1. Tier 1 made every locked charm look weaker than
- * it really is (Gold's activation chance typically runs 2.2x Tier 1's for
- * the same charm), which is why "why only Tier 1" recommendations showed up
- * everywhere a locked charm was ranked. `best` still only considers unlocked
- * charms - that's the "what should I equip right now" view; the Gold-tier
- * ceiling is the "what's worth pursuing" view shown in the full ranking.
+ * tier the player owns, locked charms are evaluated at `targetTier` - their
+ * realistic ceiling - not Tier 1. Tier 1 made every locked charm look weaker
+ * than it really is (Gold's activation chance typically runs 2.2x Tier 1's
+ * for the same charm), which is why "why only Tier 1" recommendations showed
+ * up everywhere a locked charm was ranked. `targetTier` defaults to Gold but
+ * is user-configurable - not every Charm Point budget realistically reaches
+ * Gold on everything, so the ceiling (and the "is this worth pursuing"
+ * framing built on it) should match what's actually achievable. `best` still
+ * only considers unlocked charms - that's the "what should I equip right
+ * now" view, unaffected by `targetTier`.
  */
 function rankCharmGroup(
   charmList: CharmDefinition[],
@@ -130,11 +133,12 @@ function rankCharmGroup(
   unlockedList: UnlockedCharm[],
   ctx: ScoringContext,
   weights: ScoreWeights,
+  targetTier: CharmTier,
 ): RankedGroup {
   const evaluations = charmList.map((charm) => {
     const ownedTier = getUnlockedTier(unlockedList, charm.id);
     const unlocked = ownedTier !== null;
-    const tier: CharmTier = ownedTier ?? 3;
+    const tier: CharmTier = ownedTier ?? targetTier;
     const { effect, warnings, confidence } = computeCharmEffect(charm, getTierDefinition(charm, tier), ctx);
     return { charm, tier, unlocked, effect, warnings, confidence };
   });
@@ -155,6 +159,7 @@ function rankCharmGroup(
       charmId: entry.charm.id,
       category,
       name: entry.charm.name,
+      monsterName: ctx.huntStat.monsterName,
       tier: entry.tier,
       unlocked: entry.unlocked,
       effect: entry.effect,
@@ -237,6 +242,11 @@ function solveGlobalCharmAssignment(
  * there is nothing to allocate against, so this falls back to an advisory
  * top-10 list of the most efficient next steps, unconstrained by affordability -
  * the same spirit as the previous behaviour, but still capable of chaining.
+ *
+ * Stops at `targetTier` rather than always walking to Gold - not every
+ * Charm Point budget realistically reaches Gold on everything, so a lower
+ * target means this never bothers suggesting the (often steeply expensive)
+ * final step towards a tier the player isn't aiming for.
  */
 function buildPurchaseSuggestions(
   charmList: CharmDefinition[],
@@ -245,10 +255,11 @@ function buildPurchaseSuggestions(
   creatureContexts: CreatureContext[],
   weights: ScoreWeights,
   availableBudget: number,
+  targetTier: CharmTier,
 ): CharmPurchaseSuggestion[] {
   const hasBudget = availableBudget > 0;
   let remainingBudget = hasBudget ? availableBudget : Number.POSITIVE_INFINITY;
-  const suggestionCap = hasBudget ? charmList.length * 3 : 10;
+  const suggestionCap = hasBudget ? charmList.length * targetTier : 10;
 
   const virtualTier = new Map<CharmId, number>(charmList.map((c) => [c.id, getUnlockedTier(unlockedList, c.id) ?? 0]));
   const suggestions: CharmPurchaseSuggestion[] = [];
@@ -258,7 +269,7 @@ function buildPurchaseSuggestions(
 
     for (const charm of charmList) {
       const currentTier = virtualTier.get(charm.id)!;
-      if (currentTier >= 3) continue;
+      if (currentTier >= targetTier) continue;
       const toTier = (currentTier + 1) as CharmTier;
       const cost = getTierDefinition(charm, toTier).cost;
       if (cost > remainingBudget) continue;
@@ -335,6 +346,7 @@ export function optimiseCharms(
   parseResult: HuntAnalyserParseResult,
   mode: OptimisationMode = 'balanced',
   bestiaryEntries: RawBestiaryEntry[] = getBestiaryEntries(),
+  targetTier: CharmTier = 3,
 ): HuntOptimisationSummary {
   const { killedMonsters, totals } = parseResult;
   if (killedMonsters.length === 0) return emptySummary(character, mode);
@@ -439,8 +451,8 @@ export function optimiseCharms(
       attacksPerHour: attacksPerHourAllocated[i] ?? 0,
     };
 
-    const majorGroup = rankCharmGroup(MAJOR_CHARM_LIST, 'major', character.unlockedMajorCharms, ctx, weights);
-    const minorGroup = rankCharmGroup(MINOR_CHARM_LIST, 'minor', character.unlockedMinorCharms, ctx, weights);
+    const majorGroup = rankCharmGroup(MAJOR_CHARM_LIST, 'major', character.unlockedMajorCharms, ctx, weights, targetTier);
+    const minorGroup = rankCharmGroup(MINOR_CHARM_LIST, 'minor', character.unlockedMinorCharms, ctx, weights, targetTier);
 
     creatureContexts.push({ monsterName: huntStat.monsterName, profile, ctx, majorMaxima: majorGroup.maxima, minorMaxima: minorGroup.maxima });
 
@@ -553,6 +565,7 @@ export function optimiseCharms(
     creatureContexts,
     weights,
     character.availableCharmPoints,
+    targetTier,
   );
   const minorEchoSuggestions = buildPurchaseSuggestions(
     MINOR_CHARM_LIST,
@@ -561,6 +574,7 @@ export function optimiseCharms(
     creatureContexts,
     weights,
     character.availableMinorCharmEchoes,
+    targetTier,
   );
 
   // --- Reassignment suggestions: where the current loadout differs from the recommendation.
@@ -693,7 +707,8 @@ export function optimiseHuntFromText(
   rawHuntAnalyserText: string,
   mode: OptimisationMode = 'balanced',
   bestiaryEntries?: RawBestiaryEntry[],
+  targetTier: CharmTier = 3,
 ): HuntOptimisationSummary {
   const parseResult = parseHuntAnalyser(rawHuntAnalyserText);
-  return optimiseCharms(character, parseResult, mode, bestiaryEntries);
+  return optimiseCharms(character, parseResult, mode, bestiaryEntries, targetTier);
 }

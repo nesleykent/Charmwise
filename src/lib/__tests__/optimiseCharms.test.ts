@@ -213,4 +213,31 @@ describe('optimiseCharms - end to end with the sample session', () => {
 
     expect(tankyDamage / frailDamage).toBeCloseTo(81, 1);
   });
+
+  it('evaluates locked charms at the configured target tier, not always Gold', () => {
+    const character = baseCharacter({ unlockedMajorCharms: [] });
+    const summaryGold = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT), 'balanced', undefined, 3);
+    const summaryBronze = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT), 'balanced', undefined, 1);
+
+    const crusaderGold = summaryGold.creatureResults.find((r) => r.monsterName === 'crusader')!;
+    const crusaderBronze = summaryBronze.creatureResults.find((r) => r.monsterName === 'crusader')!;
+    const wound = (s: typeof crusaderGold) => s.rankedMajorCharms.find((r) => r.charmId === 'wound')!;
+
+    expect(wound(crusaderGold).tier).toBe(3);
+    expect(wound(crusaderBronze).tier).toBe(1);
+    // Compare raw damage/hour, not the normalised 0-100 score - the two runs
+    // rank against different maxima (every locked charm is evaluated at a
+    // different tier in each run), so their *normalised* scores aren't
+    // directly comparable, but the underlying activation-chance difference
+    // (11% at Gold vs 5% at Bronze) must still show up in the raw EV.
+    expect(wound(crusaderGold).effect.expectedDamagePerHour).toBeGreaterThan(wound(crusaderBronze).effect.expectedDamagePerHour);
+  });
+
+  it('never suggests a purchase past the configured target tier', () => {
+    const character = baseCharacter({ unlockedMajorCharms: [], availableCharmPoints: 10_000 });
+    const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT), 'balanced', undefined, 2);
+
+    expect(summary.charmPointBudget.suggestions.length).toBeGreaterThan(0);
+    expect(summary.charmPointBudget.suggestions.every((s) => s.toTier <= 2)).toBe(true);
+  });
 });

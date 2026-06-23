@@ -79,6 +79,12 @@ A specific unlocked Charm can only be actively assigned to one creature at a tim
 
 [`assignmentSolver.ts`](src/lib/assignmentSolver.ts) solves this properly: an exact bitmask-DP solution to the assignment problem (each creature gets at most one Charm, each Charm goes to at most one creature, Major Charms additionally capped at the account's slot limit), maximising total score across the whole hunt rather than greedily per creature. It's exact, not a heuristic - the Charm axis is always small (≤14 Major, ≤11 Minor), so brute-forcing every subset via DP is cheap (a worst-case 50-creature x 14-charm hunt solves in well under 20ms). `bestMajorCharm`/`bestMinorCharm` on each creature reflect this solved assignment; a creature that loses a Charm to one with a stronger claim on it shows a `charm_in_use_elsewhere` warning rather than no explanation. `bestMajorCharmOverall`/`bestMinorCharmOverall` (the Full Analysis view) deliberately stay independent per creature, since that view is "what's worth pursuing" regardless of what you've actually unlocked, not a real achievable assignment.
 
+Because the same Charm legitimately scores differently per creature, it can show up more than once in a cross-creature list like "Ranked alternatives" - once per creature it's good for. Each row there names the creature it was scored against, so two entries for the same Charm read as "this Charm is great for both of these creatures" rather than looking like a duplicate-data bug.
+
+### Target tier
+
+Recommendations Center has a Bronze/Silver/Gold **target tier** selector (default Gold). It caps two things: the ceiling locked Charms are evaluated at in the full ranking (so "what's worth pursuing" reflects a tier you're actually aiming for, not always the absolute maximum), and how far purchase suggestions walk before stopping - Gold is rarely realistic on every Charm given how steeply its cost scales versus Bronze/Silver, so this exists for anyone whose Charm Point budget isn't going to stretch that far.
+
 ## Character input explanation
 
 Only Level, Max. hitpoints and Max. mana are asked for up front - together with a pasted Hunt Analyser session, they're enough for a useful result. Everything else lives behind "Advanced settings".

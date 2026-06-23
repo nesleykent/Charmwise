@@ -74,6 +74,9 @@ const en: Dictionary = {
       safety: 'Safety focused',
       low_supplies: 'Low supplies',
     },
+    targetTierLabel: 'Target tier for locked Charms',
+    targetTierHint:
+      "Caps how far locked Charms are evaluated and how far purchase suggestions go. Gold is the absolute ceiling, but it's not realistic on every Charm Point budget - lower this if you're not aiming that high.",
     sectionDetails: 'Detailed calculations',
   },
   charmLibrary: {
@@ -119,7 +122,8 @@ const en: Dictionary = {
     tierNames: ['Bronze', 'Silver', 'Gold'],
     tierLocked: 'Locked',
     helpCharmPoints: 'Earned by completing a creature\'s Bestiary entry.',
-    helpMinorEchoes: 'Earned by unlocking or upgrading Major Charms, or from Promotion.',
+    helpMinorEchoes:
+      'Earned from Major Charm tiers (50 at Bronze, 100 more at Silver, 200 more at Gold - 350 total per fully-upgraded Charm), plus a one-time 100 if your character is promoted.',
     validation: {
       levelRange: 'Level must be at least 1.',
       hitpointsPositive: 'Must be greater than zero.',

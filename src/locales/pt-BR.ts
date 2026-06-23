@@ -75,6 +75,9 @@ const ptBR: Dictionary = {
       safety: 'Foco em seguranca',
       low_supplies: 'Poucas supplies',
     },
+    targetTierLabel: 'Nivel-alvo para Charms bloqueadas',
+    targetTierHint:
+      'Limita até onde Charms bloqueadas sao avaliadas e até onde as sugestoes de compra vao. Ouro e o limite absoluto, mas nao e realista para todo orcamento de Charm Points - reduza se voce nao esta visando tao alto.',
     sectionDetails: 'Calculos detalhados',
   },
   charmLibrary: {
@@ -120,7 +123,8 @@ const ptBR: Dictionary = {
     tierNames: ['Bronze', 'Prata', 'Ouro'],
     tierLocked: 'Bloqueada',
     helpCharmPoints: 'Ganhos ao completar o Bestiario de uma criatura.',
-    helpMinorEchoes: 'Ganhos ao desbloquear ou evoluir Major Charms, ou pela Promotion.',
+    helpMinorEchoes:
+      'Ganhos pelos niveis de Major Charm (50 no Bronze, mais 100 no Silver, mais 200 no Ouro - 350 no total por Charm totalmente evoluida), mais 100 unicos se o personagem for promovido.',
     validation: {
       levelRange: 'O nivel deve ser no minimo 1.',
       hitpointsPositive: 'Deve ser maior que zero.',

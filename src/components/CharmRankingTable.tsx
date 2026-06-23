@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from '@/lib/i18n';
-import { formatNumber, formatScore } from '@/lib/format';
+import { formatNumber, formatScore, toTitleCase } from '@/lib/format';
 import { formatMessage } from '@/lib/messages';
 import type { CharmRecommendation, ConfidenceLevel } from '@/types/charm';
 
@@ -10,6 +10,15 @@ interface Props {
   /** Shows the full score breakdown and raw effect numbers in an expandable panel per charm. */
   detailed?: boolean;
   emptyMessage?: string;
+  /**
+   * Shows which creature each row was scored against. Needed whenever the
+   * same list can mix rows for different creatures (e.g. "ranked
+   * alternatives") - otherwise the same Charm appearing twice with two
+   * different scores looks like a duplicate-data bug rather than two
+   * distinct per-creature calculations. Leave off for an already
+   * single-creature list (the heading above it already says which creature).
+   */
+  showCreatureName?: boolean;
 }
 
 const CONFIDENCE_CLASS: Record<ConfidenceLevel, string> = {
@@ -35,7 +44,7 @@ function Badge({ children, className = '' }: { children: React.ReactNode; classN
   );
 }
 
-export function CharmRankingTable({ recommendations, detailed = false, emptyMessage }: Props) {
+export function CharmRankingTable({ recommendations, detailed = false, emptyMessage, showCreatureName = false }: Props) {
   const { t, locale } = useLocale();
 
   if (recommendations.length === 0) {
@@ -68,7 +77,12 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-charm-bg/80 text-xs font-bold text-charm-muted">
                   {index + 1}
                 </span>
-                <span className="font-semibold text-white">{t.charms[rec.charmId]?.name ?? rec.name}</span>
+                <span className="font-semibold text-white">
+                  {t.charms[rec.charmId]?.name ?? rec.name}
+                  {showCreatureName && (
+                    <span className="font-normal text-charm-subtle"> {t.results.linkingFor} {toTitleCase(rec.monsterName)}</span>
+                  )}
+                </span>
                 <Badge>
                   {rec.unlocked ? t.characterForm.tierNames[rec.tier - 1] : `${t.characterForm.tierLocked} · ${t.characterForm.tierNames[rec.tier - 1]}`}
                 </Badge>

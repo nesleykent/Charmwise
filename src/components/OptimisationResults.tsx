@@ -136,7 +136,7 @@ export function OptimisationResults({ summary }: Props) {
       <section>
         <SectionHeading>{t.results.rankedAlternatives}</SectionHeading>
         <div className="card p-3.5 sm:p-4">
-          <CharmRankingTable recommendations={summary.rankedAlternatives} />
+          <CharmRankingTable recommendations={summary.rankedAlternatives} showCreatureName />
         </div>
       </section>
 

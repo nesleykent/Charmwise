@@ -143,7 +143,9 @@ export interface CharmRecommendation {
   charmId: CharmId;
   category: CharmCategory;
   name: string;
-  /** The tier this recommendation is evaluated at: the tier actually owned if unlocked, otherwise the Tier 3/Gold ceiling. */
+  /** Which creature this recommendation was scored against - the same Charm appears once per creature in a cross-creature list like "ranked alternatives", with a different score each time, so callers that flatten across creatures need this to label rows. */
+  monsterName: string;
+  /** The tier this recommendation is evaluated at: the tier actually owned if unlocked, otherwise the user's configured target tier ceiling (Gold by default - see workspace.tsx's `targetTier`). */
   tier: CharmTier;
   unlocked: boolean;
   effect: CharmEffectEstimate;

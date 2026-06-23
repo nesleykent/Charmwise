@@ -54,6 +54,8 @@ export interface Dictionary {
     modeLabel: string;
     modeDescriptions: Record<string, string>;
     modes: { balanced: string; xp: string; profit: string; safety: string; low_supplies: string };
+    targetTierLabel: string;
+    targetTierHint: string;
     sectionDetails: string;
   };
   charmLibrary: {
