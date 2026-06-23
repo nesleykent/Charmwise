@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { OptimisationModeSelector } from '@/components/OptimisationModeSelector';
 import { OptimisationResults } from '@/components/OptimisationResults';
 import { PageHeader } from '@/components/PageHeader';
-import { creatureSlug } from '@/lib/format';
+import { creatureSlug, toTitleCase } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { useWorkspace } from '@/lib/workspace';
 
@@ -44,7 +44,7 @@ export default function RecommendationsPage() {
                 .filter((r) => r.hasBestiaryData)
                 .map((result) => (
                   <div key={result.monsterName} id={creatureSlug(result.monsterName)} className="card scroll-mt-6 p-5 sm:p-6">
-                    <h3 className="mb-4 font-semibold text-white">{result.monsterName}</h3>
+                    <h3 className="mb-4 font-semibold text-white">{toTitleCase(result.monsterName)}</h3>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       <div>
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-charm-subtle">{t.results.allMajorCharms}</p>

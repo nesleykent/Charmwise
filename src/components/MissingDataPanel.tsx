@@ -1,5 +1,6 @@
 'use client';
 
+import { toTitleCase } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 
 interface Props {
@@ -22,7 +23,7 @@ export function MissingDataPanel({ creaturesLackingBestiaryData, creaturesNeedin
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {creaturesLackingBestiaryData.map((name) => (
               <li key={name} className="rounded-full border border-charm-danger/30 bg-charm-danger/10 px-2.5 py-0.5 text-xs text-charm-danger">
-                {name}
+                {toTitleCase(name)}
               </li>
             ))}
           </ul>
@@ -35,7 +36,7 @@ export function MissingDataPanel({ creaturesLackingBestiaryData, creaturesNeedin
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {creaturesNeedingManualReview.map((name) => (
               <li key={name} className="rounded-full border border-charm-warning/30 bg-charm-warning/10 px-2.5 py-0.5 text-xs text-charm-warning">
-                {name}
+                {toTitleCase(name)}
               </li>
             ))}
           </ul>

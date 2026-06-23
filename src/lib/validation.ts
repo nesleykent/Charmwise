@@ -18,7 +18,10 @@ export interface CharacterValidationIssue {
 export function validateCharacterInput(character: CharacterInput): CharacterValidationIssue[] {
   const issues: CharacterValidationIssue[] = [];
 
-  if (!Number.isFinite(character.level) || character.level < 1 || character.level > 3000) {
+  // No upper bound - Tibia has no real level cap, and the top of the
+  // playerbase keeps climbing well past any number that would have looked
+  // like a safe ceiling when this was written.
+  if (!Number.isFinite(character.level) || character.level < 1) {
     issues.push({ field: 'level', code: 'level_range' });
   }
   if (!Number.isFinite(character.maxHitpoints) || character.maxHitpoints <= 0) {
@@ -26,6 +29,12 @@ export function validateCharacterInput(character: CharacterInput): CharacterVali
   }
   if (!Number.isFinite(character.maxMana) || character.maxMana < 0) {
     issues.push({ field: 'maxMana', code: 'mana_non_negative' });
+  }
+  if (!Number.isFinite(character.criticalChance) || character.criticalChance < 0 || character.criticalChance > 100) {
+    issues.push({ field: 'criticalChance', code: 'percent_range' });
+  }
+  if (!Number.isFinite(character.criticalDamageBonus) || character.criticalDamageBonus < 0) {
+    issues.push({ field: 'criticalDamageBonus', code: 'percent_range' });
   }
   if (!Number.isFinite(character.lifeLeechPercent) || character.lifeLeechPercent < 0) {
     issues.push({ field: 'lifeLeechPercent', code: 'percent_range' });

@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { optimiseCharms } from '@/lib/optimiseCharms';
 import { parseHuntAnalyser } from '@/lib/parseHuntAnalyser';
 import { DEFAULT_CHARACTER_INPUT, type CharacterInput } from '@/types/character';
-import type { OptimisationMode } from '@/types/charm';
+import type { OptimisationMode, RecommendationScope } from '@/types/charm';
 import type { HuntAnalyserParseResult } from '@/types/hunt';
 import type { HuntOptimisationSummary } from '@/types/optimisation';
 
@@ -19,10 +19,14 @@ interface PersistedState {
   character: CharacterInput;
   huntText: string;
   mode: OptimisationMode;
+  scope: RecommendationScope;
 }
 
 function defaultState(): PersistedState {
-  return { character: DEFAULT_CHARACTER_INPUT, huntText: '', mode: 'balanced' };
+  // Full Analysis by default - someone who hasn't filled in Unlocked Charms
+  // yet should still see a comprehensive "what's the best Charm here"
+  // answer, not an empty "nothing unlocked" result.
+  return { character: DEFAULT_CHARACTER_INPUT, huntText: '', mode: 'balanced', scope: 'full_analysis' };
 }
 
 interface WorkspaceContextValue {
@@ -32,6 +36,8 @@ interface WorkspaceContextValue {
   setHuntText: (text: string) => void;
   mode: OptimisationMode;
   setMode: (mode: OptimisationMode) => void;
+  scope: RecommendationScope;
+  setScope: (scope: RecommendationScope) => void;
   parseResult: HuntAnalyserParseResult | null;
   summary: HuntOptimisationSummary | null;
   hasHuntData: boolean;
@@ -84,6 +90,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setHuntText: (huntText) => setState((s) => ({ ...s, huntText })),
       mode: state.mode,
       setMode: (mode) => setState((s) => ({ ...s, mode })),
+      scope: state.scope,
+      setScope: (scope) => setState((s) => ({ ...s, scope })),
       parseResult,
       summary,
       hasHuntData: (parseResult?.killedMonsters.length ?? 0) > 0,

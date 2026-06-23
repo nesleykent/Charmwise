@@ -1,9 +1,13 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
+import { CreatureNameInput } from '@/components/CreatureNameInput';
 import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST } from '@/data/charms';
 import { useLocale } from '@/lib/i18n';
+import { formatMessage } from '@/lib/messages';
+import { fetchCharacterByName } from '@/lib/tibiaDataApi';
 import { validateCharacterInput, type CharacterValidationIssue } from '@/lib/validation';
+import { estimateHitpointsAndMana } from '@/lib/vocationFormulas';
 import type { AccountType, AssignedCharm, CharacterInput, UnlockedCharm } from '@/types/character';
 import type { CharmDefinition, CharmId, CharmTier } from '@/types/charm';
 import type { Dictionary } from '@/types/i18n';
@@ -11,6 +15,84 @@ import type { Dictionary } from '@/types/i18n';
 interface Props {
   value: CharacterInput;
   onChange: (next: CharacterInput) => void;
+}
+
+function CharacterLookup({
+  t,
+  onApply,
+}: {
+  t: Dictionary;
+  onApply: (level: number, hitpoints: number | null, mana: number | null) => void;
+}) {
+  const id = useId();
+  const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+
+  async function handleLookup() {
+    const trimmed = name.trim();
+    if (!trimmed || isLoading) return;
+    setIsLoading(true);
+    setFeedback(null);
+    const result = await fetchCharacterByName(trimmed);
+    setIsLoading(false);
+
+    if (!result) {
+      setFeedback({ tone: 'error', message: formatMessage(t, { code: 'lookup_error' }) });
+      return;
+    }
+    const estimate = estimateHitpointsAndMana(result.level, result.vocation);
+    onApply(result.level, estimate?.hitpoints ?? null, estimate?.mana ?? null);
+    setFeedback({
+      tone: 'success',
+      message: estimate
+        ? formatMessage(t, { code: 'lookup_success', params: { name: trimmed, level: result.level, vocation: result.vocation } })
+        : formatMessage(t, { code: 'lookup_success_no_estimate', params: { name: trimmed, level: result.level } }),
+    });
+  }
+
+  return (
+    <details className="group card mb-4 overflow-hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-charm-primary marker:content-none">
+        <span className="inline-block text-charm-muted transition-transform group-open:rotate-90">&rsaquo;</span>
+        {t.characterForm.lookupToggle}
+      </summary>
+      <div className="flex flex-col gap-2 border-t border-white/10 p-4 sm:flex-row">
+        <input
+          id={id}
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void handleLookup();
+            }
+          }}
+          placeholder={t.characterForm.lookupPlaceholder}
+          aria-label={t.characterForm.lookupPlaceholder}
+          className="field-input flex-1"
+        />
+        <button
+          type="button"
+          onClick={() => void handleLookup()}
+          disabled={isLoading || name.trim().length === 0}
+          className="btn-secondary whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isLoading ? t.characterForm.lookupLoading : t.characterForm.lookupButton}
+        </button>
+      </div>
+      <p className="px-4 pb-3 text-[11px] leading-relaxed text-charm-subtle">{t.characterForm.lookupPrivacyNote}</p>
+      {feedback && (
+        <p
+          role="status"
+          className={`px-4 pb-4 text-xs leading-relaxed ${feedback.tone === 'error' ? 'text-charm-danger' : 'text-charm-minor'}`}
+        >
+          {feedback.message}
+        </p>
+      )}
+    </details>
+  );
 }
 
 function NumberField({
@@ -132,13 +214,11 @@ function AssignedCharmRows({
     <div className="space-y-2">
       {rows.map((row, i) => (
         <div key={i} className="flex gap-2">
-          <input
-            type="text"
+          <CreatureNameInput
             value={row.creatureName}
-            onChange={(e) => updateRow(i, { creatureName: e.target.value })}
+            onChange={(v) => updateRow(i, { creatureName: v })}
             placeholder={t.characterForm.creatureNamePlaceholder}
-            aria-label={t.characterForm.creatureNamePlaceholder}
-            className="field-input min-w-0 flex-1"
+            ariaLabel={t.characterForm.creatureNamePlaceholder}
           />
           <select
             value={row.charmId}
@@ -204,6 +284,17 @@ export function CharacterForm({ value, onChange }: Props) {
           hitpoints/mana, level drives the gold formulas) - everything else has a working default. */}
       <section>
         <p className="mb-3 text-sm leading-relaxed text-charm-muted">{t.characterForm.essentialsHelp}</p>
+        <CharacterLookup
+          t={t}
+          onApply={(level, hitpoints, mana) => {
+            onChange({
+              ...value,
+              level,
+              ...(hitpoints !== null ? { maxHitpoints: hitpoints } : {}),
+              ...(mana !== null ? { maxMana: mana } : {}),
+            });
+          }}
+        />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <NumberField
             id={`${idPrefix}-level`}
@@ -238,6 +329,29 @@ export function CharacterForm({ value, onChange }: Props) {
           {t.characterForm.advancedToggle}
         </summary>
         <div className="space-y-7 border-t border-white/10 p-4 sm:p-5">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <NumberField
+              id={`${idPrefix}-crit-chance`}
+              label={t.characterForm.criticalChance}
+              value={value.criticalChance}
+              onChange={(v) => set('criticalChance', v)}
+              error={findError(issues, 'criticalChance', t)}
+              min={0}
+              step={0.1}
+              help={t.characterForm.helpCriticalChance}
+            />
+            <NumberField
+              id={`${idPrefix}-crit-damage`}
+              label={t.characterForm.criticalDamageBonus}
+              value={value.criticalDamageBonus}
+              onChange={(v) => set('criticalDamageBonus', v)}
+              error={findError(issues, 'criticalDamageBonus', t)}
+              min={0}
+              step={0.1}
+              help={t.characterForm.helpCriticalDamageBonus}
+            />
+          </section>
+
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <NumberField
               id={`${idPrefix}-life-leech`}

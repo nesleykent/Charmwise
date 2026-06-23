@@ -17,9 +17,9 @@ export interface CharacterInput {
   level: number;
   maxHitpoints: number;
   maxMana: number;
-  /** Percent, 0-100. Defaults to the intrinsic 5% baseline every character has had since the Summer Update 2025 Weapon Proficiency System - not user-editable in the form, since Charm activation/cost is otherwise identical regardless of build. */
+  /** Percent, 0-100. Defaults to the intrinsic 5% baseline every character has had since the Summer Update 2025 Weapon Proficiency System, but is editable - Low Blow's entire value depends on this, and a real crit build (gear/talents) can run well above baseline. */
   criticalChance: number;
-  /** Percent, 0-100. Defaults to the intrinsic 10% baseline from the same update. */
+  /** Percent, 0+. Defaults to the intrinsic 10% baseline from the same update. Savage Blow's entire value depends on this. */
   criticalDamageBonus: number;
   /** Percent, 0+. Requires existing leech for Vampiric Embrace to apply. */
   lifeLeechPercent: number;

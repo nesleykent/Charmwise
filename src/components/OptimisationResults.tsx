@@ -3,8 +3,9 @@
 import { CharmRankingTable } from '@/components/CharmRankingTable';
 import { MissingDataPanel } from '@/components/MissingDataPanel';
 import { useLocale } from '@/lib/i18n';
-import { formatNumber, formatScore } from '@/lib/format';
+import { formatNumber, formatScore, toTitleCase } from '@/lib/format';
 import { formatMessage } from '@/lib/messages';
+import { useWorkspace } from '@/lib/workspace';
 import type { HuntOptimisationSummary } from '@/types/optimisation';
 
 interface Props {
@@ -26,6 +27,7 @@ function SummaryCard({ title, value, accent }: { title: string; value: string; a
 
 export function OptimisationResults({ summary }: Props) {
   const { t, locale } = useLocale();
+  const { scope, setScope } = useWorkspace();
   const improvement = summary.expectedImprovementSummary;
 
   return (
@@ -55,7 +57,7 @@ export function OptimisationResults({ summary }: Props) {
           <ul className="mt-2 space-y-1 text-xs text-charm-muted">
             {summary.majorCharmSlotPlan.recommendedSlots.map((slot) => (
               <li key={slot.monsterName}>
-                <span className="text-white">{slot.monsterName}</span> &rarr; {t.charms[slot.charmId]?.name}
+                <span className="text-white">{toTitleCase(slot.monsterName)}</span> &rarr; {t.charms[slot.charmId]?.name}
               </li>
             ))}
           </ul>
@@ -63,7 +65,7 @@ export function OptimisationResults({ summary }: Props) {
             <div className="mt-3 border-t border-white/10 pt-2.5 text-xs text-charm-warning">
               {summary.majorCharmSlotPlan.unassignedCandidates.map((c) => (
                 <p key={c.monsterName}>
-                  {c.monsterName}: {formatMessage(t, c.reason)}
+                  {toTitleCase(c.monsterName)}: {formatMessage(t, c.reason)}
                 </p>
               ))}
             </div>
@@ -83,7 +85,7 @@ export function OptimisationResults({ summary }: Props) {
               {summary.charmPointBudget.suggestions.map((s, i) => (
                 <li key={i} className="p-3">
                   <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} {t.results.linkingFor}{' '}
-                  <span className="text-white">{s.monsterName}</span> - {formatNumber(s.cost, locale)} CP ({formatScore(s.scorePerCost)} pts/CP)
+                  <span className="text-white">{toTitleCase(s.monsterName)}</span> - {formatNumber(s.cost, locale)} CP ({formatScore(s.scorePerCost)} pts/CP)
                 </li>
               ))}
             </ul>
@@ -100,7 +102,7 @@ export function OptimisationResults({ summary }: Props) {
               {summary.minorEchoBudget.suggestions.map((s, i) => (
                 <li key={i} className="p-3">
                   <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> T{s.fromTier}&rarr;T{s.toTier} {t.results.linkingFor}{' '}
-                  <span className="text-white">{s.monsterName}</span> - {formatNumber(s.cost, locale)} MCE ({formatScore(s.scorePerCost)} pts/MCE)
+                  <span className="text-white">{toTitleCase(s.monsterName)}</span> - {formatNumber(s.cost, locale)} MCE ({formatScore(s.scorePerCost)} pts/MCE)
                 </li>
               ))}
             </ul>
@@ -114,7 +116,7 @@ export function OptimisationResults({ summary }: Props) {
           <ul className="card divide-y divide-white/10 text-xs">
             {summary.reassignmentSuggestions.map((r, i) => (
               <li key={i} className="p-3">
-                <span className="text-white">{r.monsterName}</span>: {r.fromCharmId ? t.charms[r.fromCharmId]?.name : t.characterForm.tierLocked}{' '}
+                <span className="text-white">{toTitleCase(r.monsterName)}</span>: {r.fromCharmId ? t.charms[r.fromCharmId]?.name : t.characterForm.tierLocked}{' '}
                 &rarr; {t.charms[r.toCharmId]?.name} (+{formatScore(r.netScoreGain)} pts, {formatNumber(r.removalCost, locale)} gold)
               </li>
             ))}
@@ -146,38 +148,54 @@ export function OptimisationResults({ summary }: Props) {
       </section>
 
       <section>
-        <SectionHeading>{t.results.perCreatureTitle}</SectionHeading>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <SectionHeading>{t.results.perCreatureTitle}</SectionHeading>
+          <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1" role="group" aria-label={t.results.perCreatureTitle}>
+            {(['full_analysis', 'my_charms'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setScope(option)}
+                aria-pressed={scope === option}
+                title={option === 'full_analysis' ? t.dashboard.scopeFullAnalysisHint : t.dashboard.scopeMyCharmsHint}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  scope === option ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
+                }`}
+              >
+                {option === 'full_analysis' ? t.dashboard.scopeFullAnalysis : t.dashboard.scopeMyCharms}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="space-y-4">
-          {summary.creatureResults.map((result) => (
-            <div key={result.monsterName} className="card p-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-white">{result.monsterName}</h4>
-                <span className="text-xs text-charm-subtle">
-                  {formatNumber(result.huntStat.kills, locale)} kills ({(result.huntStat.killShare * 100).toFixed(1)}%)
-                </span>
-              </div>
-              {!result.hasBestiaryData ? (
-                <p className="mt-2 text-xs text-charm-danger">{result.warnings[0] ? formatMessage(t, result.warnings[0]) : null}</p>
-              ) : (
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMajor}</p>
-                    <CharmRankingTable
-                      recommendations={result.bestMajorCharm ? [result.bestMajorCharm] : []}
-                      emptyMessage={t.results.noMajorUnlocked}
-                    />
-                  </div>
-                  <div>
-                    <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMinor}</p>
-                    <CharmRankingTable
-                      recommendations={result.bestMinorCharm ? [result.bestMinorCharm] : []}
-                      emptyMessage={t.results.noMinorUnlocked}
-                    />
-                  </div>
+          {summary.creatureResults.map((result) => {
+            const bestMajor = scope === 'full_analysis' ? result.bestMajorCharmOverall : result.bestMajorCharm;
+            const bestMinor = scope === 'full_analysis' ? result.bestMinorCharmOverall : result.bestMinorCharm;
+            return (
+              <div key={result.monsterName} className="card p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-white">{toTitleCase(result.monsterName)}</h4>
+                  <span className="text-xs text-charm-subtle">
+                    {formatNumber(result.huntStat.kills, locale)} kills ({(result.huntStat.killShare * 100).toFixed(1)}%)
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
+                {!result.hasBestiaryData ? (
+                  <p className="mt-2 text-xs text-charm-danger">{result.warnings[0] ? formatMessage(t, result.warnings[0]) : null}</p>
+                ) : (
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMajor}</p>
+                      <CharmRankingTable recommendations={bestMajor ? [bestMajor] : []} emptyMessage={t.results.noMajorUnlocked} />
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-xs font-semibold text-charm-muted">{t.results.bestMinor}</p>
+                      <CharmRankingTable recommendations={bestMinor ? [bestMinor] : []} emptyMessage={t.results.noMinorUnlocked} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>

@@ -8,8 +8,12 @@ export interface CreatureOptimisationResult {
   matchedProfile: MonsterProfile | null;
   huntStat: KilledMonsterStat;
   hasBestiaryData: boolean;
+  /** Best among Charms the player has actually unlocked - null if none are. */
   bestMajorCharm: CharmRecommendation | null;
   bestMinorCharm: CharmRecommendation | null;
+  /** Best overall regardless of unlock status (Full Analysis view) - same ranking `rankedMajorCharms`/`rankedMinorCharms` already produce, just the top entry. */
+  bestMajorCharmOverall: CharmRecommendation | null;
+  bestMinorCharmOverall: CharmRecommendation | null;
   rankedMajorCharms: CharmRecommendation[];
   rankedMinorCharms: CharmRecommendation[];
   expectedDamagePerHour: number;

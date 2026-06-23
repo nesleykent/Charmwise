@@ -18,7 +18,8 @@ const ptBR: Dictionary = {
   common: {
     resetWorkspace: 'Limpar dados salvos',
     resetConfirm: 'Isso vai limpar seu personagem, sessao de hunt e configuracoes neste dispositivo. Continuar?',
-    privacyNote: 'O Charmwise funciona inteiramente no seu navegador - nada que voce digita e enviado a lugar nenhum.',
+    privacyNote:
+      'O Charmwise funciona inteiramente no seu navegador. A unica excecao: buscar um personagem pelo nome envia esse nome para a API publica de personagens do TibiaData - nada mais e enviado a lugar nenhum.',
   },
   dataBadge: {
     measured: 'Medido',
@@ -39,6 +40,11 @@ const ptBR: Dictionary = {
     upgradeOpportunitiesTitle: 'Oportunidades de upgrade',
     viewAllLink: 'Ver tudo em Recomendacoes',
     noUpgrades: 'Nenhum upgrade tem pontuacao positiva ainda - desbloqueie algumas Charms para ver sugestoes aqui.',
+    scopeFullAnalysis: 'Analise completa',
+    scopeMyCharms: 'Minhas charms',
+    scopeFullAnalysisHint: 'A melhor Charm para cada criatura no geral, esteja ela desbloqueada ou nao.',
+    scopeMyCharmsHint: 'A melhor Charm entre as que voce realmente desbloqueou.',
+    notUnlockedTag: 'nao desbloqueada',
   },
   characterPage: {
     title: 'Personagem',
@@ -84,6 +90,10 @@ const ptBR: Dictionary = {
     level: 'Nivel',
     maxHitpoints: 'Vida maxima',
     maxMana: 'Mana maxima',
+    criticalChance: 'Chance critica (%)',
+    criticalDamageBonus: 'Bonus de dano critico (%)',
+    helpCriticalChance: 'Padrao de 5%, que todo personagem tem. Aumente se seu equipamento/talentos derem mais - o valor de Low Blow depende inteiramente desse numero.',
+    helpCriticalDamageBonus: 'Padrao de 10%, que todo personagem tem. O valor de Savage Blow depende inteiramente desse numero.',
     lifeLeechPercent: 'Life Leech (%)',
     manaLeechPercent: 'Mana Leech (%)',
     availableCharmPoints: 'Charm Points disponiveis',
@@ -96,6 +106,11 @@ const ptBR: Dictionary = {
     assignedMajorCharms: 'Major Charms atribuidas atualmente',
     assignedMinorCharms: 'Minor Charms atribuidas atualmente',
     essentialsHelp: 'Esses tres numeros, mais sua sessao do Hunt Analyser, ja sao suficientes para um resultado util. Tudo abaixo e opcional e apenas refina ainda mais os numeros.',
+    lookupToggle: 'Ou preencha a partir do nome de um personagem',
+    lookupPlaceholder: 'Nome do personagem',
+    lookupButton: 'Buscar',
+    lookupLoading: 'Buscando...',
+    lookupPrivacyNote: 'Envia esse nome para a API publica de personagens do TibiaData - nada mais sobre voce e enviado a lugar nenhum.',
     advancedToggle: 'Configuracoes avancadas (opcional)',
     accountTypes: { free: 'Free', premium: 'Premium' },
     addRow: 'Adicionar',
@@ -107,7 +122,7 @@ const ptBR: Dictionary = {
     helpCharmPoints: 'Ganhos ao completar o Bestiario de uma criatura.',
     helpMinorEchoes: 'Ganhos ao desbloquear ou evoluir Major Charms, ou pela Promotion.',
     validation: {
-      levelRange: 'O nivel deve estar entre 1 e 3000.',
+      levelRange: 'O nivel deve ser no minimo 1.',
       hitpointsPositive: 'Deve ser maior que zero.',
       manaNonNegative: 'Nao pode ser negativo.',
       percentRange: 'Deve estar entre 0 e 100.',
@@ -187,9 +202,9 @@ const ptBR: Dictionary = {
   },
   messages: {
     reason_top_unlocked: 'Maior pontuacao total entre suas charms desbloqueadas para esta criatura, impulsionada principalmente por {{dominant}}.',
-    reason_top_locked: 'Teoricamente a melhor charm para esta criatura (impulsionada principalmente por {{dominant}}), mas voce ainda nao a desbloqueou.',
+    reason_top_locked: 'Melhor charm para esta criatura no nivel {{tier}} (impulsionada principalmente por {{dominant}}), mas voce ainda nao a desbloqueou.',
     reason_ranked_unlocked: 'Classificada em #{{rank}} entre suas charms desbloqueadas; contribuicao principal de {{dominant}}.',
-    reason_ranked_locked: 'Classificada em #{{rank}} no geral, impulsionada principalmente por {{dominant}}. Ainda nao desbloqueada.',
+    reason_ranked_locked: 'Classificada em #{{rank}} no geral no nivel {{tier}}, impulsionada principalmente por {{dominant}}. Ainda nao desbloqueada.',
     hp_unknown: 'Vida do monstro desconhecida - o dano nao pode ser estimado para esta criatura.',
     resistance_unknown: 'Dados de resistencia indisponiveis - assumida resistencia neutra (100%).',
     heals_from_element: 'Esta criatura se cura com dano de {{element}} - {{charmName}} nao e recomendada.',
@@ -231,6 +246,10 @@ const ptBR: Dictionary = {
     suitability_scales_with_incoming_damage: 'O valor desta Charm escala com o quanto a criatura te acerta, o que nao e um campo do Bestiario - veja sua propria sessao do Hunt Analyser para o impacto real desta criatura.',
     suitability_no_product_data: 'Nenhuma criatura na fonte de dados do Bestiario tem dados de Produto de Criatura ou Skinning/Dusting ainda.',
     suitability_not_creature_specific: 'O valor desta Charm nao depende de qual criatura voce esta enfrentando.',
+    lookup_success:
+      'Encontrado {{name}} - nivel {{level}} {{vocation}}. Vida e mana maximas abaixo sao estimadas pela sua vocacao - ajuste-as se seus valores reais forem diferentes (Promotion, Wheel of Destiny e Loyalty aumentam ainda mais).',
+    lookup_success_no_estimate: 'Encontrado {{name}} - nivel {{level}}. Informe sua vida e mana maximas manualmente abaixo.',
+    lookup_error: 'Nao foi possivel encontrar esse personagem - confira a grafia, ou informe seus dados manualmente abaixo.',
   },
   charms: {
     carnage: {

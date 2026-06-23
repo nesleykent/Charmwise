@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { getCharmSuitability } from '@/lib/charmLibrary';
-import { formatNumber, formatPercent } from '@/lib/format';
+import { formatNumber, formatPercent, toTitleCase } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { formatMessage } from '@/lib/messages';
 import { ALL_CHARM_LIST } from '@/data/charms';
@@ -83,7 +83,7 @@ export function CharmDetailView({ charmId }: { charmId: string }) {
               <ul className="card divide-y divide-white/10 text-sm">
                 {suitability.best.map((c) => (
                   <li key={c.name} className="flex items-center justify-between p-3">
-                    <span className="text-white">{c.name}</span>
+                    <span className="text-white">{toTitleCase(c.name)}</span>
                     <span className="text-xs text-charm-subtle">{c.detail}</span>
                   </li>
                 ))}
@@ -94,7 +94,7 @@ export function CharmDetailView({ charmId }: { charmId: string }) {
               <ul className="card divide-y divide-white/10 text-sm">
                 {suitability.worst.map((c) => (
                   <li key={c.name} className="flex items-center justify-between p-3">
-                    <span className="text-white">{c.name}</span>
+                    <span className="text-white">{toTitleCase(c.name)}</span>
                     <span className="text-xs text-charm-subtle">{c.detail}</span>
                   </li>
                 ))}

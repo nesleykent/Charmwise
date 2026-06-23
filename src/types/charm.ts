@@ -99,6 +99,9 @@ export interface ScoreBreakdown {
 
 export type OptimisationMode = 'balanced' | 'xp' | 'profit' | 'safety' | 'low_supplies';
 
+/** Which charms count as candidates for "best charm": every Charm regardless of unlock status (`full_analysis`, the default - useful before filling in Unlocked Charms at all), or only what the player has actually unlocked (`my_charms`). */
+export type RecommendationScope = 'full_analysis' | 'my_charms';
+
 export interface ScoreWeights {
   damage: number;
   xp: number;
@@ -140,13 +143,14 @@ export interface CharmRecommendation {
   charmId: CharmId;
   category: CharmCategory;
   name: string;
+  /** The tier this recommendation is evaluated at: the tier actually owned if unlocked, otherwise the Tier 3/Gold ceiling. */
   tier: CharmTier;
   unlocked: boolean;
   effect: CharmEffectEstimate;
   scores: ScoreBreakdown;
-  /** total_score divided by the Charm Point cost of this tier, null for minor charms or zero-cost cases. */
+  /** total_score divided by the cumulative Charm Point cost to reach `tier` from scratch, null for minor charms or zero-cost cases. */
   scorePerCharmPoint: number | null;
-  /** total_score divided by the Minor Charm Echo cost of this tier, null for major charms. */
+  /** total_score divided by the cumulative Minor Charm Echo cost to reach `tier` from scratch, null for major charms. */
   scorePerMinorCharmEcho: number | null;
   confidence: ConfidenceLevel;
   reason: LocalisedMessage;

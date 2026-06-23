@@ -5,7 +5,7 @@ import { DataBadge } from '@/components/DataBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { MissingDataPanel } from '@/components/MissingDataPanel';
 import { PageHeader } from '@/components/PageHeader';
-import { creatureSlug, formatNumber, formatScore } from '@/lib/format';
+import { creatureSlug, formatNumber, formatScore, toTitleCase } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { useWorkspace } from '@/lib/workspace';
 
@@ -20,7 +20,7 @@ function SummaryCard({ title, value, accent }: { title: string; value: string; a
 
 export default function DashboardPage() {
   const { t, locale } = useLocale();
-  const { summary, hasHuntData } = useWorkspace();
+  const { summary, hasHuntData, scope, setScope } = useWorkspace();
 
   return (
     <div className="mx-auto max-w-5xl animate-fadeIn px-4 py-10 sm:px-6">
@@ -64,34 +64,58 @@ export default function DashboardPage() {
           </section>
 
           <section>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-charm-subtle">{t.dashboard.bestAssignmentsTitle}</h2>
               <Link href="/recommendations" className="text-xs font-medium text-charm-primary transition-opacity hover:opacity-70">
                 {t.dashboard.viewAllLink}
               </Link>
             </div>
-            <div className="card divide-y divide-white/10">
-              {summary.creatureResults.map((result) => (
-                <Link
-                  key={result.monsterName}
-                  href={`/recommendations#${creatureSlug(result.monsterName)}`}
-                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-white/[0.04]"
+
+            <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1" role="group" aria-label={t.dashboard.bestAssignmentsTitle}>
+              {(['full_analysis', 'my_charms'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setScope(option)}
+                  aria-pressed={scope === option}
+                  title={option === 'full_analysis' ? t.dashboard.scopeFullAnalysisHint : t.dashboard.scopeMyCharmsHint}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    scope === option ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
+                  }`}
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-white">{result.monsterName}</p>
-                    {result.hasBestiaryData ? (
-                      <p className="mt-0.5 truncate text-xs text-charm-muted">
-                        {result.bestMajorCharm ? t.charms[result.bestMajorCharm.charmId]?.name : t.results.noMajorUnlocked}
-                        {' · '}
-                        {result.bestMinorCharm ? t.charms[result.bestMinorCharm.charmId]?.name : t.results.noMinorUnlocked}
-                      </p>
-                    ) : (
-                      <p className="mt-0.5 text-xs text-charm-danger">{t.missingData.lackingBestiary}</p>
-                    )}
-                  </div>
-                  {result.bestMajorCharm && <DataBadge tier={result.bestMajorCharm.confidence === 'high' ? 'measured' : result.bestMajorCharm.confidence === 'medium' ? 'estimated' : 'assumed'} />}
-                </Link>
+                  {option === 'full_analysis' ? t.dashboard.scopeFullAnalysis : t.dashboard.scopeMyCharms}
+                </button>
               ))}
+            </div>
+
+            <div className="card divide-y divide-white/10">
+              {summary.creatureResults.map((result) => {
+                const bestMajor = scope === 'full_analysis' ? result.bestMajorCharmOverall : result.bestMajorCharm;
+                const bestMinor = scope === 'full_analysis' ? result.bestMinorCharmOverall : result.bestMinorCharm;
+                return (
+                  <Link
+                    key={result.monsterName}
+                    href={`/recommendations#${creatureSlug(result.monsterName)}`}
+                    className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-white/[0.04]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-white">{toTitleCase(result.monsterName)}</p>
+                      {result.hasBestiaryData ? (
+                        <p className="mt-0.5 truncate text-xs text-charm-muted">
+                          {bestMajor ? t.charms[bestMajor.charmId]?.name : t.results.noMajorUnlocked}
+                          {bestMajor && !bestMajor.unlocked ? ` (${t.dashboard.notUnlockedTag})` : ''}
+                          {' · '}
+                          {bestMinor ? t.charms[bestMinor.charmId]?.name : t.results.noMinorUnlocked}
+                          {bestMinor && !bestMinor.unlocked ? ` (${t.dashboard.notUnlockedTag})` : ''}
+                        </p>
+                      ) : (
+                        <p className="mt-0.5 text-xs text-charm-danger">{t.missingData.lackingBestiary}</p>
+                      )}
+                    </div>
+                    {bestMajor && <DataBadge tier={bestMajor.confidence === 'high' ? 'measured' : bestMajor.confidence === 'medium' ? 'estimated' : 'assumed'} />}
+                  </Link>
+                );
+              })}
             </div>
           </section>
 
@@ -107,7 +131,7 @@ export default function DashboardPage() {
                   .map((s, i) => (
                     <li key={i} className="p-3">
                       <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> {t.results.linkingFor}{' '}
-                      <span className="text-white">{s.monsterName}</span> - {formatNumber(s.cost, locale)} {s.currency === 'charm_points' ? 'CP' : 'MCE'} (
+                      <span className="text-white">{toTitleCase(s.monsterName)}</span> - {formatNumber(s.cost, locale)} {s.currency === 'charm_points' ? 'CP' : 'MCE'} (
                       {formatScore(s.scorePerCost)} pts/cost)
                     </li>
                   ))}

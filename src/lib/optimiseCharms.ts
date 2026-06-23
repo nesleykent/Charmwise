@@ -84,11 +84,11 @@ function dominantScoreLabel(
   return contributions[0]![0];
 }
 
-function buildReason(rankIndex: number, unlocked: boolean, dominant: string): LocalisedMessage {
+function buildReason(rankIndex: number, unlocked: boolean, dominant: string, lockedAtTier: CharmTier): LocalisedMessage {
   if (rankIndex === 0 && unlocked) return { code: 'reason_top_unlocked', params: { dominant } };
-  if (rankIndex === 0 && !unlocked) return { code: 'reason_top_locked', params: { dominant } };
+  if (rankIndex === 0 && !unlocked) return { code: 'reason_top_locked', params: { dominant, tier: lockedAtTier } };
   if (unlocked) return { code: 'reason_ranked_unlocked', params: { rank: rankIndex + 1, dominant } };
-  return { code: 'reason_ranked_locked', params: { rank: rankIndex + 1, dominant } };
+  return { code: 'reason_ranked_locked', params: { rank: rankIndex + 1, dominant, tier: lockedAtTier } };
 }
 
 function addEffects(a: CharmEffectEstimate, b: CharmEffectEstimate): CharmEffectEstimate {
@@ -106,11 +106,23 @@ function addEffects(a: CharmEffectEstimate, b: CharmEffectEstimate): CharmEffect
 
 interface RankedGroup {
   recommendations: CharmRecommendation[];
+  /** Best among unlocked Charms only - what the player can actually equip right now. */
   best: CharmRecommendation | null;
+  /** Best overall regardless of unlock status - the Full Analysis view. */
+  bestOverall: CharmRecommendation | null;
   maxima: ScoreMaxima;
 }
 
-/** Ranks every charm in `charmList` for one creature: unlocked charms use the tier the player owns, locked charms are evaluated at Tier 1 (the cheapest entry point) purely so they can be compared and surfaced as purchase candidates. */
+/**
+ * Ranks every charm in `charmList` for one creature: unlocked charms use the
+ * tier the player owns, locked charms are evaluated at Tier 3/Gold - their
+ * true ceiling - not Tier 1. Tier 1 made every locked charm look weaker than
+ * it really is (Gold's activation chance typically runs 2.2x Tier 1's for
+ * the same charm), which is why "why only Tier 1" recommendations showed up
+ * everywhere a locked charm was ranked. `best` still only considers unlocked
+ * charms - that's the "what should I equip right now" view; the Gold-tier
+ * ceiling is the "what's worth pursuing" view shown in the full ranking.
+ */
 function rankCharmGroup(
   charmList: CharmDefinition[],
   category: CharmCategory,
@@ -121,7 +133,7 @@ function rankCharmGroup(
   const evaluations = charmList.map((charm) => {
     const ownedTier = getUnlockedTier(unlockedList, charm.id);
     const unlocked = ownedTier !== null;
-    const tier = ownedTier ?? 1;
+    const tier: CharmTier = ownedTier ?? 3;
     const { effect, warnings, confidence } = computeCharmEffect(charm, getTierDefinition(charm, tier), ctx);
     return { charm, tier, unlocked, effect, warnings, confidence };
   });
@@ -134,6 +146,10 @@ function rankCharmGroup(
 
   const recommendations: CharmRecommendation[] = scored.map((entry, index) => {
     const dominant = dominantScoreLabel(entry.scores, weights);
+    // Cumulative cost from scratch to the evaluated tier, not just that
+    // tier's incremental price - Gold can't be bought without Bronze and
+    // Silver first, so "score per point" must reflect the full spend.
+    const totalCostToTier = costToReachTier(entry.charm, 0, entry.tier);
     return {
       charmId: entry.charm.id,
       category,
@@ -142,20 +158,17 @@ function rankCharmGroup(
       unlocked: entry.unlocked,
       effect: entry.effect,
       scores: entry.scores,
-      scorePerCharmPoint:
-        entry.charm.currency === 'charm_points' ? entry.scores.totalScore / getTierDefinition(entry.charm, entry.tier).cost : null,
-      scorePerMinorCharmEcho:
-        entry.charm.currency === 'minor_charm_echoes'
-          ? entry.scores.totalScore / getTierDefinition(entry.charm, entry.tier).cost
-          : null,
+      scorePerCharmPoint: entry.charm.currency === 'charm_points' ? entry.scores.totalScore / totalCostToTier : null,
+      scorePerMinorCharmEcho: entry.charm.currency === 'minor_charm_echoes' ? entry.scores.totalScore / totalCostToTier : null,
       confidence: entry.confidence,
-      reason: buildReason(index, entry.unlocked, dominant),
+      reason: buildReason(index, entry.unlocked, dominant, entry.tier),
       warnings: entry.warnings,
     };
   });
 
   const best = recommendations.find((r) => r.unlocked) ?? null;
-  return { recommendations, best, maxima };
+  const bestOverall = recommendations[0] ?? null;
+  return { recommendations, best, bestOverall, maxima };
 }
 
 interface CreatureContext {
@@ -166,48 +179,86 @@ interface CreatureContext {
   minorMaxima: ScoreMaxima;
 }
 
+/**
+ * Greedy budget allocator: repeatedly takes the single best score-per-cost
+ * upgrade that still fits the remaining budget, then re-evaluates from that
+ * charm's new (virtual) tier - so a budget that's best spent maxing out one
+ * excellent charm's full Bronze-to-Gold path gets suggested as that full
+ * chain, not as ten independent "buy Tier 1 of something else" options that
+ * structurally look more efficient in isolation (Tier 1 is always the
+ * cheapest, biggest relative jump for an unowned charm). This is what
+ * actually drove "why are you only suggesting Tier 1" - cheap, fresh-unlock
+ * Tier 1s were crowding every further tier-up out of a flat top-10 list.
+ *
+ * Not a provably optimal knapsack solver (see README "Future improvements")
+ * - but it correctly respects the available budget and chains tiers, unlike
+ * the flat ranking it replaces.
+ *
+ * When no budget has been entered (still 0, the Advanced-settings default),
+ * there is nothing to allocate against, so this falls back to an advisory
+ * top-10 list of the most efficient next steps, unconstrained by affordability -
+ * the same spirit as the previous behaviour, but still capable of chaining.
+ */
 function buildPurchaseSuggestions(
   charmList: CharmDefinition[],
   category: CharmCategory,
   unlockedList: UnlockedCharm[],
   creatureContexts: CreatureContext[],
   weights: ScoreWeights,
+  availableBudget: number,
 ): CharmPurchaseSuggestion[] {
+  const hasBudget = availableBudget > 0;
+  let remainingBudget = hasBudget ? availableBudget : Number.POSITIVE_INFINITY;
+  const suggestionCap = hasBudget ? charmList.length * 3 : 10;
+
+  const virtualTier = new Map<CharmId, number>(charmList.map((c) => [c.id, getUnlockedTier(unlockedList, c.id) ?? 0]));
   const suggestions: CharmPurchaseSuggestion[] = [];
 
-  for (const charm of charmList) {
-    const currentTier = getUnlockedTier(unlockedList, charm.id) ?? 0;
-    if (currentTier >= 3) continue;
-    const nextTier = (currentTier + 1) as CharmTier;
-    const cost = costToReachTier(charm, currentTier, nextTier);
+  while (suggestions.length < suggestionCap) {
+    let best: { charm: CharmDefinition; fromTier: number; toTier: CharmTier; cost: number; monsterName: string; scoreGain: number; scorePerCost: number } | null = null;
 
-    let best: { monsterName: string; scoreGain: number } | null = null;
-    for (const { monsterName, ctx, majorMaxima, minorMaxima } of creatureContexts) {
-      const maxima = category === 'major' ? majorMaxima : minorMaxima;
-      const currentEffect =
-        currentTier > 0 ? computeCharmEffect(charm, getTierDefinition(charm, currentTier as CharmTier), ctx).effect : emptyEffect();
-      const nextEffect = computeCharmEffect(charm, getTierDefinition(charm, nextTier), ctx).effect;
-      const gain = scoreEffect(nextEffect, maxima, weights).totalScore - scoreEffect(currentEffect, maxima, weights).totalScore;
-      if (!best || gain > best.scoreGain) best = { monsterName, scoreGain: gain };
+    for (const charm of charmList) {
+      const currentTier = virtualTier.get(charm.id)!;
+      if (currentTier >= 3) continue;
+      const toTier = (currentTier + 1) as CharmTier;
+      const cost = getTierDefinition(charm, toTier).cost;
+      if (cost > remainingBudget) continue;
+
+      let bestForCharm: { monsterName: string; scoreGain: number } | null = null;
+      for (const { monsterName, ctx, majorMaxima, minorMaxima } of creatureContexts) {
+        const maxima = category === 'major' ? majorMaxima : minorMaxima;
+        const currentEffect =
+          currentTier > 0 ? computeCharmEffect(charm, getTierDefinition(charm, currentTier as CharmTier), ctx).effect : emptyEffect();
+        const nextEffect = computeCharmEffect(charm, getTierDefinition(charm, toTier), ctx).effect;
+        const gain = scoreEffect(nextEffect, maxima, weights).totalScore - scoreEffect(currentEffect, maxima, weights).totalScore;
+        if (!bestForCharm || gain > bestForCharm.scoreGain) bestForCharm = { monsterName, scoreGain: gain };
+      }
+      if (!bestForCharm || bestForCharm.scoreGain <= 0) continue;
+
+      const scorePerCost = cost > 0 ? bestForCharm.scoreGain / cost : bestForCharm.scoreGain;
+      if (!best || scorePerCost > best.scorePerCost) {
+        best = { charm, fromTier: currentTier, toTier, cost, monsterName: bestForCharm.monsterName, scoreGain: bestForCharm.scoreGain, scorePerCost };
+      }
     }
 
-    if (best && best.scoreGain > 0) {
-      suggestions.push({
-        charmId: charm.id,
-        category,
-        monsterName: best.monsterName,
-        fromTier: currentTier,
-        toTier: nextTier,
-        cost,
-        currency: charm.currency,
-        scoreGain: best.scoreGain,
-        scorePerCost: cost > 0 ? best.scoreGain / cost : best.scoreGain,
-      });
-    }
+    if (!best) break;
+
+    suggestions.push({
+      charmId: best.charm.id,
+      category,
+      monsterName: best.monsterName,
+      fromTier: best.fromTier,
+      toTier: best.toTier,
+      cost: best.cost,
+      currency: best.charm.currency,
+      scoreGain: best.scoreGain,
+      scorePerCost: best.scorePerCost,
+    });
+    virtualTier.set(best.charm.id, best.toTier);
+    remainingBudget -= best.cost;
   }
 
-  suggestions.sort((a, b) => b.scorePerCost - a.scorePerCost);
-  return suggestions.slice(0, 10);
+  return suggestions;
 }
 
 function emptySummary(character: CharacterInput, mode: OptimisationMode): HuntOptimisationSummary {
@@ -310,6 +361,8 @@ export function optimiseCharms(
         hasBestiaryData: false,
         bestMajorCharm: null,
         bestMinorCharm: null,
+        bestMajorCharmOverall: null,
+        bestMinorCharmOverall: null,
         rankedMajorCharms: [],
         rankedMinorCharms: [],
         expectedDamagePerHour: 0,
@@ -371,6 +424,8 @@ export function optimiseCharms(
       hasBestiaryData: true,
       bestMajorCharm: majorGroup.best,
       bestMinorCharm: minorGroup.best,
+      bestMajorCharmOverall: majorGroup.bestOverall,
+      bestMinorCharmOverall: minorGroup.bestOverall,
       rankedMajorCharms: majorGroup.recommendations,
       rankedMinorCharms: minorGroup.recommendations,
       expectedDamagePerHour: combinedEffect.expectedDamagePerHour,
@@ -418,6 +473,7 @@ export function optimiseCharms(
     character.unlockedMajorCharms,
     creatureContexts,
     weights,
+    character.availableCharmPoints,
   );
   const minorEchoSuggestions = buildPurchaseSuggestions(
     MINOR_CHARM_LIST,
@@ -425,6 +481,7 @@ export function optimiseCharms(
     character.unlockedMinorCharms,
     creatureContexts,
     weights,
+    character.availableMinorCharmEchoes,
   );
 
   // --- Reassignment suggestions: where the current loadout differs from the recommendation.

@@ -69,7 +69,9 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
                   {index + 1}
                 </span>
                 <span className="font-semibold text-white">{t.charms[rec.charmId]?.name ?? rec.name}</span>
-                <Badge>{rec.unlocked ? t.characterForm.tierNames[rec.tier - 1] : t.characterForm.tierLocked}</Badge>
+                <Badge>
+                  {rec.unlocked ? t.characterForm.tierNames[rec.tier - 1] : `${t.characterForm.tierLocked} · ${t.characterForm.tierNames[rec.tier - 1]}`}
+                </Badge>
                 <Badge className={CONFIDENCE_CLASS[rec.confidence]}>{t.results.confidence[rec.confidence]}</Badge>
               </div>
               <span className="text-sm font-bold text-charm-primary">{formatScore(rec.scores.totalScore)} pts</span>

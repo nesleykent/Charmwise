@@ -17,7 +17,8 @@ const en: Dictionary = {
   common: {
     resetWorkspace: 'Reset workspace',
     resetConfirm: 'This clears your character, hunt session and settings on this device. Continue?',
-    privacyNote: 'Charmwise runs entirely in your browser - nothing you enter is ever uploaded anywhere.',
+    privacyNote:
+      'Charmwise runs entirely in your browser. The only exception: looking up a character by name sends that name to TibiaData\'s public character API - nothing else is ever uploaded anywhere.',
   },
   dataBadge: {
     measured: 'Measured',
@@ -38,6 +39,11 @@ const en: Dictionary = {
     upgradeOpportunitiesTitle: 'Upgrade opportunities',
     viewAllLink: 'View all in Recommendations',
     noUpgrades: 'No upgrade has a positive score yet - unlock a few Charms to see suggestions here.',
+    scopeFullAnalysis: 'Full analysis',
+    scopeMyCharms: 'My charms',
+    scopeFullAnalysisHint: "The best Charm for each creature overall, whether you've unlocked it or not.",
+    scopeMyCharmsHint: "The best Charm among what you've actually unlocked.",
+    notUnlockedTag: 'not unlocked',
   },
   characterPage: {
     title: 'Character',
@@ -83,6 +89,10 @@ const en: Dictionary = {
     level: 'Level',
     maxHitpoints: 'Max. hitpoints',
     maxMana: 'Max. mana',
+    criticalChance: 'Critical chance (%)',
+    criticalDamageBonus: 'Critical damage bonus (%)',
+    helpCriticalChance: 'Defaults to the 5% baseline every character has. Raise this if your gear/talents give you more - Low Blow\'s value depends entirely on this number.',
+    helpCriticalDamageBonus: 'Defaults to the 10% baseline every character has. Savage Blow\'s value depends entirely on this number.',
     lifeLeechPercent: 'Life Leech (%)',
     manaLeechPercent: 'Mana Leech (%)',
     availableCharmPoints: 'Available Charm Points',
@@ -95,6 +105,11 @@ const en: Dictionary = {
     assignedMajorCharms: 'Currently assigned Major Charms',
     assignedMinorCharms: 'Currently assigned Minor Charms',
     essentialsHelp: "These three numbers, plus your Hunt Analyser session, are enough for a useful result. Everything below is optional and only sharpens the numbers further.",
+    lookupToggle: 'Or fill these in from a character name',
+    lookupPlaceholder: 'Character name',
+    lookupButton: 'Look up',
+    lookupLoading: 'Looking up...',
+    lookupPrivacyNote: "Sends this name to TibiaData's public character API - nothing else about you is sent anywhere.",
     advancedToggle: 'Advanced settings (optional)',
     accountTypes: { free: 'Free', premium: 'Premium' },
     addRow: 'Add',
@@ -106,7 +121,7 @@ const en: Dictionary = {
     helpCharmPoints: 'Earned by completing a creature\'s Bestiary entry.',
     helpMinorEchoes: 'Earned by unlocking or upgrading Major Charms, or from Promotion.',
     validation: {
-      levelRange: 'Level must be between 1 and 3000.',
+      levelRange: 'Level must be at least 1.',
       hitpointsPositive: 'Must be greater than zero.',
       manaNonNegative: 'Cannot be negative.',
       percentRange: 'Must be between 0 and 100.',
@@ -186,9 +201,9 @@ const en: Dictionary = {
   },
   messages: {
     reason_top_unlocked: 'Highest total score among your unlocked charms for this creature, driven mainly by {{dominant}}.',
-    reason_top_locked: 'Theoretically the best charm for this creature (driven mainly by {{dominant}}), but you have not unlocked it yet.',
+    reason_top_locked: 'Best charm for this creature at {{tier}} tier (driven mainly by {{dominant}}), but you have not unlocked it yet.',
     reason_ranked_unlocked: 'Ranked #{{rank}} among your unlocked charms; main contribution from {{dominant}}.',
-    reason_ranked_locked: 'Ranked #{{rank}} overall, driven mainly by {{dominant}}. Not unlocked yet.',
+    reason_ranked_locked: 'Ranked #{{rank}} overall at {{tier}} tier, driven mainly by {{dominant}}. Not unlocked yet.',
     hp_unknown: 'Monster hitpoints unknown - damage cannot be estimated for this creature.',
     resistance_unknown: 'Resistance data unavailable - assumed neutral (100%) resistance.',
     heals_from_element: 'This creature heals from {{element}} damage - {{charmName}} is not recommended.',
@@ -230,6 +245,10 @@ const en: Dictionary = {
     suitability_scales_with_incoming_damage: "This Charm's value scales with how hard a creature hits you, which isn't a Bestiary field - check your own Hunt Analyser session for this creature's real impact.",
     suitability_no_product_data: 'No creature in the Bestiary data source has Creature Product or Skinning/Dusting data yet.',
     suitability_not_creature_specific: "This Charm's value doesn't depend on which creature you're fighting.",
+    lookup_success:
+      'Found {{name}} - level {{level}} {{vocation}}. Max. hitpoints and mana below are estimated from your vocation - adjust them if your real values differ (Promotion, the Wheel of Destiny and Loyalty all add more).',
+    lookup_success_no_estimate: 'Found {{name}} - level {{level}}. Enter your Max. hitpoints and mana manually below.',
+    lookup_error: "Couldn't find that character - check the spelling, or enter your stats manually below.",
   },
   charms: {
     carnage: {

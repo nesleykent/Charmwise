@@ -107,6 +107,43 @@ describe('optimiseCharms - end to end with the sample session', () => {
     expect(summary.economics.cheaperOption).toBe('no_change');
   });
 
+  it('chains multiple tiers of the same charm within budget instead of only ever suggesting Tier 1s', () => {
+    // A generous Charm Point budget and nothing unlocked yet: the best use of
+    // money is very likely to fully max out at least one charm (Bronze then
+    // Silver then Gold), not just buy Bronze of many different charms - the
+    // exact behaviour that used to be impossible (every suggestion was an
+    // independent, unchained "next tier" lookup).
+    const character = baseCharacter({ unlockedMajorCharms: [], availableCharmPoints: 6000 });
+    const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT));
+
+    const totalSpend = summary.charmPointBudget.suggestions.reduce((sum, s) => sum + s.cost, 0);
+    expect(totalSpend).toBeLessThanOrEqual(6000);
+
+    const byCharm = new Map<string, number[]>();
+    for (const s of summary.charmPointBudget.suggestions) {
+      byCharm.set(s.charmId, [...(byCharm.get(s.charmId) ?? []), s.toTier]);
+    }
+    const chainedSomeCharm = [...byCharm.values()].some((tiers) => tiers.length >= 2);
+    expect(chainedSomeCharm).toBe(true);
+  });
+
+  it('never suggests a tier-up that costs more than the remaining budget', () => {
+    const character = baseCharacter({ unlockedMajorCharms: [], availableCharmPoints: 1000 });
+    const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT));
+
+    let remaining = 1000;
+    for (const s of summary.charmPointBudget.suggestions) {
+      expect(s.cost).toBeLessThanOrEqual(remaining);
+      remaining -= s.cost;
+    }
+  });
+
+  it('still offers an advisory suggestion list when no budget has been entered (defaults to 0)', () => {
+    const character = baseCharacter({ unlockedMajorCharms: [], availableCharmPoints: 0 });
+    const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT));
+    expect(summary.charmPointBudget.suggestions.length).toBeGreaterThan(0);
+  });
+
   it('attributes more attack opportunities (and so more elemental Charm damage) to a tankier creature at an equal kill share', () => {
     // Frail and Tanky are killed in equal numbers, so the old killShare-only
     // model would have given them identical attacksPerHour. Tanky has 9x the

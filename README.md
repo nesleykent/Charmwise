@@ -19,6 +19,8 @@ Charmwise combines four inputs to recommend the best Major Charm and Minor Charm
 
 The app parses the Hunt Analyser text, joins each killed monster against the Bestiary, applies your character's stats, calculates the expected value of every Charm against every creature you fought, and ranks the results. Everything runs client-side - nothing you type is ever uploaded anywhere.
 
+The Dashboard and Recommendations pages both have a **Full analysis / My charms** toggle. Full analysis (the default) shows the best Charm for each creature regardless of whether you've unlocked it yet - useful the moment you've pasted a hunt, before filling in anything under Character. My charms narrows that down to only what you've actually unlocked, for "what should I equip right now."
+
 ### App structure
 
 Charmwise is five pages sharing one workspace (`src/lib/workspace.tsx`), not one long form - your character, pasted session, and optimisation mode persist to `localStorage` and follow you between pages and across reloads:
@@ -55,7 +57,7 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 ## Data sources
 
 - **Bestiary** - [`bestiary-session-analyzer`](https://github.com/nesleykent/bestiary-session-analyzer/blob/main/src/data/bestiary.json), vendored into [`src/data/bestiary.json`](src/data/bestiary.json). It is a [tibiadraptor.com](https://tibiadraptor.com) bestiary export: 800+ creatures with hitpoints, experience, difficulty, resistances, damage types, negative conditions and Charm Point rewards.
-- **Charm mechanics** - transcribed into [`src/data/charms.ts`](src/data/charms.ts) from the in-game Charm system (activation chances, tier costs, effect magnitudes). The Winter Update 2024 level cap on elemental Charm damage, and the attack-opportunity weighting in `charmScoring.ts`, were corrected against the published methodology of [TibiaMaps' Charm Optimizer](https://tibiamaps.io/tools/charms) and [TibiaPal's Charm Calculator](https://tibiapal.com/charm_calculator).
+- **Charm mechanics** - transcribed into [`src/data/charms.ts`](src/data/charms.ts) from the in-game Charm system (activation chances, tier costs, effect magnitudes). [`src/data/charms.json`](src/data/charms.json) is a vendored export of the same data in its original tier-cost/value shape; [`charmsData.test.ts`](src/lib/__tests__/charmsData.test.ts) loads it and asserts every tier in `charms.ts` matches exactly, so the two can never silently drift apart. The Winter Update 2024 level cap on elemental Charm damage, and the attack-opportunity weighting in `charmScoring.ts`, were corrected against the published methodology of [TibiaMaps' Charm Optimizer](https://tibiamaps.io/tools/charms) and [TibiaPal's Charm Calculator](https://tibiapal.com/charm_calculator).
 - **Hunt Analyser** - whatever you paste into the Hunt Analyser page, parsed by [`src/lib/parseHuntAnalyser.ts`](src/lib/parseHuntAnalyser.ts).
 - **Character** - whatever you enter into the Character form.
 
@@ -75,15 +77,17 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 
 Only Level, Max. hitpoints and Max. mana are asked for up front - together with a pasted Hunt Analyser session, they're enough for a useful result. Everything else lives behind "Advanced settings".
 
+A "look up by character name" disclosure above those three fields can fill them in automatically: it calls [TibiaData's character API](https://api.tibiadata.com/v4/character/) (client-side, no backend - the API sends `Access-Control-Allow-Origin: *`) for the character's real Level and Vocation, then estimates Max. hitpoints/mana from the vocation's official HP/Mana-per-level growth rate, anchored at the shared level-8 baseline every vocation starts from (185 HP / 90 Mana). That estimate intentionally does **not** account for Promotion, the Wheel of Destiny, or Loyalty bonuses - all three push real characters above the base curve - so the fields stay fully editable afterwards rather than locking to the estimate. If the lookup fails (the character doesn't exist, a typo, or TibiaData's API being briefly unavailable - it does occasionally return a 502 even for valid names) the fields are simply left as they were, with a message to enter them manually.
+
 | Field | Meaning |
 | --- | --- |
-| Level | Feeds the reset/removal gold formulas and the elemental Charm level cap (see below). There is no Vocation field - Charm activation chances, costs, and (as far as we've verified) attack cadence are identical across all five vocations, so it would have had no effect on any calculation. |
+| Level | Feeds the reset/removal gold formulas and the elemental Charm level cap (see below). There is no Vocation field for manual entry - Charm activation chances, costs, and (as far as we've verified) attack cadence are identical across all five vocations, so it would have had no effect on any calculation. Vocation is only used transiently by the character name lookup above, to pick which HP/Mana growth rate to estimate from. |
 | Max. hitpoints / mana | Feed Overpower and Overflux's proc-damage caps. |
-| Critical chance / damage bonus | Not user-editable. Defaulted to 5% / 10%, the intrinsic baseline every character has had since the Summer Update 2025 Weapon Proficiency System replaced the old gear-based crit bonuses with build-specific Augments (see CipSoft's [Summer Update 2025 notes](https://www.cipsoft.com/en/395-tibia-summer-update-2025-now-available)). Low Blow/Savage Blow scores are therefore typical/average figures, not exact for builds with significant Augment investment in critical hits. |
+| Critical chance / damage bonus | Editable, under Advanced settings. Defaults to 5% / 10%, the intrinsic baseline every character has had since the Summer Update 2025 Weapon Proficiency System replaced the old gear-based crit bonuses with build-specific Augments (see CipSoft's [Summer Update 2025 notes](https://www.cipsoft.com/en/395-tibia-summer-update-2025-now-available)). Low Blow and Savage Blow's entire score depends on these two numbers - raise them if your build has invested Augment points into critical hits. |
 | Life Leech % / Mana Leech % | Your *existing* leech - Vampiric Embrace and Void's Call only have an effect once this is above zero. Kept editable since leech varies a lot by equipment and isn't a flat baseline. |
 | Available Charm Points / Minor Charm Echoes | Your unspent budget, used for purchase suggestions. |
 | Account type, Charm Expansion | Free accounts may have 2 active Major Charms at once, Premium 6; Charm Expansion removes that limit and cuts removal cost by 25%. |
-| Unlocked Major/Minor Charms | Which Charms you own and at which tier (Bronze/Silver/Gold) - everything else is scored as a hypothetical Tier 1 purchase. |
+| Unlocked Major/Minor Charms | Which Charms you own and at which tier (Bronze/Silver/Gold) - everything else is scored at its Gold-tier ceiling, since that's the charm's true upside and what "worth pursuing" should be judged against. The "best charm" used for slot planning and reassignment suggestions still only considers what you've actually unlocked. |
 | Currently assigned Major/Minor Charms | Which Charm is on which creature right now, used to compute reassignment suggestions and removal cost. |
 
 ## Hunt Analyser input explanation
@@ -158,7 +162,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
 - Carnage's AoE damages *other* nearby creatures, not the one that died; Charmwise approximates this using the same creature's own physical resistance, which is most accurate when hunting a single species in a pack.
 - Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless are scored from documented heuristic assumptions rather than the spec's explicit EV formulas, since none was given for them.
 - Bestiary "unlocked" status is treated as "this creature has a matching Bestiary entry at all", since per-account completion progress is not exposed by the data source.
-- Critical chance/damage default to the universal 5%/10% baseline and are not user-editable. If your build has invested Augment points into critical hits (e.g. a Sorcerer's Master of Energy/Master of Death, which are tied to a specific spell element), your real crit rate is higher than the default and may vary by which element you're hitting a creature with - Low Blow/Savage Blow scores will then understate your actual gain.
+- Critical chance/damage default to the universal 5%/10% baseline but are editable under Advanced settings. They're still a single flat number each, though - if your build has invested Augment points into critical hits (e.g. a Sorcerer's Master of Energy/Master of Death, which are tied to a specific spell element), your real crit rate may vary by which element you're hitting a creature with, which one field per stat can't capture.
 
 ## Future improvements
 
@@ -166,7 +170,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
 - A direct "Damage Taken" and per-monster hit-count parser path for Hunt Analyser exports that include them, removing the attack-rate and incoming-damage estimation heuristics entirely.
 - A proper knapsack solver for "best use of available Charm Points" across the whole account (today's greedy, per-charm, best-creature suggestion is simple and deterministic but not globally optimal).
 - Multiple saved characters/hunts (today's workspace holds exactly one of each), and a way to compare two optimisation modes side by side.
-- An optional, opt-in critical chance/damage override (or an Augment picker that derives one) for builds that have invested well beyond the 5%/10% baseline, so Low Blow/Savage Blow scoring can reflect it without asking every user to look the numbers up.
+- A per-element critical chance/damage override, for builds (e.g. a Sorcerer's spell-specific Augments) where the single flat critical fields don't capture real per-element variation.
 
 ## Project structure
 

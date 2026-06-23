@@ -31,6 +31,11 @@ export interface Dictionary {
     upgradeOpportunitiesTitle: string;
     viewAllLink: string;
     noUpgrades: string;
+    scopeFullAnalysis: string;
+    scopeMyCharms: string;
+    scopeFullAnalysisHint: string;
+    scopeMyCharmsHint: string;
+    notUnlockedTag: string;
   };
   characterPage: {
     title: string;
@@ -64,6 +69,10 @@ export interface Dictionary {
     level: string;
     maxHitpoints: string;
     maxMana: string;
+    criticalChance: string;
+    criticalDamageBonus: string;
+    helpCriticalChance: string;
+    helpCriticalDamageBonus: string;
     lifeLeechPercent: string;
     manaLeechPercent: string;
     availableCharmPoints: string;
@@ -76,6 +85,11 @@ export interface Dictionary {
     assignedMajorCharms: string;
     assignedMinorCharms: string;
     essentialsHelp: string;
+    lookupToggle: string;
+    lookupPlaceholder: string;
+    lookupButton: string;
+    lookupLoading: string;
+    lookupPrivacyNote: string;
     advancedToggle: string;
     accountTypes: { free: string; premium: string };
     addRow: string;
