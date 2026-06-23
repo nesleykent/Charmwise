@@ -112,14 +112,14 @@ Paste the text Tibia's Hunt Analyser window produces (see the "Load sample sessi
 
 ## Charm formula explanation
 
-All percentages are stored as fractions internally. `resistance_multiplier` is the creature's Bestiary resistance value divided by 100 (so 100% = neutral = `1`, and a negative value - some creatures heal from certain elements - is clamped to zero damage with a warning rather than reported as healing).
+All percentages are stored as fractions internally. `resistance_multiplier` is the creature's Bestiary resistance value divided by 100 (so 100% = neutral = `1`, and a negative value - some creatures heal from certain elements - is clamped to zero damage with a warning rather than reported as healing). `armour_mitigation_factor` is `1 - monster_mitigation`; if mitigation is missing for a creature, direct-damage charms assume a factor of `1` and drop confidence for that estimate.
 
 Since the Winter Update 2024, elemental Charm damage is also capped by character level - `base_damage` is `min(5% of hitpoints, 2x character level)` for the seven elemental Charms, and `min(15% of hitpoints, 6x character level)` for Carnage (3x the elemental cap, matching its 3x higher percentage). Without this, a low-level character would be modelled as dealing unrealistically large Charm damage against very high-HP creatures. A warning is shown whenever the cap actually changes the result.
 
 ```
 Elemental damage charms (Curse, Divine Wrath, Enflame, Freeze, Poison, Wound, Zap):
   base_damage = min(monster_hitpoints * 0.05, character_level * 2)
-  expected_damage_per_attack = base_damage * activation_chance * resistance_multiplier
+  expected_damage_per_attack = base_damage * activation_chance * resistance_multiplier * armour_mitigation_factor
 
 Carnage (on kill, not on attack):
   base_damage = min(monster_hitpoints * 0.15, character_level * 6)
@@ -127,11 +127,11 @@ Carnage (on kill, not on attack):
 
 Overpower:
   proc_damage = min(character_max_hitpoints * 0.05, monster_hitpoints * 0.08)
-  expected_damage_per_attack = proc_damage * activation_chance
+  expected_damage_per_attack = proc_damage * activation_chance * armour_mitigation_factor
 
 Overflux:
   proc_damage = min(character_max_mana * 0.025, monster_hitpoints * 0.08)
-  expected_damage_per_attack = proc_damage * activation_chance
+  expected_damage_per_attack = proc_damage * activation_chance * armour_mitigation_factor
 
 Dodge:               expected_damage_prevented_per_hour = incoming_damage_per_hour * activation_chance
 Parry:               expected_reflected_damage_per_hour  = incoming_damage_per_hour * activation_chance * armour_mitigation_factor
@@ -191,7 +191,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
   - Mana drained/hour is a fixed share (30%) of that same incoming-damage estimate, only for creatures flagged as having a Mana Drain attack.
 - The incremental XP/profit derived from a damage-dealing Charm (`extra_damage_per_hour / monster_hitpoints` extra kills/hour) assumes every point of extra damage converts smoothly into extra completed kills within the same hour. In reality, if your kill rate is bottlenecked by something other than raw damage - travel time between spawns, looting, mana regeneration - a faster kill on an already-fast fight may not actually free up time for an additional kill. This isn't double-counting observed session data (the per-kill XP/loot values come from the session, but the *extra* kills are a forward projection of adding the Charm on top of it, not a recount of kills already in the session), but it is a linear idealisation that can overstate the real marginal gain, especially in already damage-saturated hunts.
 - The product/corpse-action datasets are intentionally partial. Gut and Scavenge now have normalized mappings for the highest-priority creatures, but drop chances and base Skinning/Dusting success chances are still unknown for many entries and are excluded from EV until verified.
-- Carnage's AoE damages *other* nearby creatures, not the one that died, and is mitigated by that creature's *armour* (per TibiaWiki), not its resistance; Charmwise approximates this using the killed creature's own resistance as a stand-in (armour isn't in the Bestiary data), which is most accurate when hunting a single species in a pack.
+- Carnage's AoE damages *other* nearby creatures, not the one that died. Charmwise approximates the nearby target with the killed creature's own physical resistance and armour mitigation, which is most accurate when hunting a single species in a pack.
 - Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless are scored from documented heuristic assumptions rather than the spec's explicit EV formulas, since none was given for them. Fatal Hold is left unscored unless the creature has a known low-health flee threshold, because the current Bestiary source does not expose that data for most creatures. Adrenaline Burst specifically is cancelled by the Haste spell and provides no benefit while Haste is active, which most characters keep running near-permanently - shown as a warning on the charm.
 - Scavenge's tier value (60/90/120%) is modelled as a *relative* increase to base Skinning/Dusting success chance. If the base chance is unknown, Charmwise shows an unknown-data warning and leaves the Scavenge EV at zero instead of applying the tier value directly to product value.
 - Bestiary "unlocked" status is treated as "this creature has a matching Bestiary entry at all", since per-account completion progress is not exposed by the data source.

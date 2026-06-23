@@ -267,7 +267,7 @@ const ptBR: Dictionary = {
     damage_level_capped:
       'Dano limitado a {{multiplier}}x o nivel do seu personagem (o limite de Charm do Winter Update 2024) - a vida desta criatura permitiria mais.',
     carnage_aoe_note:
-      'Carnage acerta outras criaturas perto da que morreu, nao a propria, e e mitigada pela armadura do alvo proximo, nao pela resistencia dele - esta estimativa usa a resistencia da criatura morta como uma aproximacao, ja que a armadura dela nao esta nos dados do Bestiario. Mais precisa ao cacar em grupos da mesma criatura.',
+      'Carnage acerta outras criaturas perto da que morreu, nao a propria - esta estimativa usa a resistencia fisica da criatura morta e assume sem mitigacao de armadura porque esta criatura nao tem valor de mitigacao. Mais precisa ao cacar em grupos da mesma criatura.',
     carnage_aoe_note_with_mitigation:
       'Carnage acerta outras criaturas perto da que morreu, nao a propria - esta estimativa usa a resistencia e a mitigacao de armadura da criatura morta como aproximacao para o alvo proximo, a melhor aproximacao disponivel, mas que ainda pode errar em grupos mistos. Mais precisa ao cacar em grupos da mesma criatura.',
     no_mana: 'O personagem nao tem mana - Overflux nao pode ser ativada.',

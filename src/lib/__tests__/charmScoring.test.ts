@@ -167,6 +167,14 @@ describe('computeCharmEffect - elemental damage charms', () => {
     const { warnings } = computeCharmEffect(getCharmDefinition('wound'), getCharmDefinition('wound').tiers[0], ctx);
     expect(warnings.some((w) => w.code === 'damage_level_capped')).toBe(false);
   });
+
+  it('reduces elemental charm damage by monster mitigation when known', () => {
+    const ctx = makeContext({ monster: makeMonster({ mitigation: 0.2 }) });
+    const { effect, confidence } = computeCharmEffect(getCharmDefinition('wound'), getCharmDefinition('wound').tiers[0], ctx);
+    // 1000 * 5% base * 5% activation * neutral resistance * 80% mitigation multiplier * 900 attacks/hour.
+    expect(effect.expectedDamagePerHour).toBeCloseTo(1000 * 0.05 * 0.05 * 1 * 0.8 * 900, 5);
+    expect(confidence).toBe('high');
+  });
 });
 
 describe('computeCharmEffect - Overpower and Overflux', () => {
@@ -182,6 +190,17 @@ describe('computeCharmEffect - Overpower and Overflux', () => {
     const { effect } = computeCharmEffect(getCharmDefinition('overflux'), getCharmDefinition('overflux').tiers[0], ctx);
     // char mana * 2.5% = 50, monster hp * 8% = 80 -> not capped (50 < 80); *activation 0.05 = 2.5/attack; *900/h
     expect(effect.expectedDamagePerHour).toBeCloseTo(50 * 0.05 * 900, 5);
+  });
+
+  it('applies monster mitigation to Overpower and Overflux neutral damage', () => {
+    const ctx = makeContext({ monster: makeMonster({ mitigation: 0.25 }) });
+    const overpower = computeCharmEffect(getCharmDefinition('overpower'), getCharmDefinition('overpower').tiers[0], ctx);
+    const overflux = computeCharmEffect(getCharmDefinition('overflux'), getCharmDefinition('overflux').tiers[0], ctx);
+
+    expect(overpower.effect.expectedDamagePerHour).toBeCloseTo(80 * 0.75 * 0.05 * 900, 5);
+    expect(overpower.confidence).toBe('high');
+    expect(overflux.effect.expectedDamagePerHour).toBeCloseTo(50 * 0.75 * 0.05 * 900, 5);
+    expect(overflux.confidence).toBe('high');
   });
 });
 

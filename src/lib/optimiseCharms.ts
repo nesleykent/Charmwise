@@ -12,6 +12,7 @@ import {
   scoreEffect,
   MODE_WEIGHTS,
   resistanceMultiplier,
+  monsterMitigationMultiplier,
   ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER,
   CARNAGE_LEVEL_CAP_MULTIPLIER,
   type ScoreMaxima,
@@ -110,6 +111,7 @@ function buildCalculationBreakdown(
 ): CharmModelBreakdown {
   const hp = ctx.monster.hitpoints;
   const activationChance = tier.activationChance ?? null;
+  const { multiplier: mitigationMultiplier, wasAssumedNone: mitigationWasAssumed } = monsterMitigationMultiplier(ctx.monster);
   const base: CharmModelBreakdown = {
     effectKind: charm.effectKind,
     element: charm.element,
@@ -124,6 +126,7 @@ function buildCalculationBreakdown(
     tierValue: tier.value,
     activationChance,
     resistanceMultiplier: null,
+    mitigationMultiplier: mitigationWasAssumed ? null : mitigationMultiplier,
     levelCapMultiplier: null,
     uncappedBaseDamage: null,
     levelCapDamage: null,
@@ -151,7 +154,7 @@ function buildCalculationBreakdown(
     const levelCapDamage = ctx.character.level * capMultiplier;
     const baseDamage = Math.min(uncappedBaseDamage, levelCapDamage);
     const { multiplier } = resistanceMultiplier(ctx.monster, charm.element ?? 'physical');
-    const perProcDamage = baseDamage * Math.max(0, multiplier);
+    const perProcDamage = baseDamage * Math.max(0, multiplier) * mitigationMultiplier;
     return {
       ...base,
       resistanceMultiplier: multiplier,
@@ -172,14 +175,15 @@ function buildCalculationBreakdown(
     const uncappedBaseDamage = resource * tier.value;
     const levelCapDamage = hp * PERCENT_HP_DAMAGE_CAP;
     const baseDamage = Math.min(uncappedBaseDamage, levelCapDamage);
+    const perProcDamage = baseDamage * mitigationMultiplier;
     return {
       ...base,
       uncappedBaseDamage,
       levelCapDamage,
       baseDamage,
       wasLevelCapped: uncappedBaseDamage > levelCapDamage,
-      perProcDamage: baseDamage,
-      expectedPerTrigger: activationChance === null ? baseDamage : baseDamage * activationChance,
+      perProcDamage,
+      expectedPerTrigger: activationChance === null ? perProcDamage : perProcDamage * activationChance,
       triggersPerHour: ctx.attacksPerHour,
       triggerUnit: 'attack',
     };

@@ -39,7 +39,9 @@ describe('optimiseCharms - end to end with the sample session', () => {
     expect(carnage.calculation.levelCapDamage).toBe(1200);
     expect(carnage.calculation.baseDamage).toBeCloseTo(510, 5);
     expect(carnage.calculation.wasLevelCapped).toBe(false);
-    expect(carnage.calculation.perProcDamage).toBeGreaterThan(0);
+    expect(carnage.calculation.resistanceMultiplier).toBeCloseTo(0.9, 5);
+    expect(carnage.calculation.mitigationMultiplier).toBeCloseTo(0.9901, 5);
+    expect(carnage.calculation.perProcDamage).toBeCloseTo(510 * 0.9 * 0.9901, 5);
     expect(carnage.calculation.triggersPerHour).toBe(carnage.calculation.killsPerHour);
   });
 

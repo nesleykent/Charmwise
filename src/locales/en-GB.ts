@@ -264,7 +264,7 @@ const en: Dictionary = {
     damage_level_capped:
       "Damage capped at {{multiplier}}x your character level (the Winter Update 2024 Charm cap) - this creature's hitpoints would otherwise allow more.",
     carnage_aoe_note:
-      "Carnage hits other creatures near the kill, not the one that died, and is mitigated by the nearby target's armour rather than its resistance - this estimate uses the killed creature's resistance as a rough stand-in, since armour isn't in the Bestiary data for it. Most accurate when hunting in packs of the same creature.",
+      "Carnage hits other creatures near the kill, not the one that died - this estimate uses the killed creature's physical resistance and assumes no armour mitigation because this creature has no mitigation value. Most accurate when hunting in packs of the same creature.",
     carnage_aoe_note_with_mitigation:
       "Carnage hits other creatures near the kill, not the one that died - this estimate uses the killed creature's own resistance and armour mitigation as a stand-in for the nearby target's, which is the best available approximation but can still be off in mixed packs. Most accurate when hunting in packs of the same creature.",
     no_mana: 'Character has no mana - Overflux cannot proc.',

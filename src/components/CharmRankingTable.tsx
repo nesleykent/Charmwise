@@ -82,6 +82,12 @@ function FormulaLine({ label, formula, result }: { label: string; formula: strin
   );
 }
 
+function mitigationFormulaPart(multiplier: number | null, locale: Locale): string {
+  return multiplier === null
+    ? '100% mitigation multiplier assumed'
+    : `${formatPercent(multiplier, 1)} mitigation multiplier`;
+}
+
 function EffectModelPanel({ rec, t, locale }: { rec: CharmRecommendation; t: Dictionary; locale: Locale }) {
   const c = rec.calculation;
   const formulaLines: { label: string; formula: string; result?: string }[] = [];
@@ -134,12 +140,12 @@ function EffectModelPanel({ rec, t, locale }: { rec: CharmRecommendation; t: Dic
     if (c.resistanceMultiplier !== null) {
       formulaLines.push({
         label: t.results.modelPerProcDamage,
-        formula: `${formatFormulaNumber(c.baseDamage, locale)} base x ${formatPercent(c.resistanceMultiplier, 0)} ${c.element ?? ''} multiplier = ${formatFormulaNumber(c.perProcDamage, locale)}`,
+        formula: `${formatFormulaNumber(c.baseDamage, locale)} base x ${formatPercent(c.resistanceMultiplier, 0)} ${c.element ?? ''} multiplier x ${mitigationFormulaPart(c.mitigationMultiplier, locale)} = ${formatFormulaNumber(c.perProcDamage, locale)}`,
       });
     } else {
       formulaLines.push({
         label: t.results.modelPerProcDamage,
-        formula: `${formatFormulaNumber(c.baseDamage, locale)} base damage`,
+        formula: `${formatFormulaNumber(c.baseDamage, locale)} base x ${mitigationFormulaPart(c.mitigationMultiplier, locale)} = ${formatFormulaNumber(c.perProcDamage, locale)}`,
       });
     }
 

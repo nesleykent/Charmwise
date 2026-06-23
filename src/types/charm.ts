@@ -129,6 +129,7 @@ export interface CharmModelBreakdown {
   tierValue: number;
   activationChance: number | null;
   resistanceMultiplier: number | null;
+  mitigationMultiplier: number | null;
   levelCapMultiplier: number | null;
   uncappedBaseDamage: number | null;
   levelCapDamage: number | null;

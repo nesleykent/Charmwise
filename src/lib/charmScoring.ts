@@ -115,6 +115,11 @@ export function resistanceMultiplier(
   return { multiplier: monster.resistances[element], wasAssumedNeutral: false };
 }
 
+export function monsterMitigationMultiplier(monster: MonsterProfile): { multiplier: number; wasAssumedNone: boolean } {
+  if (monster.mitigation === null) return { multiplier: 1, wasAssumedNone: true };
+  return { multiplier: Math.max(0, 1 - monster.mitigation), wasAssumedNone: false };
+}
+
 /**
  * Extra kills/hour enabled by `extraDamagePerHour`, converted into the
  * incremental XP and profit that come from killing faster. This is what lets
@@ -239,16 +244,17 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
         return { effect: emptyEffect(), warnings, confidence: 'low' };
       }
       const { multiplier, wasAssumedNeutral } = resistanceMultiplier(monster, element);
+      const { multiplier: mitigationMultiplier, wasAssumedNone: mitigationWasAssumed } = monsterMitigationMultiplier(monster);
       if (wasAssumedNeutral) warnings.push(RESISTANCE_UNKNOWN);
       if (multiplier <= 0) warnings.push(elementLabel(charm.name, element, multiplier));
       const { base: cappedBase, wasCapped } = applyLevelCap(hp * tier.value, character.level, ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER);
       if (wasCapped) warnings.push({ code: 'damage_level_capped', params: { multiplier: ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER } });
-      const perAttack = cappedBase * activation * multiplier;
+      const perAttack = cappedBase * activation * multiplier * mitigationMultiplier;
       const damagePerHour = Math.max(0, perAttack * ctx.attacksPerHour);
       return {
         effect: withDerivedXpProfit(damagePerHour, ctx, emptyEffect()),
         warnings,
-        confidence: wasAssumedNeutral ? 'medium' : 'high',
+        confidence: wasAssumedNeutral || mitigationWasAssumed ? 'medium' : 'high',
       };
     }
 
@@ -285,13 +291,14 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
         warnings.push(HP_UNKNOWN);
         return { effect: emptyEffect(), warnings, confidence: 'low' };
       }
-      const procDamage = Math.min(character.maxHitpoints * tier.value, hp * PERCENT_HP_DAMAGE_CAP);
+      const { multiplier: mitigationMultiplier, wasAssumedNone: mitigationWasAssumed } = monsterMitigationMultiplier(monster);
+      const procDamage = Math.min(character.maxHitpoints * tier.value, hp * PERCENT_HP_DAMAGE_CAP) * mitigationMultiplier;
       const perAttack = procDamage * activation;
       const damagePerHour = Math.max(0, perAttack * ctx.attacksPerHour);
       return {
         effect: withDerivedXpProfit(damagePerHour, ctx, emptyEffect()),
         warnings,
-        confidence: 'high',
+        confidence: mitigationWasAssumed ? 'medium' : 'high',
       };
     }
 
@@ -304,13 +311,14 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
         warnings.push({ code: 'no_mana' });
         return { effect: emptyEffect(), warnings, confidence: 'high' };
       }
-      const procDamage = Math.min(character.maxMana * tier.value, hp * PERCENT_HP_DAMAGE_CAP);
+      const { multiplier: mitigationMultiplier, wasAssumedNone: mitigationWasAssumed } = monsterMitigationMultiplier(monster);
+      const procDamage = Math.min(character.maxMana * tier.value, hp * PERCENT_HP_DAMAGE_CAP) * mitigationMultiplier;
       const perAttack = procDamage * activation;
       const damagePerHour = Math.max(0, perAttack * ctx.attacksPerHour);
       return {
         effect: withDerivedXpProfit(damagePerHour, ctx, emptyEffect()),
         warnings,
-        confidence: 'high',
+        confidence: mitigationWasAssumed ? 'medium' : 'high',
       };
     }
 
