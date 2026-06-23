@@ -160,7 +160,7 @@ const en: Dictionary = {
     improvementSummary: 'Expected improvement summary',
     economicsTitle: 'Economics',
     reassignmentsTitle: 'Suggested reassignments',
-    confidence: { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence' },
+    confidence: { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence', unknown: 'Unknown data' },
     metrics: {
       expectedDamagePerHour: 'Expected charm damage / hour',
       expectedProfitPerHour: 'Expected profit gain / hour',
@@ -227,8 +227,15 @@ const en: Dictionary = {
     no_mana_leech: "Character has 0% base Mana Leech - Void's Call requires existing leech on your equipment.",
     no_mana_drain: 'This creature has no known Mana Drain attack - Void Inversion has nothing to invert.',
     mana_drain_estimated: 'Mana drained per hour is estimated as 30% of incoming damage - an assumed share, not a documented figure.',
-    no_creature_product_data: 'No creature product value available for this creature in the Bestiary data source.',
-    no_skinning_dusting_data: 'No Skinning/Dusting data available for this creature in the Bestiary data source.',
+    no_creature_product_data: 'No Creature Product mapping is available for this creature yet.',
+    no_skinning_dusting_data: 'No Skinning/Dusting mapping is available for this creature yet.',
+    unknown_creature_product_drop_chance:
+      'Drop chance is unknown for {{itemName}} - Gut excludes it instead of inventing a product EV.',
+    missing_product_price: 'No NPC or market price is available for {{itemName}} - excluded from profit EV.',
+    unknown_scavenge_base_chance:
+      'Base Skinning/Dusting success chance is unknown for {{itemName}} - Scavenge excludes it instead of multiplying product value directly.',
+    scavenge_relative_success_note:
+      'Scavenge is modelled as a relative increase to Skinning/Dusting success chance, using the current 60% / 90% / 120% tier table.',
     scavenge_approximation_note:
       "Scavenge's tier value is really a relative increase to your base Skinning/Dusting chance, not a direct multiplier on loot value - applied as one here since the base chance isn't in the Bestiary data. Treat this as an order-of-magnitude estimate.",
     adrenaline_burst_haste_note: 'Cancelled by the Haste spell - provides no benefit while Haste is active, which most characters keep running.',

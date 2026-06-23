@@ -122,4 +122,28 @@ describe('normaliseMonster against the bundled bestiary.json', () => {
     expect(headwalker.matchedBestiaryName).toBe('Headwalker');
     expect(headwalker.hitpoints).toBe(2460);
   });
+
+  it('hydrates Skinning, Dusting, and Creature Product mappings for priority creatures', () => {
+    const dragon = normaliseMonster('Dragon');
+    expect(dragon.skinning?.productItemId).toBe('green_dragon_leather');
+    expect(dragon.skinning?.baseSuccessChance).toBeNull();
+    expect(dragon.missingFields).toContain('skinning.baseSuccessChance');
+    expect(dragon.creatureProducts.some((product) => product.itemId === 'green_dragon_leather')).toBe(true);
+
+    const dragonLord = normaliseMonster('Dragon Lord');
+    expect(dragonLord.skinning?.productItemId).toBe('red_dragon_leather');
+    expect(dragonLord.creatureProducts.some((product) => product.itemId === 'red_dragon_leather')).toBe(true);
+
+    const vampire = normaliseMonster('Vampire');
+    expect(vampire.dusting?.productItemId).toBe('vampire_dust');
+    expect(vampire.dusting?.baseSuccessChance).toBeNull();
+    expect(vampire.missingFields).toContain('dusting.baseSuccessChance');
+
+    const demon = normaliseMonster('Demon');
+    expect(demon.dusting?.productItemId).toBe('demon_dust');
+
+    const albinoDragon = normaliseMonster('Albino Dragon');
+    expect(albinoDragon.skinning?.productItemId).toBe('albino_dragon_leather');
+    expect(albinoDragon.creatureProducts.some((product) => product.itemId === 'albino_dragon_leather')).toBe(true);
+  });
 });

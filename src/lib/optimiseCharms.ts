@@ -144,7 +144,7 @@ function rankCharmGroup(
   });
 
   const maxima = computeMaxima(evaluations.map((e) => e.effect));
-  const scored = evaluations.map((e) => ({ ...e, scores: scoreEffect(e.effect, maxima, weights) }));
+  const scored = evaluations.map((e) => ({ ...e, scores: scoreEffect(e.effect, maxima, weights, e.confidence) }));
 
   // Deterministic ranking: total score desc, ties broken by charm id so output never reorders between runs.
   scored.sort((a, b) => b.scores.totalScore - a.scores.totalScore || a.charm.id.localeCompare(b.charm.id));
@@ -172,8 +172,8 @@ function rankCharmGroup(
     };
   });
 
-  const best = recommendations.find((r) => r.unlocked) ?? null;
-  const bestOverall = recommendations[0] ?? null;
+  const best = recommendations.find((r) => r.unlocked && r.confidence !== 'unknown' && r.scores.totalScore > 0) ?? null;
+  const bestOverall = recommendations.find((r) => r.confidence !== 'unknown' && r.scores.totalScore > 0) ?? null;
   return { recommendations, best, bestOverall, maxima };
 }
 
@@ -277,10 +277,13 @@ function buildPurchaseSuggestions(
       let bestForCharm: { monsterName: string; scoreGain: number } | null = null;
       for (const { monsterName, ctx, majorMaxima, minorMaxima } of creatureContexts) {
         const maxima = category === 'major' ? majorMaxima : minorMaxima;
-        const currentEffect =
-          currentTier > 0 ? computeCharmEffect(charm, getTierDefinition(charm, currentTier as CharmTier), ctx).effect : emptyEffect();
-        const nextEffect = computeCharmEffect(charm, getTierDefinition(charm, toTier), ctx).effect;
-        const gain = scoreEffect(nextEffect, maxima, weights).totalScore - scoreEffect(currentEffect, maxima, weights).totalScore;
+        const currentResult =
+          currentTier > 0 ? computeCharmEffect(charm, getTierDefinition(charm, currentTier as CharmTier), ctx) : null;
+        const currentEffect = currentResult?.effect ?? emptyEffect();
+        const nextResult = computeCharmEffect(charm, getTierDefinition(charm, toTier), ctx);
+        const gain =
+          scoreEffect(nextResult.effect, maxima, weights, nextResult.confidence).totalScore -
+          scoreEffect(currentEffect, maxima, weights, currentResult?.confidence ?? 'high').totalScore;
         if (!bestForCharm || gain > bestForCharm.scoreGain) bestForCharm = { monsterName, scoreGain: gain };
       }
       if (!bestForCharm || bestForCharm.scoreGain <= 0) continue;

@@ -1,0 +1,42 @@
+{
+  "sourceUrl": "https://tibia.fandom.com/wiki/Dusting",
+  "lastVerifiedAt": "2026-06-23",
+  "entries": [
+    {
+      "creatureId": "vampire",
+      "name": "Vampire",
+      "eligible": true,
+      "tool": "blessed_wooden_stake",
+      "productItemId": "vampire_dust",
+      "productItemName": "Vampire Dust",
+      "baseSuccessChance": null,
+      "baseSuccessChanceConfidence": "unknown",
+      "npcPrice": 100,
+      "marketPriceByWorld": {},
+      "corpseEligibleSeconds": 300,
+      "specialCaseMultipleAttempts": false,
+      "specialCaseGuaranteedSuccess": false,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Dusting",
+      "lastVerifiedAt": "2026-06-23",
+      "confidence": "low"
+    },
+    {
+      "creatureId": "demon",
+      "name": "Demon",
+      "eligible": true,
+      "tool": "blessed_wooden_stake",
+      "productItemId": "demon_dust",
+      "productItemName": "Demon Dust",
+      "baseSuccessChance": null,
+      "baseSuccessChanceConfidence": "unknown",
+      "npcPrice": 300,
+      "marketPriceByWorld": {},
+      "corpseEligibleSeconds": 300,
+      "specialCaseMultipleAttempts": false,
+      "specialCaseGuaranteedSuccess": false,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Dusting",
+      "lastVerifiedAt": "2026-06-23",
+      "confidence": "low"
+    }
+  ]
+}

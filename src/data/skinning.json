@@ -1,0 +1,60 @@
+{
+  "sourceUrl": "https://tibia.fandom.com/wiki/Skinning",
+  "lastVerifiedAt": "2026-06-23",
+  "entries": [
+    {
+      "creatureId": "dragon",
+      "name": "Dragon",
+      "eligible": true,
+      "tool": "obsidian_knife",
+      "productItemId": "green_dragon_leather",
+      "productItemName": "Green Dragon Leather",
+      "baseSuccessChance": null,
+      "baseSuccessChanceConfidence": "unknown",
+      "npcPrice": 100,
+      "marketPriceByWorld": {},
+      "corpseEligibleSeconds": 300,
+      "specialCaseMultipleAttempts": false,
+      "specialCaseGuaranteedSuccess": false,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Skinning",
+      "lastVerifiedAt": "2026-06-23",
+      "confidence": "low"
+    },
+    {
+      "creatureId": "dragon_lord",
+      "name": "Dragon Lord",
+      "eligible": true,
+      "tool": "obsidian_knife",
+      "productItemId": "red_dragon_leather",
+      "productItemName": "Red Dragon Leather",
+      "baseSuccessChance": null,
+      "baseSuccessChanceConfidence": "unknown",
+      "npcPrice": 200,
+      "marketPriceByWorld": {},
+      "corpseEligibleSeconds": 300,
+      "specialCaseMultipleAttempts": false,
+      "specialCaseGuaranteedSuccess": false,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Skinning",
+      "lastVerifiedAt": "2026-06-23",
+      "confidence": "low"
+    },
+    {
+      "creatureId": "albino_dragon",
+      "name": "Albino Dragon",
+      "eligible": true,
+      "tool": "obsidian_knife",
+      "productItemId": "albino_dragon_leather",
+      "productItemName": "Albino Dragon Leather",
+      "baseSuccessChance": null,
+      "baseSuccessChanceConfidence": "unknown",
+      "npcPrice": null,
+      "marketPriceByWorld": {},
+      "corpseEligibleSeconds": 300,
+      "specialCaseMultipleAttempts": false,
+      "specialCaseGuaranteedSuccess": false,
+      "sourceUrl": "https://tibia.fandom.com/wiki/Skinning",
+      "lastVerifiedAt": "2026-06-23",
+      "confidence": "low"
+    }
+  ]
+}

@@ -112,7 +112,11 @@ export default function DashboardPage() {
                         <p className="mt-0.5 text-xs text-charm-danger">{t.missingData.lackingBestiary}</p>
                       )}
                     </div>
-                    {bestMajor && <DataBadge tier={bestMajor.confidence === 'high' ? 'measured' : bestMajor.confidence === 'medium' ? 'estimated' : 'assumed'} />}
+                    {bestMajor && (
+                      <DataBadge
+                        tier={bestMajor.confidence === 'high' ? 'measured' : bestMajor.confidence === 'medium' ? 'estimated' : 'assumed'}
+                      />
+                    )}
                   </Link>
                 );
               })}

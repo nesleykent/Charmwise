@@ -25,6 +25,7 @@ const CONFIDENCE_CLASS: Record<ConfidenceLevel, string> = {
   high: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
   medium: 'bg-charm-warning/15 text-charm-warning border-charm-warning/30',
   low: 'bg-charm-danger/15 text-charm-danger border-charm-danger/30',
+  unknown: 'bg-white/10 text-charm-muted border-white/15',
 };
 
 function MetricChip({ label, value }: { label: string; value: string }) {

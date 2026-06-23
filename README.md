@@ -58,12 +58,14 @@ To enable it on your fork: **Settings &rarr; Pages &rarr; Build and deployment &
 
 - **Bestiary** - [`bestiary-session-analyzer`](https://github.com/nesleykent/bestiary-session-analyzer/blob/main/src/data/bestiary.json), vendored into [`src/data/bestiary.json`](src/data/bestiary.json). It is a [tibiadraptor.com](https://tibiadraptor.com) bestiary export: 800+ creatures with hitpoints, experience, difficulty, resistances, damage types, negative conditions and Charm Point rewards.
 - **Charm mechanics** - transcribed into [`src/data/charms.ts`](src/data/charms.ts) from the in-game Charm system (activation chances, tier costs, effect magnitudes). [`src/data/charms.json`](src/data/charms.json) is a vendored export of the same data in its original tier-cost/value shape; [`charmsData.test.ts`](src/lib/__tests__/charmsData.test.ts) loads it and asserts every tier in `charms.ts` matches exactly, so the two can never silently drift apart. The Winter Update 2024 level cap on elemental Charm damage, and the attack-opportunity weighting in `charmScoring.ts`, were corrected against the published methodology of [TibiaMaps' Charm Optimizer](https://tibiamaps.io/tools/charms) and [TibiaPal's Charm Calculator](https://tibiapal.com/charm_calculator).
+- **Creature Products and corpse actions** - [`src/data/creatureProducts.json`](src/data/creatureProducts.json), [`src/data/skinning.json`](src/data/skinning.json), and [`src/data/dusting.json`](src/data/dusting.json) are separate from the Bestiary because loot/product mechanics have different source quality and update cadence. They currently include the priority Dragon, Dragon Lord, Vampire, Demon and Albino Dragon mappings, NPC price fallbacks where known, and source metadata. Unknown drop or success chances are stored as `null` and excluded from EV rather than guessed.
+- **Market prices** - [`src/data/marketPrices.sample.json`](src/data/marketPrices.sample.json) documents the override shape for world-specific prices; the app falls back to NPC prices until real market data is wired in.
 - **Hunt Analyser** - whatever you paste into the Hunt Analyser page, parsed by [`src/lib/parseHuntAnalyser.ts`](src/lib/parseHuntAnalyser.ts).
 - **Character** - whatever you enter into the Character form.
 
 ### A note on what the Bestiary source does *not* contain
 
-`bestiary.json` has no loot value, Creature Product value, Skinning/Dusting data, or flee-health thresholds under any key we could find. [`normaliseMonster.ts`](src/lib/normaliseMonster.ts) is written as a defensive adapter: it checks several plausible alternate key names for these fields (in case the upstream source adds them later) and otherwise leaves them `null` rather than inventing a number. Every such gap is recorded in `MonsterProfile.missingFields` and surfaced in the **Missing data warnings** panel. Average loot value falls back to a per-creature estimate derived from your own pasted session's `Loot:` total, which is arguably more relevant than a static table since it reflects current market prices.
+`bestiary.json` has no loot value, Creature Product drop chance, Skinning/Dusting success chance, or flee-health thresholds under any key we could find. [`normaliseMonster.ts`](src/lib/normaliseMonster.ts) is written as a defensive adapter: it checks several plausible alternate key names for these fields (in case the upstream source adds them later), joins the richer local product/corpse-action files when available, and otherwise leaves unknown values `null` rather than inventing a number. Every such gap is recorded in `MonsterProfile.missingFields` and surfaced in the **Missing data warnings** panel. Average loot value falls back to a per-creature estimate derived from your own pasted session's `Loot:` total, which is arguably more relevant than a static table since it reflects current market prices.
 
 ## How the optimiser works
 
@@ -135,8 +137,10 @@ Dodge:               expected_damage_prevented_per_hour = incoming_damage_per_ho
 Parry:               expected_reflected_damage_per_hour  = incoming_damage_per_hour * activation_chance
 Low Blow:            expected_damage_gain = base_damage_per_hour * added_critical_chance * critical_damage_bonus
 Savage Blow:         expected_damage_gain = base_damage_per_hour * critical_chance * added_critical_damage
-Gut:                 expected_profit_gain_per_hour = kills_per_hour * creature_product_value * gut_bonus_percent
-Scavenge:            expected_profit_gain_per_hour = kills_per_hour * skinning_or_dusting_value * scavenge_bonus_percent
+Gut:                 product_ev_per_kill = sum(drop_chance * product_value)
+                     expected_profit_gain_per_hour = kills_per_hour * product_ev_per_kill * gut_bonus_percent
+Scavenge:            success_delta = min(1 - base_success_chance, base_success_chance * scavenge_relative_increase)
+                     expected_profit_gain_per_hour = eligible_kills_per_hour * success_delta * product_value
 Vampiric Embrace:    expected_healing_gain_per_hour = damage_per_hour * added_life_leech_percent
 Void's Call:         expected_mana_gain_per_hour = damage_per_hour * added_mana_leech_percent
 Void Inversion:      expected_mana_saved_per_hour = mana_drain_received_per_hour * activation_chance
@@ -155,6 +159,17 @@ total_score = damage_score * 0.40 + profit_score * 0.25 + safety_score * 0.20
 
 `xp`, `profit`, `safety` and `low_supplies` optimisation modes use different weight sets (see `MODE_WEIGHTS` in `charmScoring.ts`); all weight sets sum to 1.
 
+The raw weighted score is then adjusted by formula/data confidence for ranking only:
+
+```
+high = 1.00
+medium = 0.85
+low = 0.60
+unknown = 0.00
+```
+
+Raw EV metrics (damage/hour, profit/hour, prevented damage/hour and supply savings/hour) still display beside the adjusted score. Unknown-confidence rows remain visible in full rankings, but are excluded from "best" recommendations by default.
+
 ### Economics
 
 ```
@@ -172,17 +187,17 @@ reset_cost   = 0 if the free reset hasn't been used yet
   - Incoming damage/hour per species is approximated from the session's `Healing/h` figure (a sustainable hunt's healing received roughly tracks the damage it offsets), allocated across species the same `kills * hitpoints` way outgoing damage is.
   - Mana drained/hour is a fixed share (30%) of that same incoming-damage estimate, only for creatures flagged as having a Mana Drain attack.
 - The incremental XP/profit derived from a damage-dealing Charm (`extra_damage_per_hour / monster_hitpoints` extra kills/hour) assumes every point of extra damage converts smoothly into extra completed kills within the same hour. In reality, if your kill rate is bottlenecked by something other than raw damage - travel time between spawns, looting, mana regeneration - a faster kill on an already-fast fight may not actually free up time for an additional kill. This isn't double-counting observed session data (the per-kill XP/loot values come from the session, but the *extra* kills are a forward projection of adding the Charm on top of it, not a recount of kills already in the session), but it is a linear idealisation that can overstate the real marginal gain, especially in already damage-saturated hunts.
-- `bestiary.json` carries no loot value, Creature Product, Skinning/Dusting, or flee-threshold data (see "Data sources" above); Gut and Scavenge will show "no data" for most creatures until a richer data source is wired in.
+- The product/corpse-action datasets are intentionally partial. Gut and Scavenge now have normalized mappings for the highest-priority creatures, but drop chances and base Skinning/Dusting success chances are still unknown for many entries and are excluded from EV until verified.
 - Carnage's AoE damages *other* nearby creatures, not the one that died, and is mitigated by that creature's *armour* (per TibiaWiki), not its resistance; Charmwise approximates this using the killed creature's own resistance as a stand-in (armour isn't in the Bestiary data), which is most accurate when hunting a single species in a pack.
 - Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless are scored from documented heuristic assumptions rather than the spec's explicit EV formulas, since none was given for them. Adrenaline Burst specifically is cancelled by the Haste spell and provides no benefit while Haste is active, which most characters keep running near-permanently - shown as a warning on the charm.
-- Scavenge's tier value (60/90/120%) is a documented *relative* increase to your base Skinning/Dusting success chance, but Charmwise applies it as a direct multiplier on expected loot value instead, since the Bestiary data doesn't expose a base success chance to apply the relative increase to. Treat its score as an order-of-magnitude estimate, not a precise figure - shown as a warning on the charm.
+- Scavenge's tier value (60/90/120%) is modelled as a *relative* increase to base Skinning/Dusting success chance. If the base chance is unknown, Charmwise shows an unknown-data warning and leaves the Scavenge EV at zero instead of applying the tier value directly to product value.
 - Bestiary "unlocked" status is treated as "this creature has a matching Bestiary entry at all", since per-account completion progress is not exposed by the data source.
 - Critical chance/damage default to the universal 5%/10% baseline but are editable under Advanced settings. They're still a single flat number each, though - if your build has invested Augment points into critical hits (e.g. a Sorcerer's Master of Energy/Master of Death, which are tied to a specific spell element), your real crit rate may vary by which element you're hitting a creature with, which one field per stat can't capture.
 - Savage Blow scores noticeably higher than Low Blow at the shared 5%/10% baseline (Gold tier: 44% added crit damage vs 9% added crit chance) - confirmed against multiple sources to be Tibia's own relative charm design (Savage Blow's tier values are simply larger numbers), not an asymmetry in how the two are scored. The two formulas are structurally identical, cross-multiplying each charm's own added stat by the *other* stat's current value.
 
 ## Future improvements
 
-- A real loot/Creature Product/Skinning/Dusting value dataset, so Gut and Scavenge can be scored with reported data instead of session-derived fallbacks.
+- Fill out Creature Product drop chances, Skinning/Dusting base success chances, and world-specific market prices so Gut and Scavenge can be scored for more creatures.
 - A direct "Damage Taken" and per-monster hit-count parser path for Hunt Analyser exports that include them, removing the attack-rate and incoming-damage estimation heuristics entirely.
 - A proper knapsack solver for "best use of available Charm Points" across the whole account (today's greedy, per-charm, best-creature suggestion is simple and deterministic but not globally optimal).
 - Multiple saved characters/hunts (today's workspace holds exactly one of each), and a way to compare two optimisation modes side by side.
@@ -194,7 +209,8 @@ reset_cost   = 0 if the free reset hasn't been used yet
 src/app                  Dashboard (/), /character, /hunt, /recommendations, /charms + /charms/[charmId]
 src/components           CharacterForm, HuntAnalyserInput, OptimisationResults, CharmRankingTable, CharmDetailView,
                          MissingDataPanel, DataBadge, EmptyState, nav/AppShell, ...
-src/data                 bestiary.json, charms.ts, sampleHuntAnalyser.ts
+src/data                 bestiary.json, charms.ts, creatureProducts.json, skinning.json, dusting.json,
+                         marketPrices.sample.json, dataSources.ts, sampleHuntAnalyser.ts
 src/lib                  parseHuntAnalyser.ts, normaliseMonster.ts, charmScoring.ts, optimiseCharms.ts, charmLibrary.ts,
                          economy.ts, validation.ts, format.ts, i18n.tsx, workspace.tsx
 src/locales              en-GB.ts, pt-BR.ts

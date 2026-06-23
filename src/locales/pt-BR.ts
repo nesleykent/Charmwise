@@ -161,7 +161,7 @@ const ptBR: Dictionary = {
     improvementSummary: 'Resumo da melhoria esperada',
     economicsTitle: 'Economia',
     reassignmentsTitle: 'Reatribuicoes sugeridas',
-    confidence: { high: 'Confianca alta', medium: 'Confianca media', low: 'Confianca baixa' },
+    confidence: { high: 'Confianca alta', medium: 'Confianca media', low: 'Confianca baixa', unknown: 'Dados desconhecidos' },
     metrics: {
       expectedDamagePerHour: 'Dano esperado da Charm / hora',
       expectedProfitPerHour: 'Lucro esperado / hora',
@@ -228,8 +228,15 @@ const ptBR: Dictionary = {
     no_mana_leech: "O personagem tem 0% de Mana Leech base - Void's Call exige Mana Leech ja existente no equipamento.",
     no_mana_drain: 'Esta criatura nao possui ataque de Mana Drain conhecido - Void Inversion nao tem o que inverter.',
     mana_drain_estimated: 'A mana drenada por hora e estimada como 30% do dano recebido - uma fracao assumida, nao um valor documentado.',
-    no_creature_product_data: 'Nenhum valor de Produto de Criatura disponivel para esta criatura na fonte de dados do Bestiario.',
-    no_skinning_dusting_data: 'Nenhum dado de Skinning/Dusting disponivel para esta criatura na fonte de dados do Bestiario.',
+    no_creature_product_data: 'Nenhum mapeamento de Produto de Criatura esta disponivel para esta criatura ainda.',
+    no_skinning_dusting_data: 'Nenhum mapeamento de Skinning/Dusting esta disponivel para esta criatura ainda.',
+    unknown_creature_product_drop_chance:
+      'A chance de drop e desconhecida para {{itemName}} - Gut exclui este item em vez de inventar um EV de produto.',
+    missing_product_price: 'Nenhum preco de NPC ou mercado esta disponivel para {{itemName}} - excluido do EV de lucro.',
+    unknown_scavenge_base_chance:
+      'A chance base de Skinning/Dusting e desconhecida para {{itemName}} - Scavenge exclui este item em vez de multiplicar o valor do produto diretamente.',
+    scavenge_relative_success_note:
+      'Scavenge e modelada como aumento relativo da chance de sucesso de Skinning/Dusting, usando a tabela atual de 60% / 90% / 120%.',
     scavenge_approximation_note:
       'O valor do nivel de Scavenge e, na verdade, um aumento relativo a sua chance base de Skinning/Dusting, nao um multiplicador direto sobre o valor do loot - aplicado como tal aqui porque a chance base nao esta nos dados do Bestiario. Trate isso como uma estimativa de ordem de grandeza.',
     adrenaline_burst_haste_note: 'Cancelada pela magia Haste - nao traz beneficio enquanto Haste esta ativa, que a maioria dos personagens mantem ligada.',

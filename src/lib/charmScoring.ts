@@ -48,7 +48,7 @@ import type {
   ScoreWeights,
 } from '@/types/charm';
 import type { KilledMonsterStat } from '@/types/hunt';
-import type { MonsterProfile } from '@/types/monster';
+import type { CorpseActionProfile, CreatureProductDrop, DataConfidence, MonsterProfile } from '@/types/monster';
 
 export const ASSUMED_SECONDS_PER_ATTACK = 2;
 export const ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE = 3600 / ASSUMED_SECONDS_PER_ATTACK;
@@ -63,6 +63,12 @@ export const ASSUMED_RISK_FACTOR_BY_DIFFICULTY: Record<string, number> = {
   hard: 1.0,
   challenging: 1.3,
   unknown: 0.7,
+};
+export const CONFIDENCE_SCORE_MULTIPLIER: Record<ConfidenceLevel, number> = {
+  high: 1,
+  medium: 0.85,
+  low: 0.6,
+  unknown: 0,
 };
 
 export interface ScoringContext {
@@ -153,9 +159,68 @@ function withDerivedXpProfit(
 
 const HP_UNKNOWN: LocalisedMessage = { code: 'hp_unknown' };
 const RESISTANCE_UNKNOWN: LocalisedMessage = { code: 'resistance_unknown' };
+const CONFIDENCE_RANK: Record<ConfidenceLevel | DataConfidence, number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+  unknown: 0,
+};
 
 function elementLabel(charmName: string, element: ElementType, multiplier: number): LocalisedMessage {
   return { code: multiplier < 0 ? 'heals_from_element' : 'immune_to_element', params: { element, charmName } };
+}
+
+function combineConfidence(levels: (ConfidenceLevel | DataConfidence)[]): ConfidenceLevel {
+  if (levels.length === 0) return 'high';
+  return levels.reduce<ConfidenceLevel>((worst, level) => (CONFIDENCE_RANK[level] < CONFIDENCE_RANK[worst] ? level : worst), 'high');
+}
+
+function itemValue(npcPrice: number | null, marketPrice: number | null): number | null {
+  return marketPrice ?? npcPrice;
+}
+
+function creatureProductEvPerKill(products: CreatureProductDrop[], warnings: LocalisedMessage[]): { value: number; confidence: ConfidenceLevel } {
+  let total = 0;
+  const confidenceInputs: (ConfidenceLevel | DataConfidence)[] = [];
+
+  for (const product of products) {
+    const value = itemValue(product.npcPrice, product.marketPrice);
+    if (product.dropChance === null) {
+      warnings.push({ code: 'unknown_creature_product_drop_chance', params: { itemName: product.itemName } });
+      continue;
+    }
+    if (value === null) {
+      warnings.push({ code: 'missing_product_price', params: { itemName: product.itemName } });
+      continue;
+    }
+    total += product.dropChance * value;
+    confidenceInputs.push(product.dropChanceConfidence);
+  }
+
+  return { value: total, confidence: confidenceInputs.length > 0 ? combineConfidence(confidenceInputs) : 'unknown' };
+}
+
+function scavengeProfitPerKill(actions: CorpseActionProfile[], tier: CharmTierDefinition, warnings: LocalisedMessage[]): { value: number; confidence: ConfidenceLevel } {
+  let total = 0;
+  const confidenceInputs: (ConfidenceLevel | DataConfidence)[] = [];
+
+  warnings.push({ code: 'scavenge_relative_success_note' });
+  for (const action of actions) {
+    const value = itemValue(action.npcPrice, action.marketPrice);
+    if (action.baseSuccessChance === null) {
+      warnings.push({ code: 'unknown_scavenge_base_chance', params: { itemName: action.productItemName } });
+      continue;
+    }
+    if (value === null) {
+      warnings.push({ code: 'missing_product_price', params: { itemName: action.productItemName } });
+      continue;
+    }
+    const successChanceDelta = Math.min(1 - action.baseSuccessChance, action.baseSuccessChance * tier.value);
+    total += Math.max(0, successChanceDelta) * value;
+    confidenceInputs.push(action.confidence, action.baseSuccessChanceConfidence);
+  }
+
+  return { value: total, confidence: confidenceInputs.length > 0 ? combineConfidence(confidenceInputs) : 'unknown' };
 }
 
 /** Computes the raw (unnormalised) effect of equipping `tier` of `charm` against the creature in `ctx`. */
@@ -321,32 +386,39 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
     }
 
     case 'creature_product_bonus': {
+      if (monster.creatureProducts.length > 0) {
+        const productEv = creatureProductEvPerKill(monster.creatureProducts, warnings);
+        const profit = (huntStat.killsPerHour ?? 0) * productEv.value * tier.value;
+        return {
+          effect: { ...emptyEffect(), expectedProfitPerHour: profit },
+          warnings,
+          confidence: productEv.confidence,
+        };
+      }
       if (monster.creatureProductValue === null) {
         warnings.push({ code: 'no_creature_product_data' });
-        return { effect: emptyEffect(), warnings, confidence: 'low' };
+        return { effect: emptyEffect(), warnings, confidence: 'unknown' };
       }
       const profit = (huntStat.killsPerHour ?? 0) * monster.creatureProductValue * tier.value;
       return {
         effect: { ...emptyEffect(), expectedProfitPerHour: profit },
         warnings,
-        confidence: 'high',
+        confidence: 'low',
       };
     }
 
     case 'skinning_dusting_bonus': {
-      const canSkin = monster.supportsSkinning === true;
-      const canDust = monster.supportsDusting === true;
-      if (!canSkin && !canDust) {
+      const actions = [monster.skinning, monster.dusting].filter((action): action is CorpseActionProfile => action?.eligible === true);
+      if (actions.length === 0) {
         warnings.push({ code: 'no_skinning_dusting_data' });
-        return { effect: emptyEffect(), warnings, confidence: 'low' };
+        return { effect: emptyEffect(), warnings, confidence: 'unknown' };
       }
-      warnings.push({ code: 'scavenge_approximation_note' });
-      const value = (canSkin ? monster.skinningValue ?? 0 : 0) + (canDust ? monster.dustingValue ?? 0 : 0);
-      const profit = (huntStat.killsPerHour ?? 0) * value * tier.value;
+      const scavengeEv = scavengeProfitPerKill(actions, tier, warnings);
+      const profit = (huntStat.killsPerHour ?? 0) * scavengeEv.value;
       return {
         effect: { ...emptyEffect(), expectedProfitPerHour: profit },
         warnings,
-        confidence: 'high',
+        confidence: scavengeEv.confidence,
       };
     }
 
@@ -405,6 +477,7 @@ export const MODE_WEIGHTS: Record<OptimisationMode, ScoreWeights> = {
 
 export interface ScorableCandidate {
   effect: CharmEffectEstimate;
+  confidence?: ConfidenceLevel;
 }
 
 export interface ScoreMaxima {
@@ -434,7 +507,12 @@ export function computeMaxima(effects: CharmEffectEstimate[]): ScoreMaxima {
  * Wound's damage/hour (thousands) and Cleanse's utility magnitude (0-1) can
  * be summed with the same weights meaningfully.
  */
-export function scoreEffect(effect: CharmEffectEstimate, maxima: ScoreMaxima, weights: ScoreWeights): ScoreBreakdown {
+export function scoreEffect(
+  effect: CharmEffectEstimate,
+  maxima: ScoreMaxima,
+  weights: ScoreWeights,
+  confidence: ConfidenceLevel = 'high',
+): ScoreBreakdown {
   const damageScore = (effect.expectedDamagePerHour / maxima.damage) * 100;
   const xpScore = (effect.expectedXpPerHour / maxima.xp) * 100;
   const profitScore = (effect.expectedProfitPerHour / maxima.profit) * 100;
@@ -445,15 +523,16 @@ export function scoreEffect(effect: CharmEffectEstimate, maxima: ScoreMaxima, we
     100;
   const utilityScore = (effect.utilityMagnitude / maxima.utility) * 100;
 
-  const totalScore =
+  const rawTotalScore =
     damageScore * weights.damage +
     xpScore * weights.xp +
     profitScore * weights.profit +
     safetyScore * weights.safety +
     supplySavingScore * weights.supplySaving +
     utilityScore * weights.utility;
+  const totalScore = rawTotalScore * CONFIDENCE_SCORE_MULTIPLIER[confidence];
 
-  return { damageScore, xpScore, profitScore, safetyScore, supplySavingScore, utilityScore, totalScore };
+  return { damageScore, xpScore, profitScore, safetyScore, supplySavingScore, utilityScore, rawTotalScore, totalScore };
 }
 
 /**
@@ -463,5 +542,5 @@ export function scoreEffect(effect: CharmEffectEstimate, maxima: ScoreMaxima, we
  */
 export function scoreCandidates(candidates: ScorableCandidate[], weights: ScoreWeights): ScoreBreakdown[] {
   const maxima = computeMaxima(candidates.map((c) => c.effect));
-  return candidates.map(({ effect }) => scoreEffect(effect, maxima, weights));
+  return candidates.map(({ effect, confidence }) => scoreEffect(effect, maxima, weights, confidence));
 }

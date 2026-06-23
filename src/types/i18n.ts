@@ -140,7 +140,7 @@ export interface Dictionary {
     improvementSummary: string;
     economicsTitle: string;
     reassignmentsTitle: string;
-    confidence: { high: string; medium: string; low: string };
+    confidence: { high: string; medium: string; low: string; unknown: string };
     metrics: {
       expectedDamagePerHour: string;
       expectedProfitPerHour: string;

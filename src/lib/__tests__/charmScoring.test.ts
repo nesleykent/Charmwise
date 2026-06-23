@@ -48,6 +48,38 @@ function makeMonster(overrides: Partial<MonsterProfile> = {}): MonsterProfile {
     supportsDusting: false,
     skinningValue: 30,
     dustingValue: 0,
+    creatureProducts: [
+      {
+        itemId: 'test_product',
+        itemName: 'Test Product',
+        npcPrice: 50,
+        marketPrice: null,
+        marketPriceByWorld: {},
+        weight: null,
+        dropChance: 1,
+        dropChanceConfidence: 'high',
+        sourceUrl: 'test',
+        lastVerifiedAt: '2026-06-23',
+      },
+    ],
+    skinning: {
+      eligible: true,
+      tool: 'obsidian_knife',
+      productItemId: 'test_leather',
+      productItemName: 'Test Leather',
+      npcPrice: 30,
+      marketPrice: null,
+      marketPriceByWorld: {},
+      baseSuccessChance: 0.2,
+      baseSuccessChanceConfidence: 'high',
+      corpseEligibleSeconds: 300,
+      specialCaseMultipleAttempts: false,
+      specialCaseGuaranteedSuccess: false,
+      sourceUrl: 'test',
+      lastVerifiedAt: '2026-06-23',
+      confidence: 'high',
+    },
+    dusting: null,
     fleeHealthPercent: null,
     conditions: [],
     damageProfile: { attackType: 'melee', dealtElements: ['physical'], inflictsManaDrain: false, inflictsLifeDrain: false },
@@ -219,17 +251,110 @@ describe('computeCharmEffect - leech and mana charms', () => {
 });
 
 describe('computeCharmEffect - profit charms', () => {
-  it('Gut multiplies kills/hour by creature product value and the tier bonus', () => {
+  it('Gut uses per-product drop EV rather than a generic creature product value', () => {
     const ctx = makeContext();
     const { effect } = computeCharmEffect(getCharmDefinition('gut'), getCharmDefinition('gut').tiers[0], ctx);
     expect(effect.expectedProfitPerHour).toBeCloseTo(100 * 50 * 0.06, 5);
   });
 
-  it('Scavenge only counts the Skinning/Dusting values the creature actually supports', () => {
+  it('Gut excludes products with unknown drop chance instead of inventing EV', () => {
+    const ctx = makeContext({
+      monster: makeMonster({
+        creatureProductValue: null,
+        creatureProducts: [
+          {
+            itemId: 'unknown_drop_product',
+            itemName: 'Unknown Drop Product',
+            npcPrice: 1000,
+            marketPrice: null,
+            marketPriceByWorld: {},
+            weight: null,
+            dropChance: null,
+            dropChanceConfidence: 'unknown',
+            sourceUrl: 'test',
+            lastVerifiedAt: '2026-06-23',
+          },
+        ],
+      }),
+    });
+    const { effect, warnings, confidence } = computeCharmEffect(getCharmDefinition('gut'), getCharmDefinition('gut').tiers[0], ctx);
+    expect(effect.expectedProfitPerHour).toBe(0);
+    expect(confidence).toBe('unknown');
+    expect(warnings.some((w) => w.code === 'unknown_creature_product_drop_chance')).toBe(true);
+  });
+
+  it('Gut handles high-value low-drop creature products', () => {
+    const ctx = makeContext({
+      monster: makeMonster({
+        creatureProducts: [
+          {
+            itemId: 'boss_trophy',
+            itemName: 'Boss Trophy',
+            npcPrice: 50_000,
+            marketPrice: null,
+            marketPriceByWorld: {},
+            weight: null,
+            dropChance: 0.01,
+            dropChanceConfidence: 'medium',
+            sourceUrl: 'test',
+            lastVerifiedAt: '2026-06-23',
+          },
+        ],
+      }),
+    });
+    const { effect, confidence } = computeCharmEffect(getCharmDefinition('gut'), getCharmDefinition('gut').tiers[0], ctx);
+    expect(effect.expectedProfitPerHour).toBeCloseTo(100 * 0.01 * 50_000 * 0.06, 5);
+    expect(confidence).toBe('medium');
+  });
+
+  it('Gut keeps known zero-price products in the model without fabricating price', () => {
+    const ctx = makeContext({
+      monster: makeMonster({
+        creatureProducts: [
+          {
+            itemId: 'zero_price_product',
+            itemName: 'Zero Price Product',
+            npcPrice: 0,
+            marketPrice: null,
+            marketPriceByWorld: {},
+            weight: null,
+            dropChance: 1,
+            dropChanceConfidence: 'high',
+            sourceUrl: 'test',
+            lastVerifiedAt: '2026-06-23',
+          },
+        ],
+      }),
+    });
+    const { effect, warnings, confidence } = computeCharmEffect(getCharmDefinition('gut'), getCharmDefinition('gut').tiers[0], ctx);
+    expect(effect.expectedProfitPerHour).toBe(0);
+    expect(confidence).toBe('high');
+    expect(warnings.some((w) => w.code === 'missing_product_price')).toBe(false);
+  });
+
+  it('Scavenge uses success chance delta, not a direct product-value multiplier', () => {
     const ctx = makeContext();
     const { effect } = computeCharmEffect(getCharmDefinition('scavenge'), getCharmDefinition('scavenge').tiers[0], ctx);
-    // supportsDusting is false, so only skinningValue (30) counts even though dustingValue is set to 0 anyway.
-    expect(effect.expectedProfitPerHour).toBeCloseTo(100 * 30 * 0.6, 5);
+    // 20% base success chance * 60% Bronze relative increase * 30 gp product value * 100 kills/hour.
+    expect(effect.expectedProfitPerHour).toBeCloseTo(100 * 0.2 * 0.6 * 30, 5);
+  });
+
+  it('Scavenge excludes mapped actions when base success chance is unknown', () => {
+    const ctx = makeContext({
+      monster: makeMonster({
+        skinning: makeMonster().skinning
+          ? {
+              ...makeMonster().skinning!,
+              baseSuccessChance: null,
+              baseSuccessChanceConfidence: 'unknown',
+            }
+          : null,
+      }),
+    });
+    const { effect, warnings, confidence } = computeCharmEffect(getCharmDefinition('scavenge'), getCharmDefinition('scavenge').tiers[0], ctx);
+    expect(effect.expectedProfitPerHour).toBe(0);
+    expect(confidence).toBe('unknown');
+    expect(warnings.some((w) => w.code === 'unknown_scavenge_base_chance')).toBe(true);
   });
 });
 
@@ -270,6 +395,28 @@ describe('scoring normalisation', () => {
     const scores = effects.map((e) => scoreEffect(e, maxima, MODE_WEIGHTS.balanced));
     expect(scores[0]?.damageScore).toBeCloseTo(100, 5);
     expect(scores[1]?.damageScore).toBeCloseTo(50, 5);
+    expect(scores[0]?.rawTotalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
     expect(scores[0]?.totalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
+  });
+
+  it('applies confidence multipliers only to total ranking score', () => {
+    const effect = {
+      expectedDamagePerHour: 1000,
+      expectedXpPerHour: 0,
+      expectedProfitPerHour: 0,
+      expectedDamagePreventedPerHour: 0,
+      expectedHealingGainPerHour: 0,
+      expectedManaGainPerHour: 0,
+      expectedManaSavedPerHour: 0,
+      utilityMagnitude: 0,
+    };
+    const maxima = computeMaxima([effect]);
+    const low = scoreEffect(effect, maxima, MODE_WEIGHTS.balanced, 'low');
+    const unknown = scoreEffect(effect, maxima, MODE_WEIGHTS.balanced, 'unknown');
+
+    expect(low.rawTotalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
+    expect(low.totalScore).toBeCloseTo(low.rawTotalScore * 0.6, 5);
+    expect(unknown.rawTotalScore).toBeCloseTo(low.rawTotalScore, 5);
+    expect(unknown.totalScore).toBe(0);
   });
 });

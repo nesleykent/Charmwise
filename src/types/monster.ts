@@ -76,6 +76,41 @@ export interface MonsterDamageProfile {
   inflictsLifeDrain: boolean;
 }
 
+export type DataConfidence = 'high' | 'medium' | 'low' | 'unknown';
+
+export type CorpseActionTool = 'obsidian_knife' | 'blessed_wooden_stake';
+
+export interface CreatureProductDrop {
+  itemId: string;
+  itemName: string;
+  npcPrice: number | null;
+  marketPrice: number | null;
+  marketPriceByWorld: Record<string, number | null>;
+  weight: number | null;
+  dropChance: number | null;
+  dropChanceConfidence: DataConfidence;
+  sourceUrl: string;
+  lastVerifiedAt: string;
+}
+
+export interface CorpseActionProfile {
+  eligible: boolean;
+  tool: CorpseActionTool;
+  productItemId: string;
+  productItemName: string;
+  npcPrice: number | null;
+  marketPrice: number | null;
+  marketPriceByWorld: Record<string, number | null>;
+  baseSuccessChance: number | null;
+  baseSuccessChanceConfidence: DataConfidence;
+  corpseEligibleSeconds: number | null;
+  specialCaseMultipleAttempts: boolean;
+  specialCaseGuaranteedSuccess: boolean;
+  sourceUrl: string;
+  lastVerifiedAt: string;
+  confidence: DataConfidence;
+}
+
 export interface MonsterProfile {
   name: string;
   hitpoints: number | null;
@@ -90,6 +125,9 @@ export interface MonsterProfile {
   supportsDusting: boolean | null;
   skinningValue: number | null;
   dustingValue: number | null;
+  creatureProducts: CreatureProductDrop[];
+  skinning: CorpseActionProfile | null;
+  dusting: CorpseActionProfile | null;
   fleeHealthPercent: number | null;
   conditions: string[];
   damageProfile: MonsterDamageProfile | null;

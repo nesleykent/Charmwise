@@ -8,9 +8,16 @@
 // sourced is left `null` and recorded in `missingFields` so the UI can show
 // an honest "Missing data" warning instead of a silently wrong number.
 import bestiaryFile from '@/data/bestiary.json';
+import creatureProductsFile from '@/data/creatureProducts.json';
+import dustingFile from '@/data/dusting.json';
+import skinningFile from '@/data/skinning.json';
 import type { ElementType } from '@/types/charm';
 import type {
   BestiaryDifficulty,
+  CorpseActionProfile,
+  CorpseActionTool,
+  CreatureProductDrop,
+  DataConfidence,
   MonsterDamageProfile,
   MonsterProfile,
   MonsterResistances,
@@ -19,6 +26,60 @@ import type {
 } from '@/types/monster';
 
 const DEFAULT_ENTRIES: RawBestiaryEntry[] = (bestiaryFile as unknown as RawBestiaryFile).data ?? [];
+
+interface RawCreatureProductItem {
+  itemId: string;
+  itemName: string;
+  npcPrice?: number | null;
+  marketPriceByWorld?: Record<string, number | null>;
+  weight?: number | null;
+  sourceUrl?: string;
+  lastVerifiedAt?: string;
+  droppedBy?: {
+    creatureId: string;
+    creatureName: string;
+    dropChance?: number | null;
+    dropChanceConfidence?: DataConfidence;
+  }[];
+}
+
+interface RawCreatureProductsFile {
+  sourceUrl?: string;
+  lastVerifiedAt?: string;
+  items?: RawCreatureProductItem[];
+}
+
+interface RawCorpseActionEntry {
+  creatureId: string;
+  name: string;
+  eligible: boolean;
+  tool: CorpseActionTool;
+  productItemId: string;
+  productItemName: string;
+  baseSuccessChance?: number | null;
+  baseSuccessChanceConfidence?: DataConfidence;
+  npcPrice?: number | null;
+  marketPriceByWorld?: Record<string, number | null>;
+  corpseEligibleSeconds?: number | null;
+  specialCaseMultipleAttempts?: boolean;
+  specialCaseGuaranteedSuccess?: boolean;
+  sourceUrl?: string;
+  lastVerifiedAt?: string;
+  confidence?: DataConfidence;
+}
+
+interface RawCorpseActionFile {
+  sourceUrl?: string;
+  lastVerifiedAt?: string;
+  entries?: RawCorpseActionEntry[];
+}
+
+const CREATURE_PRODUCT_FILE = creatureProductsFile as unknown as RawCreatureProductsFile;
+const CREATURE_PRODUCT_ITEMS = CREATURE_PRODUCT_FILE.items ?? [];
+const SKINNING_FILE = skinningFile as unknown as RawCorpseActionFile;
+const SKINNING_ENTRIES = SKINNING_FILE.entries ?? [];
+const DUSTING_FILE = dustingFile as unknown as RawCorpseActionFile;
+const DUSTING_ENTRIES = DUSTING_FILE.entries ?? [];
 
 const ELEMENT_TYPES: ElementType[] = [
   'physical',
@@ -50,6 +111,12 @@ export function normaliseNameForMatch(name: string): string {
     .toLowerCase()
     .replace(/^(a|an|the)\s+/, '')
     .replace(/\s+/g, ' ');
+}
+
+export function creatureIdFromName(name: string): string {
+  return normaliseNameForMatch(name)
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
 
 export function normaliseDifficulty(raw: string | undefined | null): BestiaryDifficulty {
@@ -126,6 +193,75 @@ function pickBoolean(entry: RawBestiaryEntry, keys: string[]): boolean | undefin
     if (typeof value === 'number') return value !== 0;
   }
   return undefined;
+}
+
+function normaliseMarketPrices(raw: Record<string, number | null> | undefined): Record<string, number | null> {
+  if (!raw) return {};
+  return Object.fromEntries(Object.entries(raw).map(([world, value]) => [world, typeof value === 'number' ? value : null]));
+}
+
+function buildCreatureProducts(creatureId: string): CreatureProductDrop[] {
+  const products: CreatureProductDrop[] = [];
+  for (const item of CREATURE_PRODUCT_ITEMS) {
+    for (const drop of item.droppedBy ?? []) {
+      if (drop.creatureId !== creatureId) continue;
+      products.push({
+        itemId: item.itemId,
+        itemName: item.itemName,
+        npcPrice: typeof item.npcPrice === 'number' ? item.npcPrice : null,
+        marketPrice: null,
+        marketPriceByWorld: normaliseMarketPrices(item.marketPriceByWorld),
+        weight: typeof item.weight === 'number' ? item.weight : null,
+        dropChance: typeof drop.dropChance === 'number' ? drop.dropChance : null,
+        dropChanceConfidence: drop.dropChanceConfidence ?? 'unknown',
+        sourceUrl: item.sourceUrl ?? CREATURE_PRODUCT_FILE.sourceUrl ?? '',
+        lastVerifiedAt: item.lastVerifiedAt ?? CREATURE_PRODUCT_FILE.lastVerifiedAt ?? '',
+      });
+    }
+  }
+  return products;
+}
+
+function buildCorpseAction(
+  creatureId: string,
+  entries: RawCorpseActionEntry[],
+  source: RawCorpseActionFile,
+): CorpseActionProfile | null {
+  const entry = entries.find((candidate) => candidate.creatureId === creatureId);
+  if (!entry || !entry.eligible) return null;
+  return {
+    eligible: true,
+    tool: entry.tool,
+    productItemId: entry.productItemId,
+    productItemName: entry.productItemName,
+    npcPrice: typeof entry.npcPrice === 'number' ? entry.npcPrice : null,
+    marketPrice: null,
+    marketPriceByWorld: normaliseMarketPrices(entry.marketPriceByWorld),
+    baseSuccessChance: typeof entry.baseSuccessChance === 'number' ? entry.baseSuccessChance : null,
+    baseSuccessChanceConfidence: entry.baseSuccessChanceConfidence ?? 'unknown',
+    corpseEligibleSeconds: typeof entry.corpseEligibleSeconds === 'number' ? entry.corpseEligibleSeconds : null,
+    specialCaseMultipleAttempts: entry.specialCaseMultipleAttempts ?? false,
+    specialCaseGuaranteedSuccess: entry.specialCaseGuaranteedSuccess ?? false,
+    sourceUrl: entry.sourceUrl ?? source.sourceUrl ?? '',
+    lastVerifiedAt: entry.lastVerifiedAt ?? source.lastVerifiedAt ?? '',
+    confidence: entry.confidence ?? 'low',
+  };
+}
+
+function productValue(npcPrice: number | null, marketPrice: number | null): number | null {
+  return marketPrice ?? npcPrice;
+}
+
+function expectedCreatureProductValuePerKill(products: CreatureProductDrop[]): number | null {
+  let total = 0;
+  let hasKnownValue = false;
+  for (const product of products) {
+    const value = productValue(product.npcPrice, product.marketPrice);
+    if (product.dropChance === null || value === null) continue;
+    total += product.dropChance * value;
+    hasKnownValue = true;
+  }
+  return hasKnownValue ? total : null;
 }
 
 /** Smallest edit distance between two strings - used only to catch minor typos/plurals in pasted monster names. */
@@ -224,6 +360,9 @@ export function buildMonsterProfile(
       supportsDusting: null,
       skinningValue: null,
       dustingValue: null,
+      creatureProducts: [],
+      skinning: null,
+      dusting: null,
       fleeHealthPercent: null,
       conditions: [],
       damageProfile: null,
@@ -238,6 +377,9 @@ export function buildMonsterProfile(
         'supportsDusting',
         'skinningValue',
         'dustingValue',
+        'creatureProducts',
+        'skinning',
+        'dusting',
         'fleeHealthPercent',
         'conditions',
         'damageProfile',
@@ -266,20 +408,32 @@ export function buildMonsterProfile(
   const averageLootValue = pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.averageLootValue!) ?? huntDerivedLootValue;
   if (averageLootValue === null || averageLootValue === undefined) missingFields.push('averageLootValue');
 
-  const creatureProductValue = pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.creatureProductValue!) ?? null;
-  if (creatureProductValue === null) missingFields.push('creatureProductValue');
+  const creatureId = creatureIdFromName(entry.name);
+  const creatureProducts = buildCreatureProducts(creatureId);
+  const creatureProductValue =
+    expectedCreatureProductValuePerKill(creatureProducts) ?? pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.creatureProductValue!) ?? null;
+  if (creatureProducts.length === 0 && creatureProductValue === null) missingFields.push('creatureProducts');
+  if (creatureProducts.some((product) => product.dropChance === null)) missingFields.push('creatureProducts.dropChance');
+  if (creatureProducts.some((product) => productValue(product.npcPrice, product.marketPrice) === null)) {
+    missingFields.push('creatureProducts.price');
+  }
 
-  const supportsSkinning = pickBoolean(entry, ['supports_skinning', 'skinning', 'can_skin']) ?? null;
+  const skinning = buildCorpseAction(creatureId, SKINNING_ENTRIES, SKINNING_FILE);
+  const dusting = buildCorpseAction(creatureId, DUSTING_ENTRIES, DUSTING_FILE);
+
+  const supportsSkinning = skinning?.eligible ?? pickBoolean(entry, ['supports_skinning', 'skinning', 'can_skin']) ?? null;
   if (supportsSkinning === null) missingFields.push('supportsSkinning');
 
-  const supportsDusting = pickBoolean(entry, ['supports_dusting', 'dusting', 'can_dust']) ?? null;
+  const supportsDusting = dusting?.eligible ?? pickBoolean(entry, ['supports_dusting', 'dusting', 'can_dust']) ?? null;
   if (supportsDusting === null) missingFields.push('supportsDusting');
 
-  const skinningValue = pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.skinningValue!) ?? null;
+  const skinningValue = skinning ? productValue(skinning.npcPrice, skinning.marketPrice) : pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.skinningValue!) ?? null;
   if (skinningValue === null) missingFields.push('skinningValue');
+  if (skinning && skinning.baseSuccessChance === null) missingFields.push('skinning.baseSuccessChance');
 
-  const dustingValue = pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.dustingValue!) ?? null;
+  const dustingValue = dusting ? productValue(dusting.npcPrice, dusting.marketPrice) : pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.dustingValue!) ?? null;
   if (dustingValue === null) missingFields.push('dustingValue');
+  if (dusting && dusting.baseSuccessChance === null) missingFields.push('dusting.baseSuccessChance');
 
   const fleeHealthPercent = pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.fleeHealthPercent!) ?? null;
   if (fleeHealthPercent === null) missingFields.push('fleeHealthPercent');
@@ -297,6 +451,9 @@ export function buildMonsterProfile(
     supportsDusting,
     skinningValue,
     dustingValue,
+    creatureProducts,
+    skinning,
+    dusting,
     fleeHealthPercent,
     conditions: entry.negative_conditions ?? [],
     damageProfile,

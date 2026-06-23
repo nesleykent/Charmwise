@@ -94,6 +94,9 @@ export interface ScoreBreakdown {
   safetyScore: number;
   supplySavingScore: number;
   utilityScore: number;
+  /** Weighted score before confidence adjustment. */
+  rawTotalScore: number;
+  /** Weighted score after confidence adjustment; this is what ranking uses. */
   totalScore: number;
 }
 
@@ -125,7 +128,7 @@ export interface CharmEffectEstimate {
   utilityNote?: string;
 }
 
-export type ConfidenceLevel = 'high' | 'medium' | 'low';
+export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown';
 
 /**
  * A translatable piece of generated text. `code` looks up a template in
