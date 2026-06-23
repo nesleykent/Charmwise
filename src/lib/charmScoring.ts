@@ -340,6 +340,7 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
         warnings.push({ code: 'no_skinning_dusting_data' });
         return { effect: emptyEffect(), warnings, confidence: 'low' };
       }
+      warnings.push({ code: 'scavenge_approximation_note' });
       const value = (canSkin ? monster.skinningValue ?? 0 : 0) + (canDust ? monster.dustingValue ?? 0 : 0);
       const profit = (huntStat.killsPerHour ?? 0) * value * tier.value;
       return {
@@ -372,6 +373,7 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
     }
 
     case 'movement_speed_on_hit_received': {
+      warnings.push({ code: 'adrenaline_burst_haste_note' });
       return { effect: { ...emptyEffect(), utilityMagnitude: activation }, warnings, confidence: 'low' };
     }
 

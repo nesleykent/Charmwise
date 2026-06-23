@@ -211,7 +211,7 @@ const en: Dictionary = {
     damage_level_capped:
       "Damage capped at {{multiplier}}x your character level (the Winter Update 2024 Charm cap) - this creature's hitpoints would otherwise allow more.",
     carnage_aoe_note:
-      'Carnage hits other creatures near the kill, not the one that died - this estimate assumes a similar nearby target and is most accurate when hunting in packs.',
+      "Carnage hits other creatures near the kill, not the one that died, and is mitigated by the nearby target's armour rather than its resistance - this estimate uses the killed creature's resistance as a rough stand-in, since armour isn't in the Bestiary data. Most accurate when hunting in packs of the same creature.",
     no_mana: 'Character has no mana - Overflux cannot proc.',
     incoming_damage_estimated: 'Incoming damage from this creature is estimated from session Healing/h, not a direct figure.',
     parry_armour_note:
@@ -220,9 +220,12 @@ const en: Dictionary = {
     no_life_leech: 'Character has 0% base Life Leech - Vampiric Embrace requires existing leech on your equipment.',
     no_mana_leech: "Character has 0% base Mana Leech - Void's Call requires existing leech on your equipment.",
     no_mana_drain: 'This creature has no known Mana Drain attack - Void Inversion has nothing to invert.',
-    mana_drain_estimated: 'Mana drained per hour is estimated from incoming damage, not a direct figure.',
+    mana_drain_estimated: 'Mana drained per hour is estimated as 30% of incoming damage - an assumed share, not a documented figure.',
     no_creature_product_data: 'No creature product value available for this creature in the Bestiary data source.',
     no_skinning_dusting_data: 'No Skinning/Dusting data available for this creature in the Bestiary data source.',
+    scavenge_approximation_note:
+      "Scavenge's tier value is really a relative increase to your base Skinning/Dusting chance, not a direct multiplier on loot value - applied as one here since the base chance isn't in the Bestiary data. Treat this as an order-of-magnitude estimate.",
+    adrenaline_burst_haste_note: 'Cancelled by the Haste spell - provides no benefit while Haste is active, which most characters keep running.',
     paralysis_uptime_estimated: 'Paralysis uptime is estimated by treating the whole average gap between kills as combat time.',
     fatal_hold_note: 'Most valuable against creatures that flee at low health; time saved is not modelled numerically.',
     no_conditions_known:

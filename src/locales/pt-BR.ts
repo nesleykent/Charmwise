@@ -212,7 +212,7 @@ const ptBR: Dictionary = {
     damage_level_capped:
       'Dano limitado a {{multiplier}}x o nivel do seu personagem (o limite de Charm do Winter Update 2024) - a vida desta criatura permitiria mais.',
     carnage_aoe_note:
-      'Carnage acerta outras criaturas perto da que morreu, nao a propria - esta estimativa assume um alvo proximo semelhante e e mais precisa ao cacar em grupos.',
+      'Carnage acerta outras criaturas perto da que morreu, nao a propria, e e mitigada pela armadura do alvo proximo, nao pela resistencia dele - esta estimativa usa a resistencia da criatura morta como uma aproximacao, ja que a armadura nao esta nos dados do Bestiario. Mais precisa ao cacar em grupos da mesma criatura.',
     no_mana: 'O personagem nao tem mana - Overflux nao pode ser ativada.',
     incoming_damage_estimated: 'O dano recebido desta criatura e estimado a partir do Healing/h da sessao, nao e um valor direto.',
     parry_armour_note:
@@ -221,9 +221,12 @@ const ptBR: Dictionary = {
     no_life_leech: 'O personagem tem 0% de Life Leech base - Vampiric Embrace exige Life Leech ja existente no equipamento.',
     no_mana_leech: "O personagem tem 0% de Mana Leech base - Void's Call exige Mana Leech ja existente no equipamento.",
     no_mana_drain: 'Esta criatura nao possui ataque de Mana Drain conhecido - Void Inversion nao tem o que inverter.',
-    mana_drain_estimated: 'A mana drenada por hora e estimada a partir do dano recebido, nao e um valor direto.',
+    mana_drain_estimated: 'A mana drenada por hora e estimada como 30% do dano recebido - uma fracao assumida, nao um valor documentado.',
     no_creature_product_data: 'Nenhum valor de Produto de Criatura disponivel para esta criatura na fonte de dados do Bestiario.',
     no_skinning_dusting_data: 'Nenhum dado de Skinning/Dusting disponivel para esta criatura na fonte de dados do Bestiario.',
+    scavenge_approximation_note:
+      'O valor do nivel de Scavenge e, na verdade, um aumento relativo a sua chance base de Skinning/Dusting, nao um multiplicador direto sobre o valor do loot - aplicado como tal aqui porque a chance base nao esta nos dados do Bestiario. Trate isso como uma estimativa de ordem de grandeza.',
+    adrenaline_burst_haste_note: 'Cancelada pela magia Haste - nao traz beneficio enquanto Haste esta ativa, que a maioria dos personagens mantem ligada.',
     paralysis_uptime_estimated: 'O tempo de paralisia e estimado tratando todo o intervalo medio entre kills como tempo de combate.',
     fatal_hold_note: 'Mais valiosa contra criaturas que fogem com vida baixa; o tempo economizado nao e modelado numericamente.',
     no_conditions_known:
