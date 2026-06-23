@@ -189,9 +189,27 @@ function EffectModelPanel({ rec, t, locale }: { rec: CharmRecommendation; t: Dic
   } else if (c.effectKind === 'mana_drain_inversion') {
     formulaLines.push({
       label: t.results.modelHourlyEstimate,
-      formula: `${formatNumber(c.manaDrainReceivedPerHour, locale)} estimated mana drain/h x ${formatPercent(c.activationChance ?? 0, 1)} proc chance`,
+      formula: `${formatNumber(c.manaDrainReceivedPerHour, locale)} estimated mana drain/h x ${formatPercent(c.activationChance ?? 0, 1)} proc chance x 2 net swing (loss avoided + mana gained)`,
       result: `${formatNumber(rec.effect.expectedManaSavedPerHour, locale)} ${t.results.metrics.expectedHealingSavedPerHour.toLowerCase()}`,
     });
+  } else if (c.effectKind === 'prevent_flee') {
+    if (c.fleeHealthPercent === null) {
+      formulaLines.push({
+        label: t.results.modelHourlyEstimate,
+        formula: t.messages.no_flee_data ?? 'No flee-at-low-health threshold is available for this creature.',
+      });
+    } else if (c.fleeHealthPercent <= 0) {
+      formulaLines.push({
+        label: t.results.modelHourlyEstimate,
+        formula: t.messages.no_flee_behavior ?? 'This creature is marked as not fleeing at low health.',
+      });
+    } else {
+      formulaLines.push({
+        label: t.results.modelHourlyEstimate,
+        formula: `${formatPercent(c.activationChance ?? 0, 1)} proc chance x ${formatPercent(c.fleeHealthPercent, 1)} low-health flee window`,
+        result: `${formatScore(rec.effect.utilityMagnitude)} ${t.scoreDimensions.utility.toLowerCase()}`,
+      });
+    }
   } else if (c.effectKind === 'paralyse_creature_on_attack' || c.effectKind === 'paralyse_creature_on_hit_received') {
     const averageSecondsPerKill = c.killsPerHour && c.killsPerHour > 0 ? 3600 / c.killsPerHour : null;
     const uptime = averageSecondsPerKill ? Math.min(1, ((c.activationChance ?? 0) * c.tierValue) / averageSecondsPerKill) : null;

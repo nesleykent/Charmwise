@@ -264,7 +264,28 @@ describe('computeCharmEffect - leech and mana charms', () => {
         monster: makeMonster({ damageProfile: { attackType: 'melee', dealtElements: [], inflictsManaDrain: true, inflictsLifeDrain: false } }),
       }),
     );
-    expect(withDrain.effect.expectedManaSavedPerHour).toBeCloseTo(3_000 * 0.2, 5);
+    // A proc changes "-X mana" into "+X mana", so the net supply swing is 2X.
+    expect(withDrain.effect.expectedManaSavedPerHour).toBeCloseTo(3_000 * 0.2 * 2, 5);
+  });
+});
+
+describe('computeCharmEffect - creature-specific utility charms', () => {
+  it('Fatal Hold is unscored when flee-at-low-health data is missing', () => {
+    const result = computeCharmEffect(getCharmDefinition('fatal_hold'), getCharmDefinition('fatal_hold').tiers[0], makeContext());
+    expect(result.effect.utilityMagnitude).toBe(0);
+    expect(result.confidence).toBe('unknown');
+    expect(result.warnings.some((w) => w.code === 'no_flee_data')).toBe(true);
+  });
+
+  it('Fatal Hold scales only when the creature is known to flee at low health', () => {
+    const result = computeCharmEffect(
+      getCharmDefinition('fatal_hold'),
+      getCharmDefinition('fatal_hold').tiers[0],
+      makeContext({ monster: makeMonster({ fleeHealthPercent: 0.2 }) }),
+    );
+    expect(result.effect.utilityMagnitude).toBeCloseTo(0.3 * 0.2, 5);
+    expect(result.confidence).toBe('low');
+    expect(result.warnings.some((w) => w.code === 'no_flee_data')).toBe(false);
   });
 });
 

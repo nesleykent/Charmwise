@@ -195,6 +195,11 @@ function pickBoolean(entry: RawBestiaryEntry, keys: string[]): boolean | undefin
   return undefined;
 }
 
+function normalisePercentFraction(value: number | undefined): number | null {
+  if (value === undefined || !Number.isFinite(value)) return null;
+  return value > 1 ? value / 100 : value;
+}
+
 function normaliseMarketPrices(raw: Record<string, number | null> | undefined): Record<string, number | null> {
   if (!raw) return {};
   return Object.fromEntries(Object.entries(raw).map(([world, value]) => [world, typeof value === 'number' ? value : null]));
@@ -445,7 +450,7 @@ export function buildMonsterProfile(
   if (dustingValue === null) missingFields.push('dustingValue');
   if (dusting && dusting.baseSuccessChance === null) missingFields.push('dusting.baseSuccessChance');
 
-  const fleeHealthPercent = pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.fleeHealthPercent!) ?? null;
+  const fleeHealthPercent = normalisePercentFraction(pickNumber(entry, MISSING_FIELD_CANDIDATE_KEYS.fleeHealthPercent!));
   if (fleeHealthPercent === null) missingFields.push('fleeHealthPercent');
 
   return {

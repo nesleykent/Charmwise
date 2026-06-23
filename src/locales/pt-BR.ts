@@ -296,7 +296,9 @@ const ptBR: Dictionary = {
     paralysis_uptime_estimated: 'O tempo de paralisia e estimado tratando todo o intervalo medio entre kills como tempo de combate.',
     cripple_numb_same_values:
       'Cripple e Numb tem a mesma chance de ativacao e duracao por tier no Tibia (elas so disparam de forma diferente - seu ataque vs. um golpe que voce recebe) - pontuacoes identicas aqui refletem isso, nao um erro de calculo.',
-    fatal_hold_note: 'Mais valiosa contra criaturas que fogem com vida baixa; o tempo economizado nao e modelado numericamente.',
+    fatal_hold_note: 'So tem valor contra criaturas que fogem com vida baixa; o tempo economizado nao e modelado numericamente.',
+    no_flee_data: 'Nenhum limite de fuga com vida baixa esta disponivel para esta criatura - Fatal Hold fica sem pontuacao em vez de assumir que ajuda.',
+    no_flee_behavior: 'Esta criatura esta marcada como nao fugindo com vida baixa - Fatal Hold nao tem efeito aqui.',
     no_conditions_known:
       'Nenhuma condicao especial conhecida para esta criatura - Cleanse ainda pode ajudar contra condicoes que os dados do Bestiario nao listam.',
     bless_risk_note: 'O valor de Bless escala com uma estimativa de risco baseada na dificuldade, nao com uma probabilidade real de morte.',

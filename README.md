@@ -123,7 +123,7 @@ Elemental damage charms (Curse, Divine Wrath, Enflame, Freeze, Poison, Wound, Za
 
 Carnage (on kill, not on attack):
   base_damage = min(monster_hitpoints * 0.15, character_level * 6)
-  expected_damage_per_kill = base_damage * activation_chance * physical_resistance_multiplier
+  expected_damage_per_kill = base_damage * activation_chance * physical_resistance_multiplier * armour_mitigation_factor
 
 Overpower:
   proc_damage = min(character_max_hitpoints * 0.05, monster_hitpoints * 0.08)
@@ -134,7 +134,7 @@ Overflux:
   expected_damage_per_attack = proc_damage * activation_chance
 
 Dodge:               expected_damage_prevented_per_hour = incoming_damage_per_hour * activation_chance
-Parry:               expected_reflected_damage_per_hour  = incoming_damage_per_hour * activation_chance
+Parry:               expected_reflected_damage_per_hour  = incoming_damage_per_hour * activation_chance * armour_mitigation_factor
 Low Blow:            expected_damage_gain = base_damage_per_hour * added_critical_chance * critical_damage_bonus
 Savage Blow:         expected_damage_gain = base_damage_per_hour * critical_chance * added_critical_damage
 Gut:                 product_ev_per_kill = sum(drop_chance * product_value)
@@ -143,12 +143,15 @@ Scavenge:            success_delta = min(1 - base_success_chance, base_success_c
                      expected_profit_gain_per_hour = eligible_kills_per_hour * success_delta * product_value
 Vampiric Embrace:    expected_healing_gain_per_hour = damage_per_hour * added_life_leech_percent
 Void's Call:         expected_mana_gain_per_hour = damage_per_hour * added_mana_leech_percent
-Void Inversion:      expected_mana_saved_per_hour = mana_drain_received_per_hour * activation_chance
+Void Inversion:      expected_mana_saved_per_hour = mana_drain_received_per_hour * activation_chance * 2
+                     (the proc changes -X mana into +X mana, so the net swing is 2X)
+Fatal Hold:          utility = activation_chance * flee_health_percent
+                     (left unscored when the creature's flee threshold is unknown)
 ```
 
 Every damage-dealing Charm also derives an incremental XP/profit contribution from the extra kills/hour its bonus damage enables (`extra_damage_per_hour / monster_hitpoints`), which is what feeds `xp_score` and `profit_score` for charms that the spec doesn't give a standalone XP/profit formula for. This treats extra damage as converting into extra kills at a constant, continuous rate - a reasonable approximation over a full session's worth of kills, but see **Limitations** for when it can overstate the real gain.
 
-Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless have no currency-denominated formula in the source material (they are crowd-control/defensive effects). Charmwise estimates a defensible value for each (paralysis uptime for Cripple/Numb, a difficulty-scaled risk factor for Bless, condition relevance for Cleanse) and documents every assumed constant at the top of [`charmScoring.ts`](src/lib/charmScoring.ts) - see **Limitations** below.
+Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless have no currency-denominated formula in the source material (they are crowd-control/defensive effects). Charmwise estimates a defensible value where source data exists (paralysis uptime for Cripple/Numb, a difficulty-scaled risk factor for Bless, condition relevance for Cleanse, and flee-threshold relevance for Fatal Hold) and documents every assumed constant at the top of [`charmScoring.ts`](src/lib/charmScoring.ts) - see **Limitations** below.
 
 ### Scoring
 
@@ -189,7 +192,7 @@ reset_cost   = 0 if the free reset hasn't been used yet
 - The incremental XP/profit derived from a damage-dealing Charm (`extra_damage_per_hour / monster_hitpoints` extra kills/hour) assumes every point of extra damage converts smoothly into extra completed kills within the same hour. In reality, if your kill rate is bottlenecked by something other than raw damage - travel time between spawns, looting, mana regeneration - a faster kill on an already-fast fight may not actually free up time for an additional kill. This isn't double-counting observed session data (the per-kill XP/loot values come from the session, but the *extra* kills are a forward projection of adding the Charm on top of it, not a recount of kills already in the session), but it is a linear idealisation that can overstate the real marginal gain, especially in already damage-saturated hunts.
 - The product/corpse-action datasets are intentionally partial. Gut and Scavenge now have normalized mappings for the highest-priority creatures, but drop chances and base Skinning/Dusting success chances are still unknown for many entries and are excluded from EV until verified.
 - Carnage's AoE damages *other* nearby creatures, not the one that died, and is mitigated by that creature's *armour* (per TibiaWiki), not its resistance; Charmwise approximates this using the killed creature's own resistance as a stand-in (armour isn't in the Bestiary data), which is most accurate when hunting a single species in a pack.
-- Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless are scored from documented heuristic assumptions rather than the spec's explicit EV formulas, since none was given for them. Adrenaline Burst specifically is cancelled by the Haste spell and provides no benefit while Haste is active, which most characters keep running near-permanently - shown as a warning on the charm.
+- Cleanse, Cripple, Numb, Fatal Hold, Adrenaline Burst and Bless are scored from documented heuristic assumptions rather than the spec's explicit EV formulas, since none was given for them. Fatal Hold is left unscored unless the creature has a known low-health flee threshold, because the current Bestiary source does not expose that data for most creatures. Adrenaline Burst specifically is cancelled by the Haste spell and provides no benefit while Haste is active, which most characters keep running near-permanently - shown as a warning on the charm.
 - Scavenge's tier value (60/90/120%) is modelled as a *relative* increase to base Skinning/Dusting success chance. If the base chance is unknown, Charmwise shows an unknown-data warning and leaves the Scavenge EV at zero instead of applying the tier value directly to product value.
 - Bestiary "unlocked" status is treated as "this creature has a matching Bestiary entry at all", since per-account completion progress is not exposed by the data source.
 - Critical chance/damage default to the universal 5%/10% baseline but are editable under Advanced settings. They're still a single flat number each, though - if your build has invested Augment points into critical hits (e.g. a Sorcerer's Master of Energy/Master of Death, which are tied to a specific spell element), your real crit rate may vary by which element you're hitting a creature with, which one field per stat can't capture.

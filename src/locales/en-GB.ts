@@ -293,7 +293,9 @@ const en: Dictionary = {
     paralysis_uptime_estimated: 'Paralysis uptime is estimated by treating the whole average gap between kills as combat time.',
     cripple_numb_same_values:
       "Cripple and Numb have the same activation chance and duration per tier in Tibia (they just trigger differently - your attack vs. a hit you take) - identical scores here reflect that, not a calculation error.",
-    fatal_hold_note: 'Most valuable against creatures that flee at low health; time saved is not modelled numerically.',
+    fatal_hold_note: 'Only valuable against creatures that flee at low health; time saved is not modelled numerically.',
+    no_flee_data: 'No flee-at-low-health threshold is available for this creature - Fatal Hold is left unscored instead of assuming it helps.',
+    no_flee_behavior: 'This creature is marked as not fleeing at low health - Fatal Hold has no effect here.',
     no_conditions_known:
       'No special conditions known for this creature - Cleanse may still help against conditions the Bestiary data does not list.',
     bless_risk_note: 'Bless value scales with a difficulty-based risk estimate, not an actual death probability.',

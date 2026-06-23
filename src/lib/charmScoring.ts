@@ -390,7 +390,9 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
         return { effect: emptyEffect(), warnings, confidence: 'high' };
       }
       warnings.push({ code: 'mana_drain_estimated' });
-      const saved = ctx.manaDrainReceivedPerHour * activation;
+      // The proc flips a mana-drain hit from "-X mana" into "+X mana".
+      // Compared with the no-charm baseline, the net supply swing is 2X.
+      const saved = ctx.manaDrainReceivedPerHour * activation * 2;
       return {
         effect: { ...emptyEffect(), expectedManaSavedPerHour: saved },
         warnings,
@@ -460,7 +462,19 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
 
     case 'prevent_flee': {
       warnings.push({ code: 'fatal_hold_note' });
-      return { effect: { ...emptyEffect(), utilityMagnitude: activation }, warnings, confidence: 'low' };
+      if (monster.fleeHealthPercent === null) {
+        warnings.push({ code: 'no_flee_data' });
+        return { effect: emptyEffect(), warnings, confidence: 'unknown' };
+      }
+      if (monster.fleeHealthPercent <= 0) {
+        warnings.push({ code: 'no_flee_behavior' });
+        return { effect: emptyEffect(), warnings, confidence: 'high' };
+      }
+      return {
+        effect: { ...emptyEffect(), utilityMagnitude: activation * monster.fleeHealthPercent },
+        warnings,
+        confidence: 'low',
+      };
     }
 
     case 'movement_speed_on_hit_received': {

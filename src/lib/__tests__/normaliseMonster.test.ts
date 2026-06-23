@@ -11,6 +11,7 @@ const FIXTURE: RawBestiaryEntry[] = [
     attack_type: 'Melee',
     damage_types: ['physical', 'earth'],
     negative_conditions: [],
+    flee_percent: 15,
     // The upstream export stores this as a numeric string, not a number.
     mitigation: '0.36',
     resistances: [
@@ -68,6 +69,12 @@ describe('normaliseMonster', () => {
     const profile = buildMonsterProfile('toad', FIXTURE);
     expect(profile.mitigation).toBeCloseTo(0.0036, 6);
     expect(profile.missingFields).not.toContain('mitigation');
+  });
+
+  it('normalises flee thresholds from percent values to fractions', () => {
+    const profile = buildMonsterProfile('toad', FIXTURE);
+    expect(profile.fleeHealthPercent).toBeCloseTo(0.15, 6);
+    expect(profile.missingFields).not.toContain('fleeHealthPercent');
   });
 
   it('is case- and whitespace-insensitive and strips a leading article', () => {

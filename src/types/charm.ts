@@ -145,6 +145,7 @@ export interface CharmModelBreakdown {
   baseDamagePerHourAgainstMonster: number;
   incomingDamagePerHourFromMonster: number;
   manaDrainReceivedPerHour: number;
+  fleeHealthPercent: number | null;
 }
 
 export type OptimisationMode = 'balanced' | 'xp' | 'profit' | 'safety' | 'low_supplies';

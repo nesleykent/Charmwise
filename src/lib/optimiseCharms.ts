@@ -140,6 +140,7 @@ function buildCalculationBreakdown(
     baseDamagePerHourAgainstMonster: ctx.baseDamagePerHourAgainstMonster,
     incomingDamagePerHourFromMonster: ctx.incomingDamagePerHourFromMonster,
     manaDrainReceivedPerHour: ctx.manaDrainReceivedPerHour,
+    fleeHealthPercent: ctx.monster.fleeHealthPercent,
   };
 
   if (hp === null) return base;
