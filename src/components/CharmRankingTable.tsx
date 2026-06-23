@@ -182,6 +182,35 @@ function ScoreCalculationPanel({ rec, t, locale }: { rec: CharmRecommendation; t
   );
 }
 
+// Anything closer than this rounds to the same displayed (1-decimal) score
+// via formatScore - treated as a tie regardless of any tinier float
+// difference underneath, since that's what's actually visible.
+const TIE_EPSILON = 0.05;
+
+/**
+ * Standard competition ranking (1, 2, 2, 4 - not 1, 2, 2, 3): true ties on
+ * total score are common here, not a bug - a charm that's simultaneously the
+ * per-creature maximum in both damage and profit (xp/profit scale linearly
+ * with damage for one creature) normalises to exactly 100 in both
+ * dimensions, so the same charm dominating two different creatures can land
+ * on the exact same weighted total. Showing a strict, unbroken 1-2-3-4 here
+ * would assert a confidence in the ordering that the math doesn't actually
+ * have.
+ */
+function computeDisplayRanks(recommendations: CharmRecommendation[]): { rank: number; isTied: boolean }[] {
+  const ranks: number[] = [];
+  for (let i = 0; i < recommendations.length; i++) {
+    const tiedWithPrevious = i > 0 && Math.abs(recommendations[i]!.scores.totalScore - recommendations[i - 1]!.scores.totalScore) < TIE_EPSILON;
+    ranks.push(tiedWithPrevious ? ranks[i - 1]! : i + 1);
+  }
+  return recommendations.map((rec, i) => ({
+    rank: ranks[i]!,
+    isTied:
+      (i > 0 && Math.abs(rec.scores.totalScore - recommendations[i - 1]!.scores.totalScore) < TIE_EPSILON) ||
+      (i < recommendations.length - 1 && Math.abs(rec.scores.totalScore - recommendations[i + 1]!.scores.totalScore) < TIE_EPSILON),
+  }));
+}
+
 export function CharmRankingTable({ recommendations, detailed = false, emptyMessage, showCreatureName = false }: Props) {
   const { t, locale } = useLocale();
 
@@ -189,11 +218,16 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
     return <p className="text-sm text-charm-subtle">{emptyMessage ?? '-'}</p>;
   }
 
+  const displayRanks = computeDisplayRanks(recommendations);
+
   return (
-    <ol className="space-y-2.5">
+    <>
+      {recommendations.length > 1 && <p className="mb-2 text-[11px] leading-relaxed text-charm-subtle">{t.results.rankingCriterionNote}</p>}
+      <ol className="space-y-2.5">
       {recommendations.map((rec, index) => {
         const e = rec.effect;
         const scoreWasAdjusted = Math.abs(rec.scores.rawTotalScore - rec.scores.totalScore) > 0.05;
+        const { rank, isTied } = displayRanks[index]!;
         return (
           <li
             // The same recommendations array can be a per-creature ranking
@@ -206,15 +240,18 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
             // stays cheap and lets the single blurred glass panel it sits
             // inside (see call sites) carry the actual frosted-glass effect.
             className={`rounded-2xl border p-3.5 transition-colors ${
-              index === 0 && rec.unlocked
+              rank === 1 && rec.unlocked
                 ? 'border-charm-primary/50 bg-charm-primary/10 shadow-glow'
                 : 'border-white/10 bg-white/[0.03]'
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-charm-bg/80 text-xs font-bold text-charm-muted">
-                  {index + 1}
+                <span
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-charm-bg/80 text-xs font-bold text-charm-muted"
+                  title={isTied ? t.results.tiedRankHint : undefined}
+                >
+                  {isTied ? `=${rank}` : rank}
                 </span>
                 <span className="font-semibold text-white">
                   {t.charms[rec.charmId]?.name ?? rec.name}
@@ -276,11 +313,17 @@ export function CharmRankingTable({ recommendations, detailed = false, emptyMess
               <details className="mt-2.5">
                 <summary className="cursor-pointer text-xs font-medium text-charm-primary">{t.results.scoreDetailsTitle}</summary>
                 <ScoreCalculationPanel rec={rec} t={t} locale={locale} />
+                {rec.scores.damageScore > 0 &&
+                  Math.abs(rec.scores.damageScore - rec.scores.xpScore) < TIE_EPSILON &&
+                  Math.abs(rec.scores.damageScore - rec.scores.profitScore) < TIE_EPSILON && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-charm-subtle">{t.recommendationsPage.identicalSubScoresNote}</p>
+                  )}
               </details>
             )}
           </li>
         );
       })}
-    </ol>
+      </ol>
+    </>
   );
 }

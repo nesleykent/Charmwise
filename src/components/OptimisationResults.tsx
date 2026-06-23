@@ -28,13 +28,37 @@ function SummaryCard({ title, value, accent }: { title: string; value: string; a
 
 export function OptimisationResults({ summary }: Props) {
   const { t, locale } = useLocale();
-  const { scope, setScope } = useWorkspace();
+  const { scope, setScope, character } = useWorkspace();
   const improvement = summary.expectedImprovementSummary;
+
+  const hasAnyUnlockedCharms = character.unlockedMajorCharms.length > 0 || character.unlockedMinorCharms.length > 0;
+  const improvementIsZero =
+    improvement.extraDamagePerHour === 0 &&
+    improvement.extraProfitPerHour === 0 &&
+    improvement.extraDamagePreventedPerHour === 0 &&
+    improvement.extraHealingSavedPerHour === 0;
+  // Three distinct reasons every number below can read as 0/empty - stating
+  // which one applies is the actual fix for "0/6 but there are
+  // recommendations everywhere": those recommendations are about Charms
+  // that aren't unlocked yet, which this summary (current vs. achievable
+  // right now) correctly excludes.
+  const improvementState: 'nothing_unlocked' | 'already_optimal' | 'has_gain' = !hasAnyUnlockedCharms
+    ? 'nothing_unlocked'
+    : improvementIsZero
+      ? 'already_optimal'
+      : 'has_gain';
 
   return (
     <div className="space-y-8">
       <section>
         <SectionHeading>{t.results.improvementSummary}</SectionHeading>
+        <p className="mb-3 max-w-2xl text-xs leading-relaxed text-charm-muted">
+          {improvementState === 'nothing_unlocked'
+            ? t.results.improvementStateNothingUnlocked
+            : improvementState === 'already_optimal'
+              ? t.results.improvementStateAlreadyOptimal
+              : t.results.improvementStateHasGain}
+        </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <SummaryCard title={t.results.metrics.expectedDamagePerHour} value={formatNumber(improvement.extraDamagePerHour, locale)} accent />
           <SummaryCard title={t.results.metrics.expectedProfitPerHour} value={formatNumber(improvement.extraProfitPerHour, locale)} />
@@ -102,6 +126,11 @@ export function OptimisationResults({ summary }: Props) {
               ? `${summary.majorCharmSlotPlan.recommendedSlots.length} / ∞`
               : `${summary.majorCharmSlotPlan.recommendedSlots.length} / ${summary.majorCharmSlotPlan.slotLimit}`}
           </p>
+          {summary.majorCharmSlotPlan.recommendedSlots.length === 0 && (
+            <p className="mt-1.5 text-xs text-charm-subtle">
+              {character.unlockedMajorCharms.length > 0 ? t.results.slotsEmptyNoValue : t.results.slotsEmptyNothingUnlocked}
+            </p>
+          )}
           <ul className="mt-2 space-y-1 text-xs text-charm-muted">
             {summary.majorCharmSlotPlan.recommendedSlots.map((slot) => (
               <li key={slot.monsterName}>

@@ -30,6 +30,7 @@ const character: CharacterInput = {
   assignedMajorCharms: [],
   assignedMinorCharms: [],
   hasUsedFreeReset: false,
+  isPromoted: false,
 };
 
 const neutralResistances = { physical: 1, fire: 1, earth: 1, energy: 1, ice: 1, holy: 1, death: 1 };
@@ -42,6 +43,7 @@ function makeMonster(overrides: Partial<MonsterProfile> = {}): MonsterProfile {
     difficulty: 'medium',
     charmPoints: 25,
     resistances: { ...neutralResistances },
+    mitigation: null,
     averageLootValue: 200,
     creatureProductValue: 50,
     supportsSkinning: true,
@@ -196,6 +198,22 @@ describe('computeCharmEffect - Dodge and Parry', () => {
     const { effect } = computeCharmEffect(getCharmDefinition('parry'), getCharmDefinition('parry').tiers[0], ctx);
     expect(effect.expectedDamagePerHour).toBeCloseTo(10_000 * 0.05, 5);
     expect(effect.expectedDamagePreventedPerHour).toBe(0);
+  });
+
+  it('Parry reduces reflected damage by the monster armour mitigation when known, and raises confidence to high', () => {
+    const ctx = makeContext({ monster: makeMonster({ mitigation: 0.4 }), incomingDamageIsEstimated: false });
+    const { effect, warnings, confidence } = computeCharmEffect(getCharmDefinition('parry'), getCharmDefinition('parry').tiers[0], ctx);
+    expect(effect.expectedDamagePerHour).toBeCloseTo(10_000 * 0.05 * (1 - 0.4), 5);
+    expect(confidence).toBe('high');
+    expect(warnings.some((w) => w.code === 'parry_armour_note_with_mitigation')).toBe(true);
+  });
+
+  it('Parry treats unknown armour mitigation as a flat upper bound, with medium confidence', () => {
+    const ctx = makeContext({ monster: makeMonster({ mitigation: null }) });
+    const { effect, warnings, confidence } = computeCharmEffect(getCharmDefinition('parry'), getCharmDefinition('parry').tiers[0], ctx);
+    expect(effect.expectedDamagePerHour).toBeCloseTo(10_000 * 0.05, 5);
+    expect(confidence).toBe('medium');
+    expect(warnings.some((w) => w.code === 'parry_armour_note')).toBe(true);
   });
 });
 
@@ -374,6 +392,24 @@ describe('computeCharmEffect - Carnage (on-kill AoE)', () => {
     const { effect, warnings } = computeCharmEffect(getCharmDefinition('carnage'), getCharmDefinition('carnage').tiers[0], ctx);
     expect(effect.expectedDamagePerHour).toBeCloseTo(300 * 0.1 * 1 * 100, 5);
     expect(warnings.some((w) => w.code === 'damage_level_capped' && w.params?.multiplier === 6)).toBe(true);
+  });
+
+  it('reduces the AoE estimate by the killed creature armour mitigation as a stand-in, but never exceeds medium confidence', () => {
+    // Even with both resistance and mitigation known, the cross-creature gap
+    // (the splash hits a DIFFERENT, unknown nearby creature) can't be
+    // resolved by better data about the one that died.
+    const ctx = makeContext({ monster: makeMonster({ mitigation: 0.3 }) });
+    const { effect, warnings, confidence } = computeCharmEffect(getCharmDefinition('carnage'), getCharmDefinition('carnage').tiers[0], ctx);
+    expect(effect.expectedDamagePerHour).toBeCloseTo(1000 * 0.15 * 0.1 * 1 * 100 * (1 - 0.3), 5);
+    expect(confidence).toBe('medium');
+    expect(warnings.some((w) => w.code === 'carnage_aoe_note_with_mitigation')).toBe(true);
+  });
+
+  it('applies no mitigation reduction when the killed creature has no known armour data', () => {
+    const ctx = makeContext({ monster: makeMonster({ mitigation: null }) });
+    const { effect, warnings } = computeCharmEffect(getCharmDefinition('carnage'), getCharmDefinition('carnage').tiers[0], ctx);
+    expect(effect.expectedDamagePerHour).toBeCloseTo(1000 * 0.15 * 0.1 * 1 * 100, 5);
+    expect(warnings.some((w) => w.code === 'carnage_aoe_note')).toBe(true);
   });
 });
 

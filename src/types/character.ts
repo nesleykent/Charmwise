@@ -35,6 +35,8 @@ export interface CharacterInput {
   assignedMinorCharms: AssignedCharm[];
   /** Whether the player has already used their one free Charm reset. */
   hasUsedFreeReset: boolean;
+  /** Promotion grants a one-time 100 Minor Charm Echoes, on top of whatever Major Charm tiers have unlocked - see calculateAvailableMinorCharmEchoes. */
+  isPromoted: boolean;
 }
 
 /** Intrinsic baseline since the Summer Update 2025 Weapon Proficiency System - see CipSoft's update notes. */
@@ -58,4 +60,5 @@ export const DEFAULT_CHARACTER_INPUT: CharacterInput = {
   assignedMajorCharms: [],
   assignedMinorCharms: [],
   hasUsedFreeReset: false,
+  isPromoted: false,
 };

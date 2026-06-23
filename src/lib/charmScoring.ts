@@ -259,16 +259,24 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
       }
       const { multiplier, wasAssumedNeutral } = resistanceMultiplier(monster, charm.element ?? 'physical');
       if (wasAssumedNeutral) warnings.push(RESISTANCE_UNKNOWN);
-      warnings.push({ code: 'carnage_aoe_note' });
+      // The killed creature's own armour is the only mitigation figure
+      // available - still an approximation for whichever different creature
+      // is actually standing nearby, same as the resistance stand-in above.
+      const mitigationFactor = 1 - (monster.mitigation ?? 0);
+      warnings.push({ code: monster.mitigation !== null ? 'carnage_aoe_note_with_mitigation' : 'carnage_aoe_note' });
       const { base: cappedBase, wasCapped } = applyLevelCap(hp * tier.value, character.level, CARNAGE_LEVEL_CAP_MULTIPLIER);
       if (wasCapped) warnings.push({ code: 'damage_level_capped', params: { multiplier: CARNAGE_LEVEL_CAP_MULTIPLIER } });
-      const perKill = cappedBase * activation * Math.max(0, multiplier);
+      const perKill = cappedBase * activation * Math.max(0, multiplier) * Math.max(0, mitigationFactor);
       const killsPerHour = huntStat.killsPerHour ?? 0;
       const damagePerHour = Math.max(0, perKill * killsPerHour);
       return {
         effect: withDerivedXpProfit(damagePerHour, ctx, emptyEffect()),
         warnings,
-        confidence: wasAssumedNeutral ? 'medium' : 'high',
+        // Capped at 'medium' regardless of how much resistance/mitigation
+        // data is available - the structural gap (this estimate is always
+        // about a DIFFERENT, unknown nearby creature, not the one actually
+        // killed) can't be resolved by better data for the killed creature.
+        confidence: 'medium',
       };
     }
 
@@ -318,12 +326,16 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
 
     case 'reflect_incoming_damage': {
       if (ctx.incomingDamageIsEstimated) warnings.push({ code: 'incoming_damage_estimated' });
-      warnings.push({ code: 'parry_armour_note' });
-      const reflected = ctx.incomingDamagePerHourFromMonster * activation;
+      // Reflected damage goes back to the same creature that's attacking
+      // (unlike Carnage's splash), so this monster's own armour is the
+      // directly correct mitigation figure, not a cross-creature stand-in.
+      const mitigationFactor = 1 - (monster.mitigation ?? 0);
+      warnings.push({ code: monster.mitigation !== null ? 'parry_armour_note_with_mitigation' : 'parry_armour_note' });
+      const reflected = ctx.incomingDamagePerHourFromMonster * activation * Math.max(0, mitigationFactor);
       return {
         effect: withDerivedXpProfit(reflected, ctx, emptyEffect()),
         warnings,
-        confidence: ctx.incomingDamageIsEstimated ? 'medium' : 'high',
+        confidence: ctx.incomingDamageIsEstimated || monster.mitigation === null ? 'medium' : 'high',
       };
     }
 
@@ -430,6 +442,12 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
         return { effect: { ...emptyEffect(), utilityMagnitude: activation }, warnings, confidence: 'low' };
       }
       warnings.push({ code: 'paralysis_uptime_estimated' });
+      // Cripple (triggers on your attack) and Numb (triggers on a hit you
+      // receive) have identical per-tier activation chance and duration in
+      // Tibia, and this model estimates paralysis uptime the same way for
+      // both triggers - so they score identically whenever nothing else
+      // differs. That's the underlying game data matching, not a bug.
+      warnings.push({ code: 'cripple_numb_same_values' });
       const avgSecondsPerKill = 3600 / killsPerHour;
       const uptimeFraction = Math.min(1, (activation * tier.value) / avgSecondsPerKill);
       const prevented = ctx.incomingDamagePerHourFromMonster * uptimeFraction;

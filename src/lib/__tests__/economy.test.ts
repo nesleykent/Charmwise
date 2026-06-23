@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateMajorCharmSlotLimit, calculateRemovalCost, calculateResetCost } from '@/lib/economy';
+import { calculateAvailableMinorCharmEchoes, calculateMajorCharmSlotLimit, calculateRemovalCost, calculateResetCost } from '@/lib/economy';
 
 describe('calculateMajorCharmSlotLimit', () => {
   it('gives free accounts 2 slots and premium accounts 6', () => {
@@ -36,5 +36,33 @@ describe('calculateResetCost', () => {
   it('adds 11,000 gold per level above 100 after the free reset', () => {
     expect(calculateResetCost(101, true)).toBe(111_000);
     expect(calculateResetCost(103, true)).toBe(133_000);
+  });
+});
+
+describe('calculateAvailableMinorCharmEchoes', () => {
+  it('gives 50/150/350 cumulative MCE for a single Major Charm at Bronze/Silver/Gold', () => {
+    expect(calculateAvailableMinorCharmEchoes([{ charmId: 'wound', tier: 1 }], false)).toBe(50);
+    expect(calculateAvailableMinorCharmEchoes([{ charmId: 'wound', tier: 2 }], false)).toBe(150);
+    expect(calculateAvailableMinorCharmEchoes([{ charmId: 'wound', tier: 3 }], false)).toBe(350);
+  });
+
+  it('sums across every unlocked Major Charm', () => {
+    const total = calculateAvailableMinorCharmEchoes(
+      [
+        { charmId: 'wound', tier: 3 },
+        { charmId: 'poison', tier: 1 },
+      ],
+      false,
+    );
+    expect(total).toBe(350 + 50);
+  });
+
+  it('adds a one-time 100 for promotion, on top of Major Charm tiers', () => {
+    expect(calculateAvailableMinorCharmEchoes([], true)).toBe(100);
+    expect(calculateAvailableMinorCharmEchoes([{ charmId: 'wound', tier: 3 }], true)).toBe(350 + 100);
+  });
+
+  it('is zero with nothing unlocked and no promotion', () => {
+    expect(calculateAvailableMinorCharmEchoes([], false)).toBe(0);
   });
 });

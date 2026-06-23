@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 import { CreatureNameInput } from '@/components/CreatureNameInput';
 import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST } from '@/data/charms';
+import { calculateAvailableMinorCharmEchoes } from '@/lib/economy';
 import { useLocale } from '@/lib/i18n';
 import { formatMessage } from '@/lib/messages';
 import { fetchCharacterByName } from '@/lib/tibiaDataApi';
@@ -273,6 +274,7 @@ export function CharacterForm({ value, onChange }: Props) {
   const { t } = useLocale();
   const idPrefix = useId();
   const issues = validateCharacterInput(value);
+  const suggestedMinorCharmEchoes = calculateAvailableMinorCharmEchoes(value.unlockedMajorCharms, value.isPromoted);
 
   function set<K extends keyof CharacterInput>(key: K, val: CharacterInput[K]) {
     onChange({ ...value, [key]: val });
@@ -383,15 +385,29 @@ export function CharacterForm({ value, onChange }: Props) {
               min={0}
               help={t.characterForm.helpCharmPoints}
             />
-            <NumberField
-              id={`${idPrefix}-mce`}
-              label={t.characterForm.availableMinorCharmEchoes}
-              value={value.availableMinorCharmEchoes}
-              onChange={(v) => set('availableMinorCharmEchoes', v)}
-              error={findError(issues, 'availableMinorCharmEchoes', t)}
-              min={0}
-              help={t.characterForm.helpMinorEchoes}
-            />
+            <div>
+              <NumberField
+                id={`${idPrefix}-mce`}
+                label={t.characterForm.availableMinorCharmEchoes}
+                value={value.availableMinorCharmEchoes}
+                onChange={(v) => set('availableMinorCharmEchoes', v)}
+                error={findError(issues, 'availableMinorCharmEchoes', t)}
+                min={0}
+                help={t.characterForm.helpMinorEchoes}
+              />
+              {suggestedMinorCharmEchoes !== value.availableMinorCharmEchoes && (
+                <p className="mt-1.5 text-xs text-charm-subtle">
+                  {formatMessage(t, { code: 'mce_suggestion', params: { amount: suggestedMinorCharmEchoes } })}{' '}
+                  <button
+                    type="button"
+                    onClick={() => set('availableMinorCharmEchoes', suggestedMinorCharmEchoes)}
+                    className="font-semibold text-charm-primary hover:underline"
+                  >
+                    {t.characterForm.useSuggestedValue}
+                  </button>
+                </p>
+              )}
+            </div>
             <div>
               <label htmlFor={`${idPrefix}-account`} className="field-label">
                 {t.characterForm.accountType}
@@ -424,6 +440,15 @@ export function CharacterForm({ value, onChange }: Props) {
                   className="h-4 w-4 rounded border-charm-border bg-charm-bg accent-charm-primary"
                 />
                 {t.characterForm.hasUsedFreeReset}
+              </label>
+              <label className="flex items-center gap-2.5 text-sm text-charm-muted">
+                <input
+                  type="checkbox"
+                  checked={value.isPromoted}
+                  onChange={(e) => set('isPromoted', e.target.checked)}
+                  className="h-4 w-4 rounded border-charm-border bg-charm-bg accent-charm-primary"
+                />
+                {t.characterForm.isPromoted}
               </label>
             </div>
           </section>

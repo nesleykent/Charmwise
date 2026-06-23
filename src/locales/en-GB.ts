@@ -13,12 +13,12 @@ const en: Dictionary = {
     charms: 'Charm Library',
     tagline: 'Smarter Charms. Better Hunts.',
   },
-  language: { en: 'English (UK)', pt: 'Portugues (Brasil)' },
+  language: { en: 'English (UK)', pt: 'Português (Brasil)' },
   common: {
     resetWorkspace: 'Reset workspace',
     resetConfirm: 'This clears your character, hunt session and settings on this device. Continue?',
     privacyNote:
-      'Charmwise runs entirely in your browser. The only exception: looking up a character by name sends that name to TibiaData\'s public character API - nothing else is ever uploaded anywhere.',
+      "Charmwise stores your character, hunt session and settings locally in your browser, not on a server. Looking up a character by name sends that name to TibiaData's public character API.",
   },
   dataBadge: {
     measured: 'Measured',
@@ -72,12 +72,14 @@ const en: Dictionary = {
       xp: 'XP focused',
       profit: 'Profit focused',
       safety: 'Safety focused',
-      low_supplies: 'Low supplies',
+      low_supplies: 'Supply focused',
     },
     targetTierLabel: 'Target tier for locked Charms',
     targetTierHint:
       "Caps how far locked Charms are evaluated and how far purchase suggestions go. Gold is the absolute ceiling, but it's not realistic on every Charm Point budget - lower this if you're not aiming that high.",
     sectionDetails: 'Detailed calculations',
+    identicalSubScoresNote:
+      "Damage, XP gain and profit match because this Charm is the top pick in all three for this creature - XP and profit are both calculated as direct multiples of damage for a single creature, so hitting the maximum in one means hitting it in all three. Not a copy-paste artefact.",
   },
   charmLibrary: {
     title: 'Charm Library',
@@ -103,6 +105,8 @@ const en: Dictionary = {
     accountType: 'Account type',
     hasCharmExpansion: 'Charm Expansion (450 Tibia Coins)',
     hasUsedFreeReset: 'I have already used my free Charm reset',
+    isPromoted: 'My character is promoted',
+    useSuggestedValue: 'Use this value',
     unlockedMajorCharms: 'Unlocked Major Charms',
     unlockedMinorCharms: 'Unlocked Minor Charms',
     assignedMajorCharms: 'Currently assigned Major Charms',
@@ -158,6 +162,12 @@ const en: Dictionary = {
     charmPointBudget: 'Best use of available Charm Points',
     minorEchoBudget: 'Best use of available Minor Charm Echoes',
     improvementSummary: 'Expected improvement summary',
+    improvementStateNothingUnlocked:
+      "You haven't unlocked any Charms yet, so there's nothing assigned and nothing achievable to compare against - every number below is correctly 0. See \"Per creature\" below for what's worth unlocking first at your selected target tier.",
+    improvementStateAlreadyOptimal:
+      "Comparing what's currently assigned to each creature against the best achievable from Charms you've already unlocked - they already match, so there's nothing left to improve from your current setup.",
+    improvementStateHasGain:
+      "Comparing what's currently assigned to each creature against the best achievable from Charms you've already unlocked (not the aspirational \"if I unlocked everything\" numbers shown further down).",
     economicsTitle: 'Economics',
     reassignmentsTitle: 'Suggested reassignments',
     confidence: { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence', unknown: 'Unknown data' },
@@ -187,6 +197,8 @@ const en: Dictionary = {
     noMinorUnlocked: 'No unlocked Minor Charm is useful here yet - see purchase suggestions below.',
     slotLimitTitle: 'Major Charm slots',
     slotLimitDescription: 'Your account can keep an active Major Charm on a limited number of creatures at once.',
+    slotsEmptyNothingUnlocked: "No slots are filled because you haven't unlocked any Major Charms yet - there's nothing to assign.",
+    slotsEmptyNoValue: "No slots are filled because none of your unlocked Major Charms scored above zero for any creature in this hunt - that's a real result, not a bug.",
     removalCost: 'Removal cost',
     resetCost: 'Full reset cost',
     resetFree: 'Free (first reset not yet used)',
@@ -195,10 +207,14 @@ const en: Dictionary = {
       reset: 'A full reset would be cheaper than removing each Charm individually.',
       no_change: 'No reassignments needed.',
     },
+    tiedRankHint:
+      'Tied with the next Charm at this score (rounded to one decimal place) - check Score per Charm Point or confidence to break the tie yourself.',
+    rankingCriterionNote: 'Ranked by total weighted score, not by Score per Charm Point/Echo - those are shown alongside as a separate efficiency metric, not the sort key.',
   },
   missingData: {
     title: 'Missing data warnings',
-    noIssues: 'No data issues for this hunt.',
+    noIssues: 'No blocking data issues - every creature in this hunt matched a Bestiary entry.',
+    caveatsNote: "This only covers creature-matching problems. Estimation caveats and assumptions for individual Charms (confidence level, what's approximated, what's missing) are shown inline next to each recommendation above, not repeated here.",
     lackingBestiary: 'No Bestiary entry found',
     needsManualReview: 'Needs manual review',
   },
@@ -209,6 +225,7 @@ const en: Dictionary = {
     safety: 'safety',
     supplySaving: 'supply saving',
     utility: 'utility',
+    none: 'no usable data',
   },
   elements: {
     physical: 'Physical',
@@ -231,11 +248,15 @@ const en: Dictionary = {
     damage_level_capped:
       "Damage capped at {{multiplier}}x your character level (the Winter Update 2024 Charm cap) - this creature's hitpoints would otherwise allow more.",
     carnage_aoe_note:
-      "Carnage hits other creatures near the kill, not the one that died, and is mitigated by the nearby target's armour rather than its resistance - this estimate uses the killed creature's resistance as a rough stand-in, since armour isn't in the Bestiary data. Most accurate when hunting in packs of the same creature.",
+      "Carnage hits other creatures near the kill, not the one that died, and is mitigated by the nearby target's armour rather than its resistance - this estimate uses the killed creature's resistance as a rough stand-in, since armour isn't in the Bestiary data for it. Most accurate when hunting in packs of the same creature.",
+    carnage_aoe_note_with_mitigation:
+      "Carnage hits other creatures near the kill, not the one that died - this estimate uses the killed creature's own resistance and armour mitigation as a stand-in for the nearby target's, which is the best available approximation but can still be off in mixed packs. Most accurate when hunting in packs of the same creature.",
     no_mana: 'Character has no mana - Overflux cannot proc.',
     incoming_damage_estimated: 'Incoming damage from this creature is estimated from session Healing/h, not a direct figure.',
     parry_armour_note:
-      "Parry damage ignores monster resistance but is reduced by the monster's armour, which is not modelled - treat this as an upper bound.",
+      "Parry damage ignores monster resistance but is reduced by the monster's armour, which isn't in the Bestiary data for this creature - treat this as an upper bound.",
+    parry_armour_note_with_mitigation:
+      "Parry damage ignores monster resistance but is reduced by the monster's own armour, factored in directly here since the reflected damage goes back to the same creature that attacked.",
     no_crit_chance: 'Character has 0% base critical chance - Savage Blow has nothing to amplify.',
     no_life_leech: 'Character has 0% base Life Leech - Vampiric Embrace requires existing leech on your equipment.',
     no_mana_leech: "Character has 0% base Mana Leech - Void's Call requires existing leech on your equipment.",
@@ -254,6 +275,8 @@ const en: Dictionary = {
       "Scavenge's tier value is really a relative increase to your base Skinning/Dusting chance, not a direct multiplier on loot value - applied as one here since the base chance isn't in the Bestiary data. Treat this as an order-of-magnitude estimate.",
     adrenaline_burst_haste_note: 'Cancelled by the Haste spell - provides no benefit while Haste is active, which most characters keep running.',
     paralysis_uptime_estimated: 'Paralysis uptime is estimated by treating the whole average gap between kills as combat time.',
+    cripple_numb_same_values:
+      "Cripple and Numb have the same activation chance and duration per tier in Tibia (they just trigger differently - your attack vs. a hit you take) - identical scores here reflect that, not a calculation error.",
     fatal_hold_note: 'Most valuable against creatures that flee at low health; time saved is not modelled numerically.',
     no_conditions_known:
       'No special conditions known for this creature - Cleanse may still help against conditions the Bestiary data does not list.',
@@ -281,6 +304,7 @@ const en: Dictionary = {
       'Found {{name}} - level {{level}} {{vocation}}. Max. hitpoints and mana below are estimated from your vocation - adjust them if your real values differ (the Wheel of Destiny and Gems can add more).',
     lookup_success_no_estimate: 'Found {{name}} - level {{level}}. Enter your Max. hitpoints and mana manually below.',
     lookup_error: "Couldn't find that character - check the spelling, or enter your stats manually below.",
+    mce_suggestion: 'Based on your unlocked Major Charms (and promotion, if checked), you should have {{amount}} Minor Charm Echoes available.',
   },
   charms: {
     carnage: {

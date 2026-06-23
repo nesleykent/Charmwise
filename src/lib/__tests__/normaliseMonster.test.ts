@@ -11,6 +11,8 @@ const FIXTURE: RawBestiaryEntry[] = [
     attack_type: 'Melee',
     damage_types: ['physical', 'earth'],
     negative_conditions: [],
+    // The upstream export stores this as a numeric string, not a number.
+    mitigation: '0.36',
     resistances: [
       { type: 'physical', value: 100 },
       { type: 'earth', value: 80 },
@@ -59,6 +61,15 @@ describe('normaliseMonster', () => {
     expect(profile.damageProfile?.attackType).toBe('melee');
   });
 
+  it('parses the numeric-string mitigation field as a percentage, converting to a true fraction', () => {
+    // Upstream stores 0.36 meaning "0.36%" (confirmed against TibiaWiki,
+    // which displays this exact raw figure with a "%" suffix) - dividing by
+    // 100 again gives the true 0-1 fraction this app's formulas expect.
+    const profile = buildMonsterProfile('toad', FIXTURE);
+    expect(profile.mitigation).toBeCloseTo(0.0036, 6);
+    expect(profile.missingFields).not.toContain('mitigation');
+  });
+
   it('is case- and whitespace-insensitive and strips a leading article', () => {
     const a = buildMonsterProfile('  TOAD  ', FIXTURE);
     const b = buildMonsterProfile('a toad', FIXTURE);
@@ -76,6 +87,12 @@ describe('normaliseMonster', () => {
   it('treats a negative resistance value as a fractional multiplier below zero (the creature heals from it)', () => {
     const profile = buildMonsterProfile('Abyssal Calamary', FIXTURE);
     expect(profile.resistances?.fire).toBe(-1);
+  });
+
+  it('records mitigation as missing rather than guessing zero when the entry has none', () => {
+    const profile = buildMonsterProfile('Abyssal Calamary', FIXTURE);
+    expect(profile.mitigation).toBeNull();
+    expect(profile.missingFields).toContain('mitigation');
   });
 
   it('lists every field it could not source as missing, for an unmatched creature', () => {

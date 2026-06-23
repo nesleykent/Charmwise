@@ -14,12 +14,12 @@ const ptBR: Dictionary = {
     charms: 'Biblioteca de Charms',
     tagline: 'Charms mais inteligentes. Hunts melhores.',
   },
-  language: { en: 'English (UK)', pt: 'Portugues (Brasil)' },
+  language: { en: 'English (UK)', pt: 'Português (Brasil)' },
   common: {
     resetWorkspace: 'Limpar dados salvos',
     resetConfirm: 'Isso vai limpar seu personagem, sessao de hunt e configuracoes neste dispositivo. Continuar?',
     privacyNote:
-      'O Charmwise funciona inteiramente no seu navegador. A unica excecao: buscar um personagem pelo nome envia esse nome para a API publica de personagens do TibiaData - nada mais e enviado a lugar nenhum.',
+      'O Charmwise guarda seu personagem, sessao de hunt e configuracoes localmente no seu navegador, nao em um servidor. Buscar um personagem pelo nome envia esse nome para a API publica de personagens do TibiaData.',
   },
   dataBadge: {
     measured: 'Medido',
@@ -73,12 +73,14 @@ const ptBR: Dictionary = {
       xp: 'Foco em XP',
       profit: 'Foco em lucro',
       safety: 'Foco em seguranca',
-      low_supplies: 'Poucas supplies',
+      low_supplies: 'Foco em supplies',
     },
     targetTierLabel: 'Nivel-alvo para Charms bloqueadas',
     targetTierHint:
       'Limita até onde Charms bloqueadas sao avaliadas e até onde as sugestoes de compra vao. Ouro e o limite absoluto, mas nao e realista para todo orcamento de Charm Points - reduza se voce nao esta visando tao alto.',
     sectionDetails: 'Calculos detalhados',
+    identicalSubScoresNote:
+      'Dano, ganho de XP e lucro coincidem porque esta Charm e a melhor escolha nos tres para esta criatura - XP e lucro sao calculados como multiplos diretos do dano para uma unica criatura, entao atingir o maximo em um significa atingir o maximo nos tres. Nao e um artefato de copia.',
   },
   charmLibrary: {
     title: 'Biblioteca de Charms',
@@ -104,6 +106,8 @@ const ptBR: Dictionary = {
     accountType: 'Tipo de conta',
     hasCharmExpansion: 'Charm Expansion (450 Tibia Coins)',
     hasUsedFreeReset: 'Eu ja usei meu reset gratuito de Charms',
+    isPromoted: 'Meu personagem e promovido',
+    useSuggestedValue: 'Usar este valor',
     unlockedMajorCharms: 'Major Charms desbloqueadas',
     unlockedMinorCharms: 'Minor Charms desbloqueadas',
     assignedMajorCharms: 'Major Charms atribuidas atualmente',
@@ -159,6 +163,12 @@ const ptBR: Dictionary = {
     charmPointBudget: 'Melhor uso dos Charm Points disponiveis',
     minorEchoBudget: 'Melhor uso dos Minor Charm Echoes disponiveis',
     improvementSummary: 'Resumo da melhoria esperada',
+    improvementStateNothingUnlocked:
+      'Voce ainda nao desbloqueou nenhuma Charm, entao nao ha nada atribuido nem nada alcancavel para comparar - todos os numeros abaixo sao corretamente 0. Veja "Por criatura" abaixo para o que vale a pena desbloquear primeiro no tier alvo selecionado.',
+    improvementStateAlreadyOptimal:
+      'Comparando o que esta atribuido atualmente a cada criatura com o melhor alcancavel a partir das Charms que voce ja desbloqueou - eles ja coincidem, entao nao ha mais nada a melhorar a partir da sua configuracao atual.',
+    improvementStateHasGain:
+      'Comparando o que esta atribuido atualmente a cada criatura com o melhor alcancavel a partir das Charms que voce ja desbloqueou (nao os numeros aspiracionais de "se eu desbloqueasse tudo" mostrados mais abaixo).',
     economicsTitle: 'Economia',
     reassignmentsTitle: 'Reatribuicoes sugeridas',
     confidence: { high: 'Confianca alta', medium: 'Confianca media', low: 'Confianca baixa', unknown: 'Dados desconhecidos' },
@@ -188,6 +198,9 @@ const ptBR: Dictionary = {
     noMinorUnlocked: 'Nenhuma Minor Charm desbloqueada ainda e util aqui - veja as sugestoes de compra abaixo.',
     slotLimitTitle: 'Slots de Major Charm',
     slotLimitDescription: 'Sua conta pode manter uma Major Charm ativa em um numero limitado de criaturas ao mesmo tempo.',
+    slotsEmptyNothingUnlocked: 'Nenhum slot esta preenchido porque voce ainda nao desbloqueou nenhuma Major Charm - nao ha nada para atribuir.',
+    slotsEmptyNoValue:
+      'Nenhum slot esta preenchido porque nenhuma das suas Major Charms desbloqueadas pontuou acima de zero para qualquer criatura nesta hunt - isso e um resultado real, nao um bug.',
     removalCost: 'Custo de remocao',
     resetCost: 'Custo do reset completo',
     resetFree: 'Gratuito (primeiro reset ainda nao usado)',
@@ -196,10 +209,15 @@ const ptBR: Dictionary = {
       reset: 'Um reset completo seria mais barato do que remover cada Charm individualmente.',
       no_change: 'Nenhuma reatribuicao necessaria.',
     },
+    tiedRankHint:
+      'Empatada com a proxima Charm nesta pontuacao (arredondada a uma casa decimal) - veja a Pontuacao por Charm Point ou a confianca para desempatar voce mesmo.',
+    rankingCriterionNote: 'Classificadas pela pontuacao total ponderada, nao pela Pontuacao por Charm Point/Echo - essas sao mostradas ao lado como uma metrica de eficiencia separada, nao o criterio de ordenacao.',
   },
   missingData: {
     title: 'Avisos de dados faltantes',
-    noIssues: 'Nenhum problema de dados nesta hunt.',
+    noIssues: 'Nenhum problema bloqueante - toda criatura desta hunt encontrou uma entrada no Bestiario.',
+    caveatsNote:
+      'Isso cobre apenas problemas de correspondencia de criaturas. Ressalvas e suposicoes de estimativa de cada Charm (nivel de confianca, o que e aproximado, o que esta faltando) sao mostradas ao lado de cada recomendacao acima, e nao repetidas aqui.',
     lackingBestiary: 'Nenhuma entrada do Bestiario encontrada',
     needsManualReview: 'Necessita revisao manual',
   },
@@ -210,6 +228,7 @@ const ptBR: Dictionary = {
     safety: 'seguranca',
     supplySaving: 'economia de supplies',
     utility: 'utilidade',
+    none: 'nenhum dado utilizavel',
   },
   elements: {
     physical: 'Fisico',
@@ -232,11 +251,15 @@ const ptBR: Dictionary = {
     damage_level_capped:
       'Dano limitado a {{multiplier}}x o nivel do seu personagem (o limite de Charm do Winter Update 2024) - a vida desta criatura permitiria mais.',
     carnage_aoe_note:
-      'Carnage acerta outras criaturas perto da que morreu, nao a propria, e e mitigada pela armadura do alvo proximo, nao pela resistencia dele - esta estimativa usa a resistencia da criatura morta como uma aproximacao, ja que a armadura nao esta nos dados do Bestiario. Mais precisa ao cacar em grupos da mesma criatura.',
+      'Carnage acerta outras criaturas perto da que morreu, nao a propria, e e mitigada pela armadura do alvo proximo, nao pela resistencia dele - esta estimativa usa a resistencia da criatura morta como uma aproximacao, ja que a armadura dela nao esta nos dados do Bestiario. Mais precisa ao cacar em grupos da mesma criatura.',
+    carnage_aoe_note_with_mitigation:
+      'Carnage acerta outras criaturas perto da que morreu, nao a propria - esta estimativa usa a resistencia e a mitigacao de armadura da criatura morta como aproximacao para o alvo proximo, a melhor aproximacao disponivel, mas que ainda pode errar em grupos mistos. Mais precisa ao cacar em grupos da mesma criatura.',
     no_mana: 'O personagem nao tem mana - Overflux nao pode ser ativada.',
     incoming_damage_estimated: 'O dano recebido desta criatura e estimado a partir do Healing/h da sessao, nao e um valor direto.',
     parry_armour_note:
-      'O dano do Parry ignora a resistencia do monstro mas e reduzido pela armadura dele, o que nao e modelado - trate isso como um limite superior.',
+      'O dano do Parry ignora a resistencia do monstro mas e reduzido pela armadura dele, que nao esta nos dados do Bestiario para esta criatura - trate isso como um limite superior.',
+    parry_armour_note_with_mitigation:
+      'O dano do Parry ignora a resistencia do monstro mas e reduzido pela propria armadura dele, ja considerada aqui diretamente, ja que o dano refletido volta para a mesma criatura que atacou.',
     no_crit_chance: 'O personagem tem 0% de chance critica base - Savage Blow nao tem o que amplificar.',
     no_life_leech: 'O personagem tem 0% de Life Leech base - Vampiric Embrace exige Life Leech ja existente no equipamento.',
     no_mana_leech: "O personagem tem 0% de Mana Leech base - Void's Call exige Mana Leech ja existente no equipamento.",
@@ -255,6 +278,8 @@ const ptBR: Dictionary = {
       'O valor do nivel de Scavenge e, na verdade, um aumento relativo a sua chance base de Skinning/Dusting, nao um multiplicador direto sobre o valor do loot - aplicado como tal aqui porque a chance base nao esta nos dados do Bestiario. Trate isso como uma estimativa de ordem de grandeza.',
     adrenaline_burst_haste_note: 'Cancelada pela magia Haste - nao traz beneficio enquanto Haste esta ativa, que a maioria dos personagens mantem ligada.',
     paralysis_uptime_estimated: 'O tempo de paralisia e estimado tratando todo o intervalo medio entre kills como tempo de combate.',
+    cripple_numb_same_values:
+      'Cripple e Numb tem a mesma chance de ativacao e duracao por tier no Tibia (elas so disparam de forma diferente - seu ataque vs. um golpe que voce recebe) - pontuacoes identicas aqui refletem isso, nao um erro de calculo.',
     fatal_hold_note: 'Mais valiosa contra criaturas que fogem com vida baixa; o tempo economizado nao e modelado numericamente.',
     no_conditions_known:
       'Nenhuma condicao especial conhecida para esta criatura - Cleanse ainda pode ajudar contra condicoes que os dados do Bestiario nao listam.',
@@ -282,6 +307,7 @@ const ptBR: Dictionary = {
       'Encontrado {{name}} - nivel {{level}} {{vocation}}. Vida e mana maximas abaixo sao estimadas pela sua vocacao - ajuste-as se seus valores reais forem diferentes (Wheel of Destiny e Gems podem aumentar ainda mais).',
     lookup_success_no_estimate: 'Encontrado {{name}} - nivel {{level}}. Informe sua vida e mana maximas manualmente abaixo.',
     lookup_error: 'Nao foi possivel encontrar esse personagem - confira a grafia, ou informe seus dados manualmente abaixo.',
+    mce_suggestion: 'Com base nas suas Major Charms desbloqueadas (e na promocao, se marcada), voce deveria ter {{amount}} Minor Charm Echoes disponiveis.',
   },
   charms: {
     carnage: {

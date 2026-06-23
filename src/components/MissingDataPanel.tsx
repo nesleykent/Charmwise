@@ -16,6 +16,7 @@ export function MissingDataPanel({ creaturesLackingBestiaryData, creaturesNeedin
     <div className="card p-4">
       <h3 className="text-sm font-semibold text-white">{t.missingData.title}</h3>
       {!hasIssues && <p className="mt-2 text-sm text-charm-subtle">{t.missingData.noIssues}</p>}
+      <p className="mt-2 text-xs leading-relaxed text-charm-subtle">{t.missingData.caveatsNote}</p>
 
       {creaturesLackingBestiaryData.length > 0 && (
         <div className="mt-3">

@@ -118,6 +118,13 @@ export interface MonsterProfile {
   difficulty: BestiaryDifficulty;
   charmPoints: number | null;
   resistances: MonsterResistances | null;
+  /**
+   * Fraction (0-1) of physical damage this creature's own armour mitigates -
+   * e.g. 0.36 means 36% reduced. This is the creature's OWN armour, used by
+   * Carnage/Parry as the only available stand-in for the armour of whoever
+   * is actually nearby/attacking, which the Bestiary has no way to know.
+   */
+  mitigation: number | null;
   /** Not present in the upstream bestiary export; populated from the pasted hunt session when possible. */
   averageLootValue: number | null;
   creatureProductValue: number | null;

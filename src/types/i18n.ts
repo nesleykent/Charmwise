@@ -57,6 +57,7 @@ export interface Dictionary {
     targetTierLabel: string;
     targetTierHint: string;
     sectionDetails: string;
+    identicalSubScoresNote: string;
   };
   charmLibrary: {
     title: string;
@@ -82,6 +83,8 @@ export interface Dictionary {
     accountType: string;
     hasCharmExpansion: string;
     hasUsedFreeReset: string;
+    isPromoted: string;
+    useSuggestedValue: string;
     unlockedMajorCharms: string;
     unlockedMinorCharms: string;
     assignedMajorCharms: string;
@@ -138,6 +141,9 @@ export interface Dictionary {
     charmPointBudget: string;
     minorEchoBudget: string;
     improvementSummary: string;
+    improvementStateNothingUnlocked: string;
+    improvementStateAlreadyOptimal: string;
+    improvementStateHasGain: string;
     economicsTitle: string;
     reassignmentsTitle: string;
     confidence: { high: string; medium: string; low: string; unknown: string };
@@ -166,14 +172,19 @@ export interface Dictionary {
     noMinorUnlocked: string;
     slotLimitTitle: string;
     slotLimitDescription: string;
+    slotsEmptyNothingUnlocked: string;
+    slotsEmptyNoValue: string;
     removalCost: string;
     resetCost: string;
     resetFree: string;
     cheaperOption: { removals: string; reset: string; no_change: string };
+    tiedRankHint: string;
+    rankingCriterionNote: string;
   };
   missingData: {
     title: string;
     noIssues: string;
+    caveatsNote: string;
     lackingBestiary: string;
     needsManualReview: string;
   };
@@ -184,6 +195,8 @@ export interface Dictionary {
     safety: string;
     supplySaving: string;
     utility: string;
+    /** Used as the "dominant factor" when every dimension scores exactly zero (e.g. no Bestiary data for this effect) - never let "damage" win that case by array order alone. */
+    none: string;
   };
   elements: { physical: string; fire: string; earth: string; energy: string; ice: string; holy: string; death: string };
   /** Templates for LocalisedMessage.code, with `{{param}}` placeholders - see src/lib/messages.ts. */

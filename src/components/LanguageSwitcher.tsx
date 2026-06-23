@@ -23,6 +23,7 @@ export function LanguageSwitcher() {
             locale === option.value ? 'bg-charm-primary text-charm-bg' : 'text-charm-muted hover:text-white'
           }`}
         >
+          {locale === option.value ? '✓ ' : ''}
           {option.flag}
           <span className="sr-only"> {option.value === 'en-GB' ? t.language.en : t.language.pt}</span>
         </button>

@@ -354,6 +354,7 @@ export function buildMonsterProfile(
       difficulty: 'unknown',
       charmPoints: null,
       resistances: null,
+      mitigation: null,
       averageLootValue: huntDerivedLootValue,
       creatureProductValue: null,
       supportsSkinning: null,
@@ -372,6 +373,7 @@ export function buildMonsterProfile(
         'difficulty',
         'charmPoints',
         'resistances',
+        'mitigation',
         'creatureProductValue',
         'supportsSkinning',
         'supportsDusting',
@@ -401,6 +403,14 @@ export function buildMonsterProfile(
 
   const resistances = normaliseResistances(entry.resistances);
   if (resistances === null) missingFields.push('resistances');
+
+  // Stored upstream as a percentage (e.g. "0.99" means 0.99%, confirmed
+  // against TibiaWiki's own Crusader page, which displays that exact raw
+  // number with a "%" suffix) - divide by 100 to get the true fraction, same
+  // convention as normaliseResistances above.
+  const mitigationRaw = typeof entry.mitigation === 'string' ? Number(entry.mitigation) : entry.mitigation;
+  const mitigation = typeof mitigationRaw === 'number' && Number.isFinite(mitigationRaw) ? mitigationRaw / 100 : null;
+  if (mitigation === null) missingFields.push('mitigation');
 
   const damageProfile = normaliseDamageProfile(entry);
   if (damageProfile === null) missingFields.push('damageProfile');
@@ -445,6 +455,7 @@ export function buildMonsterProfile(
     difficulty: normaliseDifficulty(entry.difficulty),
     charmPoints,
     resistances,
+    mitigation,
     averageLootValue: averageLootValue ?? null,
     creatureProductValue,
     supportsSkinning,

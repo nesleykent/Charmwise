@@ -81,6 +81,12 @@ function dominantScoreLabel(
     ['supplySaving', scores.supplySavingScore * weights.supplySaving],
     ['utility', scores.utilityScore * weights.utility],
   ];
+  // A charm with no usable data for this creature (e.g. Gut/Scavenge with no
+  // Bestiary product value) scores exactly zero in every dimension - without
+  // this check, "damage" would always win that tie purely because it's
+  // listed first below, misrepresenting a charm that does nothing here as
+  // "driven mainly by damage."
+  if (contributions.every(([, value]) => value === 0)) return 'none';
   contributions.sort((a, b) => b[1] - a[1]);
   return contributions[0]![0];
 }
@@ -146,8 +152,24 @@ function rankCharmGroup(
   const maxima = computeMaxima(evaluations.map((e) => e.effect));
   const scored = evaluations.map((e) => ({ ...e, scores: scoreEffect(e.effect, maxima, weights, e.confidence) }));
 
-  // Deterministic ranking: total score desc, ties broken by charm id so output never reorders between runs.
-  scored.sort((a, b) => b.scores.totalScore - a.scores.totalScore || a.charm.id.localeCompare(b.charm.id));
+  // Primary: total score desc. True ties happen routinely - a charm that's
+  // simultaneously the per-creature maximum in both damage and profit (xp/
+  // profit are linear in damage for one creature) normalises to exactly 100
+  // in both dimensions, so e.g. two different creatures where the same charm
+  // dominates both axes can land on the exact same weighted total. Rather
+  // than let an arbitrary alphabetical tiebreak silently decide who's "#1",
+  // break ties by cost-efficiency (score per point spent to reach the
+  // evaluated tier) - a meaningful signal - and only fall back to charm id
+  // for full determinism when even that matches.
+  scored.sort((a, b) => {
+    const scoreDiff = b.scores.totalScore - a.scores.totalScore;
+    if (scoreDiff !== 0) return scoreDiff;
+    const aCost = costToReachTier(a.charm, 0, a.tier);
+    const bCost = costToReachTier(b.charm, 0, b.tier);
+    const aDensity = aCost > 0 ? a.scores.totalScore / aCost : a.scores.totalScore;
+    const bDensity = bCost > 0 ? b.scores.totalScore / bCost : b.scores.totalScore;
+    return bDensity - aDensity || a.charm.id.localeCompare(b.charm.id);
+  });
 
   const recommendations: CharmRecommendation[] = scored.map((entry, index) => {
     const dominant = dominantScoreLabel(entry.scores, weights);

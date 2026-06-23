@@ -34,7 +34,10 @@ export function OptimisationModeSelector({ value, onChange }: Props) {
               onChange={() => onChange(mode)}
               className="sr-only"
             />
-            <span className="block font-semibold">{t.recommendationsPage.modes[mode]}</span>
+            <span className="block font-semibold">
+              {value === mode ? '✓ ' : ''}
+              {t.recommendationsPage.modes[mode]}
+            </span>
             <span className="mt-1 block text-xs leading-relaxed text-charm-subtle">{t.recommendationsPage.modeDescriptions[mode]}</span>
           </label>
         ))}
