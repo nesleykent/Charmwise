@@ -17,9 +17,17 @@ const displayFont = Playfair_Display({
   display: 'swap',
 });
 
+// See AppShell.tsx - basePath must be prepended by hand for asset URLs
+// Next doesn't run through its own build pipeline.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export const metadata: Metadata = {
   title: 'Charmwise - Tibia Charm Optimisation',
   description: 'Charmwise is a data driven Tibia Charm optimisation platform. Smarter Charms. Better Hunts.',
+  icons: {
+    icon: `${basePath}/logo.png`,
+    apple: `${basePath}/logo.png`,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

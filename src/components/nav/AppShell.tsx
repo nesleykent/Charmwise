@@ -1,10 +1,21 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLocale } from '@/lib/i18n';
 import type { Dictionary } from '@/types/i18n';
+
+// next/image does not auto-prepend basePath to `src` when images.unoptimized
+// is true (required for static export) - confirmed by inspecting the actual
+// built output, where it was missing. Must be prepended by hand, same as the
+// favicon in layout.tsx.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
+function Logo() {
+  return <Image src={`${BASE_PATH}/logo-32.png`} alt="" width={32} height={32} className="h-8 w-8 rounded-lg" priority />;
+}
 
 function DashboardIcon() {
   return (
@@ -75,9 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col md:flex-row">
       <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-r md:border-white/10 md:bg-charm-bg/60 md:backdrop-blur-xl">
         <Link href="/" className="flex items-center gap-2 px-5 py-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-charm-accent via-charm-rose to-charm-major text-base font-bold text-charm-bg">
-            C
-          </span>
+          <Logo />
           <span className="font-display text-lg font-semibold text-white">Charmwise</span>
         </Link>
         <nav className="flex-1 space-y-1 px-3" aria-label={t.nav.dashboard}>
@@ -106,9 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <header className="flex items-center justify-between border-b border-white/10 bg-charm-bg/70 px-4 py-3 backdrop-blur-xl md:hidden">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-charm-accent via-charm-rose to-charm-major text-base font-bold text-charm-bg">
-            C
-          </span>
+          <Logo />
           <span className="font-display text-lg font-semibold text-white">Charmwise</span>
         </Link>
         <LanguageSwitcher />
