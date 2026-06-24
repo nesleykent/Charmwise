@@ -234,7 +234,7 @@ const ptBR: Dictionary = {
     effectModelTitle: 'Modelo do efeito',
     modelHuntBasis: 'Base da hunt',
     modelEffectFormula: 'Fórmula do efeito',
-    modelDerivedOutputs: 'Saídas derivadas',
+    modelDerivedOutputs: 'Saídas derivadas (antes do desconto de confiança)',
     modelKillShare: 'Participação nas kills',
     modelKillsPerHour: 'Kills / hora',
     modelAttacksPerHour: 'Ataques alocados / hora',

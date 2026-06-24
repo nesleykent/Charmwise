@@ -232,7 +232,7 @@ const en: Dictionary = {
     effectModelTitle: 'Effect model',
     modelHuntBasis: 'Hunt basis',
     modelEffectFormula: 'Effect formula',
-    modelDerivedOutputs: 'Derived outputs',
+    modelDerivedOutputs: 'Derived outputs (before confidence discount)',
     modelKillShare: 'Kill share',
     modelKillsPerHour: 'Kills / hour',
     modelAttacksPerHour: 'Allocated attacks / hour',
