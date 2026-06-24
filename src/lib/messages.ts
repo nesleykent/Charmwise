@@ -5,13 +5,18 @@
 import type { Dictionary } from '@/types/i18n';
 import type { LocalisedMessage } from '@/types/charm';
 
-// Some param names carry an enum-style key (e.g. "dominant": "damage")
-// rather than display text - this maps the param name to the Dictionary
-// sub-table it should be resolved against.
-const ENUM_PARAM_LOOKUP: Record<string, keyof Dictionary> = {
-  dominant: 'scoreDimensions',
+// Some param names carry an enum-style key (e.g. "role": "damage") rather
+// than display text - this maps the param name to a dotted path into the
+// Dictionary it should be resolved against.
+const ENUM_PARAM_LOOKUP: Record<string, string> = {
+  role: 'results.roles',
   element: 'elements',
 };
+
+function resolveDictionaryPath(t: Dictionary, path: string): Record<string, string> | undefined {
+  const value: unknown = path.split('.').reduce<unknown>((obj, segment) => (obj as Record<string, unknown> | undefined)?.[segment], t);
+  return value as Record<string, string> | undefined;
+}
 
 export function formatMessage(t: Dictionary, message: LocalisedMessage): string {
   const template = t.messages[message.code] ?? message.code;
@@ -24,10 +29,10 @@ export function formatMessage(t: Dictionary, message: LocalisedMessage): string 
     if (key === 'tier' && typeof value === 'number') {
       return t.characterForm.tierNames[value - 1] ?? String(value);
     }
-    const lookupTable = ENUM_PARAM_LOOKUP[key];
-    if (lookupTable && typeof value === 'string') {
-      const table = t[lookupTable] as unknown as Record<string, string>;
-      if (value in table) return table[value]!;
+    const lookupPath = ENUM_PARAM_LOOKUP[key];
+    if (lookupPath && typeof value === 'string') {
+      const table = resolveDictionaryPath(t, lookupPath);
+      if (table && value in table) return table[value]!;
     }
     return String(value);
   });

@@ -8,11 +8,15 @@ import { formatNumber, formatScore, toTitleCase } from '@/lib/format';
 import {
   buildComparisonRows,
   defaultSelectedCharmIds,
+  formatGain,
+  primaryGainLabel,
+  roleLabel,
   sustainGain,
+  VIEW_TO_ROLE,
   type ComparisonRow,
 } from '@/lib/recommendationViews';
 import { useWorkspace } from '@/lib/workspace';
-import type { CharmId, CharmRecommendation, CharmRole, OptimisationMode, ScoreWeights } from '@/types/charm';
+import type { CharmId, CharmRecommendation, CharmRole, OptimisationMode } from '@/types/charm';
 import type { HuntOptimisationSummary, CharmPurchaseSuggestion } from '@/types/optimisation';
 
 interface Props {
@@ -21,38 +25,6 @@ interface Props {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return <h3 className="mb-3 section-label">{children}</h3>;
-}
-
-function roleLabel(role: CharmRole, t: ReturnType<typeof useLocale>['t']): string {
-  return t.results.roles[role] ?? role;
-}
-
-function primaryGainLabel(row: ComparisonRow, t: ReturnType<typeof useLocale>['t']): string {
-  switch (row.role) {
-    case 'defensive':
-      return t.results.metrics.expectedDamagePreventedPerHour;
-    case 'sustain':
-      return t.results.metrics.expectedHealingSavedPerHour;
-    case 'control':
-      return row.recommendation.effect.expectedDamagePreventedPerHour > 0.5
-        ? t.results.metrics.expectedDamagePreventedPerHour
-        : t.scoreDimensions.utility;
-    case 'loot_utility':
-      return t.results.metrics.expectedProfitPerHour;
-    case 'utility':
-      return t.scoreDimensions.utility;
-    case 'budget_damage':
-    case 'damage':
-    default:
-      return t.results.metrics.expectedDamagePerHour;
-  }
-}
-
-function formatGain(row: ComparisonRow, locale: string): string {
-  if (row.role === 'utility' || (row.role === 'control' && row.recommendation.effect.expectedDamagePreventedPerHour <= 0.5)) {
-    return formatScore(row.mainGain);
-  }
-  return formatNumber(row.mainGain, locale);
 }
 
 function comparisonReason(row: ComparisonRow, t: ReturnType<typeof useLocale>['t']): string {
@@ -68,11 +40,22 @@ function flattenRecommendations(summary: HuntOptimisationSummary): CharmRecommen
   return summary.creatureResults.flatMap((result) => [...result.rankedMajorCharms, ...result.rankedMinorCharms]);
 }
 
-function allSelectedRows(summary: HuntOptimisationSummary, view: OptimisationMode, selectedCharmIds: CharmId[], customWeights: ScoreWeights): ComparisonRow[] {
+function allSelectedRows(summary: HuntOptimisationSummary, view: OptimisationMode, selectedCharmIds: CharmId[]): ComparisonRow[] {
   const all = flattenRecommendations(summary);
   if (view === 'manual' && selectedCharmIds.length === 0) return [];
-  const fallbackIds = selectedCharmIds.length > 0 ? selectedCharmIds : defaultSelectedCharmIds(all, view, customWeights);
-  return buildComparisonRows(all, view, fallbackIds, customWeights, 10);
+  const fallbackIds = selectedCharmIds.length > 0 ? selectedCharmIds : defaultSelectedCharmIds(all, view);
+  return buildComparisonRows(all, view, fallbackIds, 10);
+}
+
+/** Reads the already assignment-solved pick for the active view's role (never re-ranks) - falling back to the damage-first default pick for views with no dedicated role (damage_first, manual, legacy modes). This is what keeps every role view free of the "same Charm recommended to two creatures at once" bug, not just the default. */
+function bestForView(
+  byRole: Partial<Record<CharmRole, CharmRecommendation>>,
+  fallback: CharmRecommendation | null,
+  view: OptimisationMode,
+): CharmRecommendation | null {
+  const role = VIEW_TO_ROLE[view];
+  if (!role) return fallback;
+  return byRole[role] ?? null;
 }
 
 function CharmSelection({
@@ -129,39 +112,6 @@ function CharmSelection({
   );
 }
 
-function CustomWeightsEditor({ value, onChange }: { value: ScoreWeights; onChange: (weights: ScoreWeights) => void }) {
-  const { t } = useLocale();
-  const entries: { key: keyof ScoreWeights; label: string }[] = [
-    { key: 'damage', label: t.scoreDimensions.damage },
-    { key: 'profit', label: t.scoreDimensions.profit },
-    { key: 'safety', label: t.scoreDimensions.safety },
-    { key: 'supplySaving', label: t.scoreDimensions.supplySaving },
-    { key: 'utility', label: t.scoreDimensions.utility },
-  ];
-
-  return (
-    <div className="glass-panel p-5">
-      <p className="text-sm font-semibold text-white">{t.results.customWeightsTitle}</p>
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-5">
-        {entries.map(({ key, label }) => (
-          <label key={key} className="text-xs text-charm-muted">
-            <span className="mb-1 block">{label}</span>
-            <input
-              type="number"
-              min={0}
-              max={1}
-              step={0.05}
-              value={value[key]}
-              onChange={(e) => onChange({ ...value, [key]: Math.max(0, Math.min(1, Number(e.target.value) || 0)) })}
-              className="field-input px-2 py-1 text-xs"
-            />
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function FinalRecommendation({ row, showNoUnlockedNotice }: { row: ComparisonRow | undefined; showNoUnlockedNotice: boolean }) {
   const { t, locale } = useLocale();
   if (!row) {
@@ -206,11 +156,15 @@ function FinalRecommendation({ row, showNoUnlockedNotice }: { row: ComparisonRow
         </div>
         <div className="border-white/15 lg:border-l lg:pl-6">
           <p className="text-sm font-semibold text-white">{t.results.whyThisIsBest}</p>
-          <p className="mt-1 text-sm text-charm-muted">{t.results.whyThisIsBestBody.replace('{{signal}}', primaryGainLabel(row, t))}</p>
+          <p className="mt-1 text-sm text-charm-muted">
+            {t.results.whyThisIsBestBody.replace('{{signal}}', primaryGainLabel(row.role, row.recommendation.effect.expectedDamagePreventedPerHour, t))}
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-2xl border border-white/15 bg-white/[0.075] p-3 shadow-card backdrop-blur-xl">
-              <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{primaryGainLabel(row, t)}</div>
-              <div className="mt-1 text-lg font-semibold text-white">{formatGain(row, locale)}</div>
+              <div className="text-[10px] uppercase tracking-wide text-charm-subtle">
+                {primaryGainLabel(row.role, row.recommendation.effect.expectedDamagePreventedPerHour, t)}
+              </div>
+              <div className="mt-1 text-lg font-semibold text-white">{formatGain(row.role, row.mainGain, row.recommendation.effect.expectedDamagePreventedPerHour, locale)}</div>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/[0.075] p-3 shadow-card backdrop-blur-xl">
               <div className="text-[10px] uppercase tracking-wide text-charm-subtle">{t.results.comparisonCost}</div>
@@ -266,8 +220,8 @@ function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
                   {!rec.unlocked ? ` · ${t.characterForm.tierLocked}` : ''}
                 </td>
                 <td className="px-3 py-3">
-                  <span className="block font-semibold text-white">{formatGain(row, locale)}</span>
-                  <span className="text-[10px] text-charm-subtle">{primaryGainLabel(row, t)}</span>
+                  <span className="block font-semibold text-white">{formatGain(row.role, row.mainGain, rec.effect.expectedDamagePreventedPerHour, locale)}</span>
+                  <span className="text-[10px] text-charm-subtle">{primaryGainLabel(row.role, rec.effect.expectedDamagePreventedPerHour, t)}</span>
                 </td>
                 <td className="px-3 py-3">
                   {formatNumber(row.cost, locale)} {rec.category === 'major' ? 'CP' : 'MCE'}
@@ -284,7 +238,27 @@ function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
   );
 }
 
-function PerCreatureSummary({ summary, view, selectedCharmIds, customWeights }: { summary: HuntOptimisationSummary; view: OptimisationMode; selectedCharmIds: CharmId[]; customWeights: ScoreWeights }) {
+function CreatureCharmLine({ rec, t, locale }: { rec: CharmRecommendation; t: ReturnType<typeof useLocale>['t']; locale: string }) {
+  return (
+    <p className="mt-2 text-sm text-charm-muted">
+      <span className="font-semibold text-white">{t.charms[rec.charmId]?.name ?? rec.name}</span> · {roleLabel(rec.role, t)} ·{' '}
+      {formatGain(rec.role, rec.roleMetric, rec.effect.expectedDamagePreventedPerHour, locale)}{' '}
+      {primaryGainLabel(rec.role, rec.effect.expectedDamagePreventedPerHour, t).toLowerCase()}
+    </p>
+  );
+}
+
+/**
+ * Reads `bestMajorCharm(ByRole)`/`bestMinorCharm(ByRole)` - the globally
+ * assignment-solved, conflict-free picks (see optimiseCharms.ts) - for
+ * whichever role the active view maps to, instead of independently
+ * re-ranking each creature's charms. Re-ranking per creature is what
+ * previously let the same Charm show up as "the pick" for two different
+ * creatures at once, since a charm can only actually be assigned to one of
+ * them; reading the already-solved assignment makes that impossible in
+ * every view, not just the default.
+ */
+function PerCreatureSummary({ summary, view }: { summary: HuntOptimisationSummary; view: OptimisationMode }) {
   const { t, locale } = useLocale();
 
   return (
@@ -299,8 +273,8 @@ function PerCreatureSummary({ summary, view, selectedCharmIds, customWeights }: 
               </div>
             );
           }
-          const creatureRows = buildComparisonRows([...result.rankedMajorCharms, ...result.rankedMinorCharms], view, selectedCharmIds, customWeights, 1);
-          const row = creatureRows[0];
+          const major = bestForView(result.bestMajorCharmByRole, result.bestMajorCharm, view);
+          const minor = bestForView(result.bestMinorCharmByRole, result.bestMinorCharm, view);
           return (
             <div key={result.monsterName} className="rounded-2xl border border-white/15 bg-white/[0.055] p-3 shadow-card backdrop-blur-xl">
               <div className="flex items-center justify-between gap-2">
@@ -309,11 +283,11 @@ function PerCreatureSummary({ summary, view, selectedCharmIds, customWeights }: 
                   {formatNumber(result.huntStat.kills, locale)} kills · {(result.huntStat.killShare * 100).toFixed(1)}%
                 </span>
               </div>
-              {row ? (
-                <p className="mt-2 text-sm text-charm-muted">
-                  <span className="font-semibold text-white">{t.charms[row.recommendation.charmId]?.name}</span> · {roleLabel(row.role, t)} ·{' '}
-                  {formatGain(row, locale)} {primaryGainLabel(row, t).toLowerCase()}
-                </p>
+              {major || minor ? (
+                <>
+                  {major && <CreatureCharmLine rec={major} t={t} locale={locale} />}
+                  {minor && <CreatureCharmLine rec={minor} t={t} locale={locale} />}
+                </>
               ) : (
                 <p className="mt-2 text-sm text-charm-subtle">{t.results.noMeaningfulComparison}</p>
               )}
@@ -325,20 +299,18 @@ function PerCreatureSummary({ summary, view, selectedCharmIds, customWeights }: 
   );
 }
 
-function suggestionReason(suggestion: CharmPurchaseSuggestion, recommendations: CharmRecommendation[], locale: string): string {
+function suggestionReason(suggestion: CharmPurchaseSuggestion, recommendations: CharmRecommendation[], t: ReturnType<typeof useLocale>['t'], locale: string): string {
   const rec = recommendations.find((r) => r.charmId === suggestion.charmId && r.monsterName === suggestion.monsterName);
-  if (!rec) return `${formatNumber(suggestion.scoreGain, locale)} score gain`;
-  const share = (rec.calculation.killShare * 100).toFixed(1);
-  if (rec.effect.expectedDamagePerHour > 0.5) return `${formatNumber(rec.effect.expectedDamagePerHour, locale)} damage/h on ${share}% of this hunt`;
-  if (rec.effect.expectedDamagePreventedPerHour > 0.5) return `${formatNumber(rec.effect.expectedDamagePreventedPerHour, locale)} prevented damage/h`;
-  if (sustainGain(rec) > 0.5) return `${formatNumber(sustainGain(rec), locale)} sustain/h`;
-  if (rec.effect.expectedProfitPerHour > 0.5) return `${formatNumber(rec.effect.expectedProfitPerHour, locale)} profit/h`;
-  return `${formatNumber(suggestion.scoreGain, locale)} score gain`;
+  const share = rec ? (rec.calculation.killShare * 100).toFixed(1) : null;
+  const gainLabel = primaryGainLabel(suggestion.role, rec?.effect.expectedDamagePreventedPerHour ?? 0, t).toLowerCase();
+  return share !== null
+    ? `${formatGain(suggestion.role, suggestion.metricGain, rec?.effect.expectedDamagePreventedPerHour ?? 0, locale)} ${gainLabel} on ${share}% of this hunt`
+    : `${formatGain(suggestion.role, suggestion.metricGain, 0, locale)} ${gainLabel}`;
 }
 
 function PurchaseSuggestions({ title, suggestions, recommendations, currency }: { title: string; suggestions: CharmPurchaseSuggestion[]; recommendations: CharmRecommendation[]; currency: 'CP' | 'MCE' }) {
   const { t, locale } = useLocale();
-  const actionable = suggestions.filter((s) => s.scoreGain > 0.05 && s.scorePerCost > 0).slice(0, 5);
+  const actionable = suggestions.filter((s) => s.metricGain > 0.05 && s.metricPerCost > 0).slice(0, 5);
 
   return (
     <section>
@@ -357,7 +329,7 @@ function PurchaseSuggestions({ title, suggestions, recommendations, currency }: 
                   {formatNumber(s.cost, locale)} {currency}
                 </span>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-charm-muted">{suggestionReason(s, recommendations, locale)}</p>
+              <p className="mt-1 text-xs leading-relaxed text-charm-muted">{suggestionReason(s, recommendations, t, locale)}</p>
             </li>
           ))}
         </ul>
@@ -368,10 +340,10 @@ function PurchaseSuggestions({ title, suggestions, recommendations, currency }: 
 
 export function OptimisationResults({ summary }: Props) {
   const { t } = useLocale();
-  const { mode, selectedCharmIds, setSelectedCharmIds, customWeights, setCustomWeights, character } = useWorkspace();
+  const { mode, selectedCharmIds, setSelectedCharmIds, character } = useWorkspace();
   const allRecommendations = flattenRecommendations(summary);
-  const comparisonRows = allSelectedRows(summary, mode, selectedCharmIds, customWeights);
-  const finalRows = buildComparisonRows(allRecommendations, mode, mode === 'manual' ? selectedCharmIds : [], customWeights, 1);
+  const comparisonRows = allSelectedRows(summary, mode, selectedCharmIds);
+  const finalRows = buildComparisonRows(allRecommendations, mode, mode === 'manual' ? selectedCharmIds : [], 1);
   const hasAnyUnlockedCharms = character.unlockedMajorCharms.length > 0 || character.unlockedMinorCharms.length > 0;
 
   return (
@@ -381,11 +353,10 @@ export function OptimisationResults({ summary }: Props) {
       <section className="space-y-3">
         <SectionHeading>{t.results.selectedComparison}</SectionHeading>
         <CharmSelection selectedCharmIds={selectedCharmIds} onChange={setSelectedCharmIds} manualMode={mode === 'manual'} />
-        {mode === 'custom' && <CustomWeightsEditor value={customWeights} onChange={setCustomWeights} />}
         <ComparisonTable rows={comparisonRows} />
       </section>
 
-      <PerCreatureSummary summary={summary} view={mode} selectedCharmIds={selectedCharmIds} customWeights={customWeights} />
+      <PerCreatureSummary summary={summary} view={mode} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <PurchaseSuggestions

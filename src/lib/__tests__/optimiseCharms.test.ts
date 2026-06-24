@@ -128,6 +128,36 @@ describe('optimiseCharms - end to end with the sample session', () => {
     expect(new Set(assignedCharmIds).size).toBe(assignedCharmIds.length);
   });
 
+  it('never assigns the same Charm to two creatures within ANY role view, not just the default - the regression bestMajorCharmByRole exists to prevent', () => {
+    // Wound and Curse are both damage-role (elemental_damage_on_attack), so
+    // they genuinely contest each other for whichever creature ranks
+    // highest; Dodge is defensive-role and solved entirely independently -
+    // this checks per-role partitioning isn't silently merging or
+    // double-counting across roles.
+    const character = baseCharacter({
+      unlockedMajorCharms: [
+        { charmId: 'wound', tier: 3 },
+        { charmId: 'curse', tier: 3 },
+        { charmId: 'dodge', tier: 3 },
+      ],
+    });
+    const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT));
+
+    for (const role of ['damage', 'defensive'] as const) {
+      const assignedIds = summary.creatureResults
+        .map((r) => r.bestMajorCharmByRole[role]?.charmId)
+        .filter((id): id is NonNullable<typeof id> => id != null);
+      expect(new Set(assignedIds).size).toBe(assignedIds.length);
+    }
+
+    // Every populated bestMajorCharmByRole entry must actually carry that role.
+    for (const result of summary.creatureResults) {
+      for (const [role, rec] of Object.entries(result.bestMajorCharmByRole)) {
+        expect(rec?.role).toBe(role);
+      }
+    }
+  });
+
   it('flags creatures with no matching Bestiary entry instead of guessing', () => {
     const text = ['Killed Monsters:', '  5x Crusader', '  3x Xyzonian Blob'].join('\n');
     const summary = optimiseCharms(baseCharacter(), parseHuntAnalyser(text));
@@ -162,6 +192,34 @@ describe('optimiseCharms - end to end with the sample session', () => {
     expect(suggestion?.toCharmId).toBe('wound');
     expect(suggestion?.removalCost).toBe(calculateRemovalCost(150, false));
     expect(summary.economics.totalRemovalCost).toBeGreaterThanOrEqual(suggestion!.removalCost);
+  });
+
+  it("reassignment suggestions can't quantify a cross-role swap as one delta - netMetricGain is null, toRole names the new role", () => {
+    // Dodge (defensive) is currently assigned everywhere; Wound (damage,
+    // first in ROLE_PRIORITY) is unlocked and wins the default slot for
+    // whichever creature its own numbers favour - there is no single real
+    // "gain" number between a damage/hour figure and a defensive pick the
+    // player chose freely, so the suggestion must say "null", not guess.
+    const character = baseCharacter({
+      unlockedMajorCharms: [
+        { charmId: 'wound', tier: 3 },
+        { charmId: 'dodge', tier: 3 },
+      ],
+      assignedMajorCharms: [
+        { charmId: 'dodge', creatureName: 'crusader' },
+        { charmId: 'dodge', creatureName: 'headwalker' },
+      ],
+    });
+    const summary = optimiseCharms(character, parseHuntAnalyser(SAMPLE_HUNT_ANALYSER_TEXT));
+
+    const woundRecipient = summary.creatureResults.find((r) => r.bestMajorCharm?.charmId === 'wound');
+    expect(woundRecipient).toBeDefined();
+
+    const suggestion = summary.reassignmentSuggestions.find((s) => s.monsterName === woundRecipient!.monsterName && s.category === 'major');
+    expect(suggestion?.fromCharmId).toBe('dodge');
+    expect(suggestion?.toCharmId).toBe('wound');
+    expect(suggestion?.toRole).toBe('damage');
+    expect(suggestion?.netMetricGain).toBeNull();
   });
 
   it('returns an empty, well-formed summary when there is nothing to optimise', () => {

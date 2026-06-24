@@ -2,7 +2,7 @@
 // transcribed from the official Charm system (see README "Data sources").
 // All percentages are stored as fractions (0-1) so scoring code never needs
 // to remember to divide by 100.
-import type { CharmDefinition, MajorCharmId, MinorCharmId } from '@/types/charm';
+import type { CharmDefinition, CharmEffectKind, CharmRole, MajorCharmId, MinorCharmId } from '@/types/charm';
 
 /** Shared cap used by Overpower and Overflux: proc damage never exceeds this share of the creature's total health. */
 export const PERCENT_HP_DAMAGE_CAP = 0.08;
@@ -358,3 +358,52 @@ export const ALL_CHARM_LIST: CharmDefinition[] = [...MAJOR_CHARM_LIST, ...MINOR_
 export function getCharmDefinition(id: MajorCharmId | MinorCharmId): CharmDefinition {
   return ALL_CHARMS[id];
 }
+
+/**
+ * What kind of value a Charm provides, decided once from what it structurally
+ * *is* (its effectKind), never from comparing magnitudes across hunts. This
+ * is what makes role assignment deterministic instead of arbitrary: a Dodge
+ * is Defensive because dodging incoming damage is what Dodge does, not
+ * because its damage-prevented number happened to outscore its damage number
+ * in this particular hunt. Every `CharmEffectKind` must have an entry here -
+ * adding a new charm with a new effectKind requires adding it to this table.
+ */
+export const EFFECT_KIND_TO_ROLE: Record<CharmEffectKind, CharmRole> = {
+  // Deals damage directly, or amplifies damage you already deal.
+  elemental_damage_on_attack: 'damage',
+  aoe_damage_on_kill: 'damage',
+  percent_hitpoints_damage_on_attack: 'damage',
+  percent_mana_damage_on_attack: 'damage',
+  critical_chance_bonus: 'damage',
+  critical_damage_bonus: 'damage',
+  // Reduces damage you take.
+  dodge_incoming_damage: 'defensive',
+  reflect_incoming_damage: 'defensive',
+  // Restores or saves a supply resource (HP/mana) instead of dealing or preventing damage.
+  life_leech_bonus: 'sustain',
+  mana_leech_bonus: 'sustain',
+  mana_drain_inversion: 'sustain',
+  // Disables the creature or denies it an escape, rather than damaging or out-tanking it.
+  paralyse_creature_on_attack: 'control',
+  paralyse_creature_on_hit_received: 'control',
+  prevent_flee: 'control',
+  // Increases gold/items earned, not combat performance.
+  creature_product_bonus: 'loot_utility',
+  skinning_dusting_bonus: 'loot_utility',
+  // Situational value that isn't damage, defence, sustain, control, or loot.
+  movement_speed_on_hit_received: 'utility',
+  condition_cleanse_on_hit_received: 'utility',
+  death_penalty_reduction: 'utility',
+};
+
+/**
+ * Fixed precedence used whenever charms of different roles must appear in
+ * one list (e.g. ranking every unlocked Major Charm for a creature, or the
+ * damage-first default view) - damage-first per
+ * `docs/charm-mechanics-research.md`'s stated philosophy, then the other
+ * always-applicable economic role, then the situational roles that only
+ * matter when this hunt's concrete data backs them. Within a role, ranking
+ * is still purely by that role's own real metric - this only fixes the
+ * *group* order, never blends across units.
+ */
+export const ROLE_PRIORITY: CharmRole[] = ['damage', 'loot_utility', 'defensive', 'sustain', 'control', 'utility', 'budget_damage'];

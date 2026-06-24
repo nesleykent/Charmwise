@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { optimiseCharms } from '@/lib/optimiseCharms';
 import { parseHuntAnalyser } from '@/lib/parseHuntAnalyser';
 import { DEFAULT_CHARACTER_INPUT, type CharacterInput } from '@/types/character';
-import type { CharmId, CharmTier, OptimisationMode, RecommendationScope, ScoreWeights } from '@/types/charm';
+import type { CharmId, CharmTier, OptimisationMode, RecommendationScope } from '@/types/charm';
 import type { HuntAnalyserParseResult } from '@/types/hunt';
 import type { HuntOptimisationSummary } from '@/types/optimisation';
 
@@ -23,7 +23,6 @@ interface PersistedState {
   /** Ceiling locked Charms are evaluated at, and how far purchase suggestions walk - see optimiseCharms.ts. Gold by default; not everyone's Charm Point budget realistically reaches Gold on everything. */
   targetTier: CharmTier;
   selectedCharmIds: CharmId[];
-  customWeights: ScoreWeights;
 }
 
 function defaultState(): PersistedState {
@@ -37,7 +36,6 @@ function defaultState(): PersistedState {
     scope: 'full_analysis',
     targetTier: 3,
     selectedCharmIds: [],
-    customWeights: { damage: 0.7, xp: 0, profit: 0.05, safety: 0.1, supplySaving: 0.1, utility: 0.05 },
   };
 }
 
@@ -54,8 +52,6 @@ interface WorkspaceContextValue {
   setTargetTier: (tier: CharmTier) => void;
   selectedCharmIds: CharmId[];
   setSelectedCharmIds: (charmIds: CharmId[]) => void;
-  customWeights: ScoreWeights;
-  setCustomWeights: (weights: ScoreWeights) => void;
   parseResult: HuntAnalyserParseResult | null;
   summary: HuntOptimisationSummary | null;
   hasHuntData: boolean;
@@ -80,7 +76,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           mode: saved.mode === 'balanced' ? defaults.mode : (saved.mode ?? prev.mode),
           character: { ...prev.character, ...saved.character },
           selectedCharmIds: saved.selectedCharmIds ?? prev.selectedCharmIds,
-          customWeights: { ...prev.customWeights, ...saved.customWeights },
         }));
       }
     } catch {
@@ -118,8 +113,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setTargetTier: (targetTier) => setState((s) => ({ ...s, targetTier })),
       selectedCharmIds: state.selectedCharmIds,
       setSelectedCharmIds: (selectedCharmIds) => setState((s) => ({ ...s, selectedCharmIds })),
-      customWeights: state.customWeights,
-      setCustomWeights: (customWeights) => setState((s) => ({ ...s, customWeights })),
       parseResult,
       summary,
       hasHuntData: (parseResult?.killedMonsters.length ?? 0) > 0,

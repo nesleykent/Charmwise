@@ -87,34 +87,6 @@ export interface CharmDefinition {
   tiers: readonly [CharmTierDefinition, CharmTierDefinition, CharmTierDefinition];
 }
 
-export interface ScoreBreakdown {
-  damageScore: number;
-  xpScore: number;
-  profitScore: number;
-  safetyScore: number;
-  supplySavingScore: number;
-  utilityScore: number;
-  /** Per-dimension maxima from the comparison set used to normalise raw effect values to 0-100. */
-  normalisationBasis: ScoreNormalisationBasis;
-  /** Optimisation-mode weights applied to the normalised dimension scores. */
-  weights: ScoreWeights;
-  /** Weighted score before confidence adjustment. */
-  rawTotalScore: number;
-  /** Multiplier applied to the raw score for data confidence. */
-  confidenceMultiplier: number;
-  /** Weighted score after confidence adjustment; this is what ranking uses. */
-  totalScore: number;
-}
-
-export interface ScoreNormalisationBasis {
-  damage: number;
-  xp: number;
-  profit: number;
-  safety: number;
-  supplySaving: number;
-  utility: number;
-}
-
 export interface CharmModelBreakdown {
   effectKind: CharmEffectKind;
   element?: ElementType;
@@ -156,8 +128,7 @@ export type RecommendationView =
   | 'defensive'
   | 'sustain'
   | 'control'
-  | 'manual'
-  | 'custom';
+  | 'manual';
 
 /** Legacy values remain accepted for old localStorage payloads and existing tests, but the UI no longer exposes them as primary choices. */
 export type LegacyOptimisationMode = 'balanced' | 'xp' | 'profit' | 'safety' | 'low_supplies';
@@ -168,15 +139,6 @@ export type CharmRole = 'damage' | 'budget_damage' | 'defensive' | 'sustain' | '
 
 /** Which charms count as candidates for "best charm": every Charm regardless of unlock status (`full_analysis`, the default - useful before filling in Unlocked Charms at all), or only what the player has actually unlocked (`my_charms`). */
 export type RecommendationScope = 'full_analysis' | 'my_charms';
-
-export interface ScoreWeights {
-  damage: number;
-  xp: number;
-  profit: number;
-  safety: number;
-  supplySaving: number;
-  utility: number;
-}
 
 export interface CharmEffectEstimate {
   expectedDamagePerHour: number;
@@ -217,11 +179,14 @@ export interface CharmRecommendation {
   unlocked: boolean;
   effect: CharmEffectEstimate;
   calculation: CharmModelBreakdown;
-  scores: ScoreBreakdown;
-  /** total_score divided by the cumulative Charm Point cost to reach `tier` from scratch, null for minor charms or zero-cost cases. */
-  scorePerCharmPoint: number | null;
-  /** total_score divided by the cumulative Minor Charm Echo cost to reach `tier` from scratch, null for major charms. */
-  scorePerMinorCharmEcho: number | null;
+  /** What kind of value this Charm provides - a deterministic lookup from its effectKind (see `EFFECT_KIND_TO_ROLE` in `data/charms.ts`), never a magnitude comparison. */
+  role: CharmRole;
+  /** The single real, unweighted metric `role` is ranked by (e.g. expectedDamagePerHour for a damage-role Charm), already confidence-discounted. This is what ranking, ties, and "why this Charm" all read - never a blend of several units. */
+  roleMetric: number;
+  /** roleMetric divided by the cumulative Charm Point cost to reach `tier` from scratch, null for minor charms or zero-cost cases. */
+  roleMetricPerCharmPoint: number | null;
+  /** roleMetric divided by the cumulative Minor Charm Echo cost to reach `tier` from scratch, null for major charms. */
+  roleMetricPerMinorCharmEcho: number | null;
   confidence: ConfidenceLevel;
   reason: LocalisedMessage;
   warnings: LocalisedMessage[];

@@ -1,6 +1,12 @@
-// Expected-value formulas for every Charm, plus the normalisation step that
-// turns those raw (and very differently-scaled) numbers into the six
-// comparable 0-100 scores the spec asks for.
+// Expected-value formulas for every Charm: turns a Charm's tier definition
+// plus the hunt/character context into a CharmEffectEstimate of real, raw
+// per-hour numbers (damage, profit, damage prevented, sustain, utility).
+// Deliberately stops there - it has no concept of "which Charm is better
+// than which", since comparing across different units would require
+// inventing weights. That comparison is deterministic-role-based instead:
+// see `EFFECT_KIND_TO_ROLE` in `data/charms.ts` (what kind of value a Charm
+// provides, decided once from its effectKind) and `roleMetricFor` below
+// (which single real field that role is ranked by).
 //
 // Documented estimation constants
 // --------------------------------
@@ -39,14 +45,11 @@ import type { CharacterInput } from '@/types/character';
 import type {
   CharmDefinition,
   CharmEffectEstimate,
+  CharmRole,
   CharmTierDefinition,
   ConfidenceLevel,
   ElementType,
   LocalisedMessage,
-  OptimisationMode,
-  ScoreBreakdown,
-  ScoreNormalisationBasis,
-  ScoreWeights,
 } from '@/types/charm';
 import type { KilledMonsterStat } from '@/types/hunt';
 import type { CorpseActionProfile, CreatureProductDrop, DataConfidence, MonsterProfile } from '@/types/monster';
@@ -507,101 +510,35 @@ export function computeCharmEffect(charm: CharmDefinition, tier: CharmTierDefini
   }
 }
 
-export const MODE_WEIGHTS: Record<OptimisationMode, ScoreWeights> = {
-  // Product-default view: damage wins unless concrete incoming damage,
-  // sustain, utility, or confidence data gives another role a real reason
-  // to compete. The Recommendations UI also sorts its main comparison by
-  // raw expected damage-first EV (see recommendationViews.ts); these weights
-  // remain for assignment, purchase, and audit-score calculations.
-  damage_first: { damage: 0.8, xp: 0, profit: 0.05, safety: 0.06, supplySaving: 0.06, utility: 0.03 },
-  damage: { damage: 1, xp: 0, profit: 0, safety: 0, supplySaving: 0, utility: 0 },
-  budget_damage: { damage: 0.85, xp: 0, profit: 0, safety: 0, supplySaving: 0, utility: 0.15 },
-  defensive: { damage: 0.15, xp: 0, profit: 0, safety: 0.75, supplySaving: 0.05, utility: 0.05 },
-  sustain: { damage: 0.15, xp: 0, profit: 0, safety: 0.1, supplySaving: 0.7, utility: 0.05 },
-  control: { damage: 0.15, xp: 0, profit: 0, safety: 0.2, supplySaving: 0.05, utility: 0.6 },
-  manual: { damage: 0.8, xp: 0, profit: 0.05, safety: 0.06, supplySaving: 0.06, utility: 0.03 },
-  custom: { damage: 0.7, xp: 0, profit: 0.05, safety: 0.1, supplySaving: 0.1, utility: 0.05 },
-  // Legacy modes retained for old saved state and tests. They are no longer
-  // shown as the primary product model.
-  balanced: { damage: 0.4, xp: 0, profit: 0.25, safety: 0.2, supplySaving: 0.1, utility: 0.05 },
-  xp: { damage: 0.3, xp: 0.45, profit: 0.1, safety: 0.1, supplySaving: 0.025, utility: 0.025 },
-  profit: { damage: 0.2, xp: 0, profit: 0.55, safety: 0.1, supplySaving: 0.1, utility: 0.05 },
-  safety: { damage: 0.15, xp: 0, profit: 0.1, safety: 0.5, supplySaving: 0.2, utility: 0.05 },
-  low_supplies: { damage: 0.15, xp: 0, profit: 0.1, safety: 0.25, supplySaving: 0.45, utility: 0.05 },
-};
-
-export interface ScorableCandidate {
-  effect: CharmEffectEstimate;
-  confidence?: ConfidenceLevel;
-}
-
-export type ScoreMaxima = ScoreNormalisationBasis;
-
-/** The normalisation basis for one comparison set (e.g. "all Major Charms for Crusader"). Exposed separately so purchase suggestions can score a hypothetical tier upgrade against the same basis without re-normalising the whole set. */
-export function computeMaxima(effects: CharmEffectEstimate[]): ScoreMaxima {
-  const maxOf = (pick: (e: CharmEffectEstimate) => number) => Math.max(1e-9, ...effects.map(pick));
-  return {
-    damage: maxOf((e) => e.expectedDamagePerHour),
-    xp: maxOf((e) => e.expectedXpPerHour),
-    profit: maxOf((e) => e.expectedProfitPerHour),
-    safety: maxOf((e) => e.expectedDamagePreventedPerHour),
-    supplySaving: maxOf((e) => e.expectedHealingGainPerHour + e.expectedManaGainPerHour + e.expectedManaSavedPerHour),
-    utility: maxOf((e) => e.utilityMagnitude),
-  };
-}
-
 /**
- * Min-max normalises one effect against `maxima` before weighting, so e.g.
- * Wound's damage/hour (thousands) and Cleanse's utility magnitude (0-1) can
- * be summed with the same weights meaningfully.
+ * The single real, unweighted metric `role` is ranked by - never a blend of
+ * several units. Each effectKind only ever populates the field its role
+ * cares about, with one deliberate exception handled here explicitly rather
+ * than blended: 'defensive' covers both Dodge (populates
+ * expectedDamagePreventedPerHour) and Parry (populates expectedDamagePerHour
+ * instead, since reflected damage is counted as damage dealt, not damage
+ * avoided) - exactly one of the two is ever non-zero for a given
+ * defensive-role charm, so preferring whichever is present is a per-charm
+ * field lookup, not a cross-unit blend. 'control'/'utility' have the same
+ * shape: Cripple/Numb populate expectedDamagePreventedPerHour when
+ * computable and fall back to utilityMagnitude only when it isn't (see their
+ * formula above); charms with no damage-prevented concept at all (Cleanse,
+ * Bless, Adrenaline Burst, Fatal Hold) only ever populate utilityMagnitude.
  */
-export function scoreEffect(
-  effect: CharmEffectEstimate,
-  maxima: ScoreMaxima,
-  weights: ScoreWeights,
-  confidence: ConfidenceLevel = 'high',
-): ScoreBreakdown {
-  const damageScore = (effect.expectedDamagePerHour / maxima.damage) * 100;
-  const xpScore = (effect.expectedXpPerHour / maxima.xp) * 100;
-  const profitScore = (effect.expectedProfitPerHour / maxima.profit) * 100;
-  const safetyScore = (effect.expectedDamagePreventedPerHour / maxima.safety) * 100;
-  const supplySavingScore =
-    ((effect.expectedHealingGainPerHour + effect.expectedManaGainPerHour + effect.expectedManaSavedPerHour) /
-      maxima.supplySaving) *
-    100;
-  const utilityScore = (effect.utilityMagnitude / maxima.utility) * 100;
-
-  const rawTotalScore =
-    damageScore * weights.damage +
-    xpScore * weights.xp +
-    profitScore * weights.profit +
-    safetyScore * weights.safety +
-    supplySavingScore * weights.supplySaving +
-    utilityScore * weights.utility;
-  const confidenceMultiplier = CONFIDENCE_SCORE_MULTIPLIER[confidence];
-  const totalScore = rawTotalScore * confidenceMultiplier;
-
-  return {
-    damageScore,
-    xpScore,
-    profitScore,
-    safetyScore,
-    supplySavingScore,
-    utilityScore,
-    normalisationBasis: { ...maxima },
-    weights: { ...weights },
-    rawTotalScore,
-    confidenceMultiplier,
-    totalScore,
-  };
-}
-
-/**
- * Min-max normalises each metric to 0-100 across `candidates` before
- * weighting. Ranking is always relative to the candidates passed in (the
- * other charms of the same category being considered for the same creature).
- */
-export function scoreCandidates(candidates: ScorableCandidate[], weights: ScoreWeights): ScoreBreakdown[] {
-  const maxima = computeMaxima(candidates.map((c) => c.effect));
-  return candidates.map(({ effect, confidence }) => scoreEffect(effect, maxima, weights, confidence));
+export function roleMetricFor(effect: CharmEffectEstimate, role: CharmRole): number {
+  switch (role) {
+    case 'damage':
+    case 'budget_damage':
+      return effect.expectedDamagePerHour;
+    case 'defensive':
+      return effect.expectedDamagePreventedPerHour > 0 ? effect.expectedDamagePreventedPerHour : effect.expectedDamagePerHour;
+    case 'sustain':
+      return effect.expectedHealingGainPerHour + effect.expectedManaGainPerHour + effect.expectedManaSavedPerHour;
+    case 'loot_utility':
+      return effect.expectedProfitPerHour;
+    case 'control':
+    case 'utility':
+    default:
+      return effect.expectedDamagePreventedPerHour > 0 ? effect.expectedDamagePreventedPerHour : effect.utilityMagnitude;
+  }
 }

@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { ROLE_PRIORITY } from '@/data/charms';
 import { DataBadge } from '@/components/DataBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { MissingDataPanel } from '@/components/MissingDataPanel';
 import { PageHeader } from '@/components/PageHeader';
 import { RecommendationScopeToggle } from '@/components/RecommendationScopeToggle';
-import { creatureSlug, formatNumber, formatScore, toTitleCase } from '@/lib/format';
+import { creatureSlug, formatNumber, toTitleCase } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { useWorkspace } from '@/lib/workspace';
 
@@ -118,13 +119,13 @@ export default function DashboardPage() {
             ) : (
               <ul className="card divide-y divide-charm-border text-xs">
                 {[...summary.charmPointBudget.suggestions.slice(0, 3), ...summary.minorEchoBudget.suggestions.slice(0, 3)]
-                  .sort((a, b) => b.scorePerCost - a.scorePerCost)
+                  .sort((a, b) => ROLE_PRIORITY.indexOf(a.role) - ROLE_PRIORITY.indexOf(b.role) || b.metricPerCost - a.metricPerCost)
                   .slice(0, 5)
                   .map((s, i) => (
                     <li key={i} className="p-3">
                       <span className="font-semibold text-white">{t.charms[s.charmId]?.name}</span> {t.results.linkingFor}{' '}
                       <span className="text-white">{toTitleCase(s.monsterName)}</span> - {formatNumber(s.cost, locale)} {s.currency === 'charm_points' ? 'CP' : 'MCE'} (
-                      {formatScore(s.scorePerCost)} pts/cost)
+                      {t.results.roles[s.role] ?? s.role}, {formatNumber(s.metricGain, locale)} gain)
                     </li>
                   ))}
               </ul>

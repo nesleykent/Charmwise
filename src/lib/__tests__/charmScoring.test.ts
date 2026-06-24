@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getCharmDefinition } from '@/data/charms';
-import {
-  MODE_WEIGHTS,
-  computeCharmEffect,
-  computeMaxima,
-  resistanceMultiplier,
-  scoreEffect,
-  type ScoringContext,
-} from '@/lib/charmScoring';
+import { computeCharmEffect, emptyEffect, resistanceMultiplier, roleMetricFor, type ScoringContext } from '@/lib/charmScoring';
 import type { CharacterInput } from '@/types/character';
-import type { OptimisationMode } from '@/types/charm';
+import type { CharmEffectEstimate } from '@/types/charm';
 import type { KilledMonsterStat } from '@/types/hunt';
 import type { MonsterProfile } from '@/types/monster';
 
@@ -453,50 +446,43 @@ describe('computeCharmEffect - Carnage (on-kill AoE)', () => {
   });
 });
 
-describe('scoring normalisation', () => {
-  it('every optimisation mode weight set sums to 1', () => {
-    for (const mode of Object.keys(MODE_WEIGHTS) as OptimisationMode[]) {
-      const w = MODE_WEIGHTS[mode];
-      const sum = w.damage + w.xp + w.profit + w.safety + w.supplySaving + w.utility;
-      expect(sum).toBeCloseTo(1, 10);
-    }
+describe('roleMetricFor', () => {
+  it('damage and budget_damage roles read expectedDamagePerHour', () => {
+    const effect: CharmEffectEstimate = { ...emptyEffect(), expectedDamagePerHour: 42 };
+    expect(roleMetricFor(effect, 'damage')).toBe(42);
+    expect(roleMetricFor(effect, 'budget_damage')).toBe(42);
   });
 
-  it('min-max normalises the top candidate to 100 on its dominant metric', () => {
-    const effects = [
-      { expectedDamagePerHour: 1000, expectedXpPerHour: 0, expectedProfitPerHour: 0, expectedDamagePreventedPerHour: 0, expectedHealingGainPerHour: 0, expectedManaGainPerHour: 0, expectedManaSavedPerHour: 0, utilityMagnitude: 0 },
-      { expectedDamagePerHour: 500, expectedXpPerHour: 0, expectedProfitPerHour: 0, expectedDamagePreventedPerHour: 0, expectedHealingGainPerHour: 0, expectedManaGainPerHour: 0, expectedManaSavedPerHour: 0, utilityMagnitude: 0 },
-    ];
-    const maxima = computeMaxima(effects);
-    const scores = effects.map((e) => scoreEffect(e, maxima, MODE_WEIGHTS.balanced));
-    expect(scores[0]?.damageScore).toBeCloseTo(100, 5);
-    expect(scores[1]?.damageScore).toBeCloseTo(50, 5);
-    expect(scores[0]?.rawTotalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
-    expect(scores[0]?.totalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
-    expect(scores[0]?.normalisationBasis.damage).toBe(1000);
-    expect(scores[0]?.weights).toEqual(MODE_WEIGHTS.balanced);
+  it('defensive role prefers expectedDamagePreventedPerHour (Dodge), falling back to expectedDamagePerHour (Parry) only when prevention is zero', () => {
+    const dodgeLike: CharmEffectEstimate = { ...emptyEffect(), expectedDamagePreventedPerHour: 30 };
+    expect(roleMetricFor(dodgeLike, 'defensive')).toBe(30);
+
+    const parryLike: CharmEffectEstimate = { ...emptyEffect(), expectedDamagePerHour: 18 };
+    expect(roleMetricFor(parryLike, 'defensive')).toBe(18);
   });
 
-  it('applies confidence multipliers only to total ranking score', () => {
-    const effect = {
-      expectedDamagePerHour: 1000,
-      expectedXpPerHour: 0,
-      expectedProfitPerHour: 0,
-      expectedDamagePreventedPerHour: 0,
-      expectedHealingGainPerHour: 0,
-      expectedManaGainPerHour: 0,
-      expectedManaSavedPerHour: 0,
-      utilityMagnitude: 0,
+  it('sustain role sums healing, mana gain, and mana saved - never a blend with damage', () => {
+    const effect: CharmEffectEstimate = {
+      ...emptyEffect(),
+      expectedDamagePerHour: 999,
+      expectedHealingGainPerHour: 5,
+      expectedManaGainPerHour: 7,
+      expectedManaSavedPerHour: 11,
     };
-    const maxima = computeMaxima([effect]);
-    const low = scoreEffect(effect, maxima, MODE_WEIGHTS.balanced, 'low');
-    const unknown = scoreEffect(effect, maxima, MODE_WEIGHTS.balanced, 'unknown');
+    expect(roleMetricFor(effect, 'sustain')).toBe(23);
+  });
 
-    expect(low.rawTotalScore).toBeCloseTo(100 * MODE_WEIGHTS.balanced.damage, 5);
-    expect(low.confidenceMultiplier).toBe(0.6);
-    expect(low.totalScore).toBeCloseTo(low.rawTotalScore * 0.6, 5);
-    expect(unknown.rawTotalScore).toBeCloseTo(low.rawTotalScore, 5);
-    expect(unknown.confidenceMultiplier).toBe(0);
-    expect(unknown.totalScore).toBe(0);
+  it('loot_utility role reads expectedProfitPerHour', () => {
+    const effect: CharmEffectEstimate = { ...emptyEffect(), expectedProfitPerHour: 64 };
+    expect(roleMetricFor(effect, 'loot_utility')).toBe(64);
+  });
+
+  it('control and utility roles prefer expectedDamagePreventedPerHour (Cripple/Numb with hunt data), falling back to utilityMagnitude (no killsPerHour, or Cleanse/Bless/Adrenaline Burst)', () => {
+    const crippleWithData: CharmEffectEstimate = { ...emptyEffect(), expectedDamagePreventedPerHour: 12, utilityMagnitude: 0.05 };
+    expect(roleMetricFor(crippleWithData, 'control')).toBe(12);
+
+    const crippleNoData: CharmEffectEstimate = { ...emptyEffect(), utilityMagnitude: 0.05 };
+    expect(roleMetricFor(crippleNoData, 'control')).toBe(0.05);
+    expect(roleMetricFor(crippleNoData, 'utility')).toBe(0.05);
   });
 });

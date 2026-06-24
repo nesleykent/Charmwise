@@ -57,7 +57,6 @@ export interface Dictionary {
     targetTierLabel: string;
     targetTierHint: string;
     sectionDetails: string;
-    identicalSubScoresNote: string;
   };
   charmLibrary: {
     title: string;
@@ -153,7 +152,6 @@ export interface Dictionary {
     chooseCharmsManualEmptyNote: string;
     chooseCharmsManualNote: string;
     clearSelection: string;
-    customWeightsTitle: string;
     noUnlockedCharmNotice: string;
     noMeaningfulComparison: string;
     nonDamageReasonDisclosure: string;
@@ -172,11 +170,13 @@ export interface Dictionary {
     comparisonConfidence: string;
     comparisonReason: string;
     roles: Record<string, string>;
+    /** One-line structural "why this role" explanations, keyed by CharmRole, with a {{charm}} placeholder - e.g. "Dodge is always Defensive...". Role is a fixed identity fact (see EFFECT_KIND_TO_ROLE), so this never varies by hunt. */
+    roleExplanations: Record<string, string>;
     decisionReasons: Record<string, string>;
     economicsTitle: string;
     reassignmentsTitle: string;
     confidence: { high: string; medium: string; low: string; unknown: string };
-    scoreDetailsTitle: string;
+    calculationDetailsTitle: string;
     effectModelTitle: string;
     modelHuntBasis: string;
     modelEffectFormula: string;
@@ -193,25 +193,14 @@ export interface Dictionary {
     modelUsed: string;
     modelNotUsed: string;
     modelNoSpecificFormula: string;
-    scoreFormula: string;
-    scoreNormalisationNote: string;
-    scoreMetric: string;
-    scoreInputVsBest: string;
-    scoreNormalised: string;
-    scoreWeight: string;
-    scoreContribution: string;
-    scoreNoBestValue: string;
-    scoreConfidenceMultiplier: string;
-    scoreConfidenceAdjustment: string;
     metrics: {
       expectedDamagePerHour: string;
+      expectedXpPerHour: string;
       expectedProfitPerHour: string;
       expectedDamagePreventedPerHour: string;
       expectedHealingSavedPerHour: string;
-      scorePerCharmPoint: string;
-      scorePerMinorCharmEcho: string;
-      adjustedScore: string;
-      rawScore: string;
+      roleMetricPerCharmPoint: string;
+      roleMetricPerMinorCharmEcho: string;
     };
     noMajorUnlocked: string;
     noMinorUnlocked: string;
@@ -232,16 +221,6 @@ export interface Dictionary {
     caveatsNote: string;
     lackingBestiary: string;
     needsManualReview: string;
-  };
-  scoreDimensions: {
-    damage: string;
-    xp: string;
-    profit: string;
-    safety: string;
-    supplySaving: string;
-    utility: string;
-    /** Used as the "dominant factor" when every dimension scores exactly zero (e.g. no Bestiary data for this effect) - never let "damage" win that case by array order alone. */
-    none: string;
   };
   elements: { physical: string; fire: string; earth: string; energy: string; ice: string; holy: string; death: string };
   /** Templates for LocalisedMessage.code, with `{{param}}` placeholders - see src/lib/messages.ts. */

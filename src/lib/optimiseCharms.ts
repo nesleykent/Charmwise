@@ -2,20 +2,18 @@
 // input + bestiary profiles -> ranked Charm recommendations for each
 // creature and for the hunt as a whole.
 import { solveAssignment } from '@/lib/assignmentSolver';
-import { MAJOR_CHARM_LIST, MINOR_CHARM_LIST, PERCENT_HP_DAMAGE_CAP, getCharmDefinition } from '@/data/charms';
+import { EFFECT_KIND_TO_ROLE, MAJOR_CHARM_LIST, MINOR_CHARM_LIST, PERCENT_HP_DAMAGE_CAP, ROLE_PRIORITY, getCharmDefinition } from '@/data/charms';
 import {
   ASSUMED_ATTACKS_PER_HOUR_WHILE_ACTIVE,
   ASSUMED_MANA_DRAIN_SHARE_OF_INCOMING,
+  CONFIDENCE_SCORE_MULTIPLIER,
   computeCharmEffect,
-  computeMaxima,
   emptyEffect,
-  scoreEffect,
-  MODE_WEIGHTS,
+  roleMetricFor,
   resistanceMultiplier,
   monsterMitigationMultiplier,
   ELEMENTAL_CHARM_LEVEL_CAP_MULTIPLIER,
   CARNAGE_LEVEL_CAP_MULTIPLIER,
-  type ScoreMaxima,
   type ScoringContext,
 } from '@/lib/charmScoring';
 import { calculateMajorCharmSlotLimit, calculateRemovalCost, calculateResetCost } from '@/lib/economy';
@@ -29,11 +27,11 @@ import type {
   CharmId,
   CharmModelBreakdown,
   CharmRecommendation,
+  CharmRole,
   CharmTier,
   CharmTierDefinition,
   LocalisedMessage,
   OptimisationMode,
-  ScoreWeights,
 } from '@/types/charm';
 import type { HuntAnalyserParseResult, KilledMonsterStat } from '@/types/hunt';
 import type { MonsterProfile, RawBestiaryEntry } from '@/types/monster';
@@ -73,34 +71,11 @@ function allocateByWeight(total: number, weights: number[]): number[] {
   return weights.map((w) => (w / sum) * total);
 }
 
-/** Returns the score-dimension key (e.g. "damage"), not display text - the UI localises it via Dictionary.scoreDimensions. */
-function dominantScoreLabel(
-  scores: { damageScore: number; xpScore: number; profitScore: number; safetyScore: number; supplySavingScore: number; utilityScore: number },
-  weights: ScoreWeights,
-): string {
-  const contributions: [string, number][] = [
-    ['damage', scores.damageScore * weights.damage],
-    ['xp', scores.xpScore * weights.xp],
-    ['profit', scores.profitScore * weights.profit],
-    ['safety', scores.safetyScore * weights.safety],
-    ['supplySaving', scores.supplySavingScore * weights.supplySaving],
-    ['utility', scores.utilityScore * weights.utility],
-  ];
-  // A charm with no usable data for this creature (e.g. Gut/Scavenge with no
-  // Bestiary product value) scores exactly zero in every dimension - without
-  // this check, "damage" would always win that tie purely because it's
-  // listed first below, misrepresenting a charm that does nothing here as
-  // "driven mainly by damage."
-  if (contributions.every(([, value]) => value === 0)) return 'none';
-  contributions.sort((a, b) => b[1] - a[1]);
-  return contributions[0]![0];
-}
-
-function buildReason(rankIndex: number, unlocked: boolean, dominant: string, lockedAtTier: CharmTier): LocalisedMessage {
-  if (rankIndex === 0 && unlocked) return { code: 'reason_top_unlocked', params: { dominant } };
-  if (rankIndex === 0 && !unlocked) return { code: 'reason_top_locked', params: { dominant, tier: lockedAtTier } };
-  if (unlocked) return { code: 'reason_ranked_unlocked', params: { rank: rankIndex + 1, dominant } };
-  return { code: 'reason_ranked_locked', params: { rank: rankIndex + 1, dominant, tier: lockedAtTier } };
+function buildReason(rankIndex: number, unlocked: boolean, role: CharmRole, lockedAtTier: CharmTier): LocalisedMessage {
+  if (rankIndex === 0 && unlocked) return { code: 'reason_top_unlocked', params: { role } };
+  if (rankIndex === 0 && !unlocked) return { code: 'reason_top_locked', params: { role, tier: lockedAtTier } };
+  if (unlocked) return { code: 'reason_ranked_unlocked', params: { rank: rankIndex + 1, role } };
+  return { code: 'reason_ranked_locked', params: { rank: rankIndex + 1, role, tier: lockedAtTier } };
 }
 
 function buildCalculationBreakdown(
@@ -220,7 +195,6 @@ interface RankedGroup {
   best: CharmRecommendation | null;
   /** Best overall regardless of unlock status - the Full Analysis view. */
   bestOverall: CharmRecommendation | null;
-  maxima: ScoreMaxima;
 }
 
 /**
@@ -241,7 +215,6 @@ function rankCharmGroup(
   category: CharmCategory,
   unlockedList: UnlockedCharm[],
   ctx: ScoringContext,
-  weights: ScoreWeights,
   targetTier: CharmTier,
 ): RankedGroup {
   const evaluations = charmList.map((charm) => {
@@ -249,36 +222,38 @@ function rankCharmGroup(
     const unlocked = ownedTier !== null;
     const tier: CharmTier = ownedTier ?? targetTier;
     const { effect, warnings, confidence } = computeCharmEffect(charm, getTierDefinition(charm, tier), ctx);
-    return { charm, tier, unlocked, effect, warnings, confidence };
+    const role = EFFECT_KIND_TO_ROLE[charm.effectKind];
+    const roleMetric = roleMetricFor(effect, role) * CONFIDENCE_SCORE_MULTIPLIER[confidence];
+    return { charm, tier, unlocked, effect, warnings, confidence, role, roleMetric };
   });
 
-  const maxima = computeMaxima(evaluations.map((e) => e.effect));
-  const scored = evaluations.map((e) => ({ ...e, scores: scoreEffect(e.effect, maxima, weights, e.confidence) }));
-
-  // Primary: total score desc. True ties happen routinely - a charm that's
-  // simultaneously the per-creature maximum in both damage and profit (xp/
-  // profit are linear in damage for one creature) normalises to exactly 100
-  // in both dimensions, so e.g. two different creatures where the same charm
-  // dominates both axes can land on the exact same weighted total. Rather
-  // than let an arbitrary alphabetical tiebreak silently decide who's "#1",
-  // break ties by cost-efficiency (score per point spent to reach the
-  // evaluated tier) - a meaningful signal - and only fall back to charm id
-  // for full determinism when even that matches.
-  scored.sort((a, b) => {
-    const scoreDiff = b.scores.totalScore - a.scores.totalScore;
-    if (scoreDiff !== 0) return scoreDiff;
+  // Primary: fixed role-priority order (damage-first, see ROLE_PRIORITY) -
+  // this list spans every role at once (e.g. Wound [damage] and Parry
+  // [defensive] both appear here for the same creature), so sorting by raw
+  // roleMetric alone would silently compare damage/hour against
+  // damage-prevented/hour. Only the *group* order is fixed; within a role,
+  // ranking is purely by that role's own roleMetric. Secondary: cost
+  // efficiency (roleMetric per point spent to reach the evaluated tier) -
+  // ties within a role happen routinely (e.g. Cripple/Numb share identical
+  // game data), and this is a meaningful signal rather than an arbitrary
+  // alphabetical tiebreak. Charm id is the final, fully deterministic
+  // fallback for when even that matches.
+  evaluations.sort((a, b) => {
+    const priorityDiff = ROLE_PRIORITY.indexOf(a.role) - ROLE_PRIORITY.indexOf(b.role);
+    if (priorityDiff !== 0) return priorityDiff;
+    const metricDiff = b.roleMetric - a.roleMetric;
+    if (metricDiff !== 0) return metricDiff;
     const aCost = costToReachTier(a.charm, 0, a.tier);
     const bCost = costToReachTier(b.charm, 0, b.tier);
-    const aDensity = aCost > 0 ? a.scores.totalScore / aCost : a.scores.totalScore;
-    const bDensity = bCost > 0 ? b.scores.totalScore / bCost : b.scores.totalScore;
+    const aDensity = aCost > 0 ? a.roleMetric / aCost : a.roleMetric;
+    const bDensity = bCost > 0 ? b.roleMetric / bCost : b.roleMetric;
     return bDensity - aDensity || a.charm.id.localeCompare(b.charm.id);
   });
 
-  const recommendations: CharmRecommendation[] = scored.map((entry, index) => {
-    const dominant = dominantScoreLabel(entry.scores, weights);
+  const recommendations: CharmRecommendation[] = evaluations.map((entry, index) => {
     // Cumulative cost from scratch to the evaluated tier, not just that
     // tier's incremental price - Gold can't be bought without Bronze and
-    // Silver first, so "score per point" must reflect the full spend.
+    // Silver first, so "metric per point" must reflect the full spend.
     const totalCostToTier = costToReachTier(entry.charm, 0, entry.tier);
     return {
       charmId: entry.charm.id,
@@ -289,27 +264,29 @@ function rankCharmGroup(
       unlocked: entry.unlocked,
       effect: entry.effect,
       calculation: buildCalculationBreakdown(entry.charm, getTierDefinition(entry.charm, entry.tier), ctx, entry.effect),
-      scores: entry.scores,
-      scorePerCharmPoint: entry.charm.currency === 'charm_points' ? entry.scores.totalScore / totalCostToTier : null,
-      scorePerMinorCharmEcho: entry.charm.currency === 'minor_charm_echoes' ? entry.scores.totalScore / totalCostToTier : null,
+      role: entry.role,
+      roleMetric: entry.roleMetric,
+      roleMetricPerCharmPoint: entry.charm.currency === 'charm_points' ? entry.roleMetric / totalCostToTier : null,
+      roleMetricPerMinorCharmEcho: entry.charm.currency === 'minor_charm_echoes' ? entry.roleMetric / totalCostToTier : null,
       confidence: entry.confidence,
-      reason: buildReason(index, entry.unlocked, dominant, entry.tier),
+      reason: buildReason(index, entry.unlocked, entry.role, entry.tier),
       warnings: entry.warnings,
     };
   });
 
-  const best = recommendations.find((r) => r.unlocked && r.confidence !== 'unknown' && r.scores.totalScore > 0) ?? null;
-  const bestOverall = recommendations.find((r) => r.confidence !== 'unknown' && r.scores.totalScore > 0) ?? null;
-  return { recommendations, best, bestOverall, maxima };
+  const best = recommendations.find((r) => r.unlocked && r.confidence !== 'unknown' && r.roleMetric > 0) ?? null;
+  const bestOverall = recommendations.find((r) => r.confidence !== 'unknown' && r.roleMetric > 0) ?? null;
+  return { recommendations, best, bestOverall };
 }
 
 interface CreatureContext {
   monsterName: string;
   profile: MonsterProfile;
   ctx: ScoringContext;
-  majorMaxima: ScoreMaxima;
-  minorMaxima: ScoreMaxima;
 }
+
+/** Every real Charm role - excludes `budget_damage`, which is a view/mode concept (damage, cost-ranked) rather than a role any Charm is ever assigned. */
+const ASSIGNABLE_ROLES: CharmRole[] = ROLE_PRIORITY.filter((role) => role !== 'budget_damage');
 
 /**
  * A specific unlocked Charm can only be actively assigned to one creature at
@@ -317,106 +294,127 @@ interface CreatureContext {
  * as `rankedMajorCharms`/`rankedMinorCharms` still does for exploration, can
  * recommend the same charm for two different creatures at once, which the
  * player cannot actually act on. This solves the real one-charm-per-creature,
- * one-creature-per-charm assignment globally across the whole hunt -
- * optionally capped at `slotLimit` total assignments - and returns the
- * winning `CharmRecommendation` per creature, keyed by monster name.
+ * one-creature-per-charm assignment globally across the whole hunt, scoped to
+ * a single `role` so the DP's objective only ever compares charms in the
+ * same real unit - optionally capped at `slotLimit` total assignments - and
+ * returns the winning `CharmRecommendation` per creature, keyed by monster
+ * name.
  */
-function solveGlobalCharmAssignment(
+function solveRoleCharmAssignment(
   creatureResults: CreatureOptimisationResult[],
   unlockedCharmIds: CharmId[],
   category: CharmCategory,
+  role: CharmRole,
   slotLimit: number | undefined,
 ): Map<string, CharmRecommendation> {
   const assignment = new Map<string, CharmRecommendation>();
   const eligible = creatureResults.filter((r) => r.hasBestiaryData);
-  if (eligible.length === 0 || unlockedCharmIds.length === 0) return assignment;
+  const roleCharmIds = unlockedCharmIds.filter((charmId) => EFFECT_KIND_TO_ROLE[getCharmDefinition(charmId).effectKind] === role);
+  if (eligible.length === 0 || roleCharmIds.length === 0) return assignment;
 
   const rankedList = (r: CreatureOptimisationResult) => (category === 'major' ? r.rankedMajorCharms : r.rankedMinorCharms);
-  const scoreMatrix = eligible.map((result) =>
-    unlockedCharmIds.map((charmId) => rankedList(result).find((r) => r.charmId === charmId && r.unlocked)?.scores.totalScore ?? 0),
+  const metricMatrix = eligible.map((result) =>
+    roleCharmIds.map((charmId) => rankedList(result).find((r) => r.charmId === charmId && r.unlocked)?.roleMetric ?? 0),
   );
 
-  const { assignedItem } = solveAssignment(scoreMatrix, slotLimit);
+  const { assignedItem } = solveAssignment(metricMatrix, slotLimit);
 
   eligible.forEach((result, i) => {
     const itemIndex = assignedItem[i];
     if (itemIndex === null || itemIndex === undefined) return;
-    const charmId = unlockedCharmIds[itemIndex]!;
+    const charmId = roleCharmIds[itemIndex]!;
     const recommendation = rankedList(result).find((r) => r.charmId === charmId && r.unlocked);
-    if (recommendation && recommendation.scores.totalScore > 0) assignment.set(result.monsterName, recommendation);
+    if (recommendation && recommendation.roleMetric > 0) assignment.set(result.monsterName, recommendation);
   });
 
   return assignment;
 }
 
 /**
- * Greedy budget allocator: repeatedly takes the single best score-per-cost
- * upgrade that still fits the remaining budget, then re-evaluates from that
- * charm's new (virtual) tier - so a budget that's best spent maxing out one
- * excellent charm's full Bronze-to-Gold path gets suggested as that full
- * chain, not as ten independent "buy Tier 1 of something else" options that
- * structurally look more efficient in isolation (Tier 1 is always the
- * cheapest, biggest relative jump for an unowned charm). This is what
- * actually drove "why are you only suggesting Tier 1" - cheap, fresh-unlock
- * Tier 1s were crowding every further tier-up out of a flat top-10 list.
+ * Runs `solveRoleCharmAssignment` once per role (per the approved design:
+ * every individual solve must stay unit-pure, so a category's unlocked
+ * charms - which can span multiple roles, e.g. Wound [damage] and Parry
+ * [defensive] both being Major Charms - can never share one DP objective).
+ * `damageSlotLimit` (the account's Major Charm slot cap) only ever applies
+ * to the damage role's solve, since that's the solve whose result becomes
+ * the default, displayed "Major Charm Slots" plan - every other role's
+ * solved assignment is informational alternate-view data, not counted
+ * against the cap.
+ */
+function solveAssignmentsByRole(
+  creatureResults: CreatureOptimisationResult[],
+  unlockedCharmIds: CharmId[],
+  category: CharmCategory,
+  damageSlotLimit: number | undefined,
+): Partial<Record<CharmRole, Map<string, CharmRecommendation>>> {
+  const byRole: Partial<Record<CharmRole, Map<string, CharmRecommendation>>> = {};
+  for (const role of ASSIGNABLE_ROLES) {
+    const slotLimit = role === 'damage' ? damageSlotLimit : undefined;
+    byRole[role] = solveRoleCharmAssignment(creatureResults, unlockedCharmIds, category, role, slotLimit);
+  }
+  return byRole;
+}
+
+/**
+ * Greedy budget allocator for ONE role's charms: repeatedly takes the single
+ * best metric-per-cost upgrade that still fits the remaining budget, then
+ * re-evaluates from that charm's new (virtual) tier - so a budget that's
+ * best spent maxing out one excellent charm's full Bronze-to-Gold path gets
+ * suggested as that full chain, not as ten independent "buy Tier 1 of
+ * something else" options that structurally look more efficient in
+ * isolation (Tier 1 is always the cheapest, biggest relative jump for an
+ * unowned charm). This is what actually drove "why are you only suggesting
+ * Tier 1" - cheap, fresh-unlock Tier 1s were crowding every further tier-up
+ * out of a flat top-10 list.
  *
  * Not a provably optimal knapsack solver (see README "Future improvements")
  * - but it correctly respects the available budget and chains tiers, unlike
  * the flat ranking it replaces.
- *
- * When no budget has been entered (still 0, the Advanced-settings default),
- * there is nothing to allocate against, so this falls back to an advisory
- * top-10 list of the most efficient next steps, unconstrained by affordability -
- * the same spirit as the previous behaviour, but still capable of chaining.
  *
  * Stops at `targetTier` rather than always walking to Gold - not every
  * Charm Point budget realistically reaches Gold on everything, so a lower
  * target means this never bothers suggesting the (often steeply expensive)
  * final step towards a tier the player isn't aiming for.
  */
-function buildPurchaseSuggestions(
-  charmList: CharmDefinition[],
+function allocateRoleBudget(
+  roleCharms: CharmDefinition[],
   category: CharmCategory,
+  role: CharmRole,
   unlockedList: UnlockedCharm[],
   creatureContexts: CreatureContext[],
-  weights: ScoreWeights,
-  availableBudget: number,
+  budget: number,
+  suggestionCap: number,
   targetTier: CharmTier,
 ): CharmPurchaseSuggestion[] {
-  const hasBudget = availableBudget > 0;
-  let remainingBudget = hasBudget ? availableBudget : Number.POSITIVE_INFINITY;
-  const suggestionCap = hasBudget ? charmList.length * targetTier : 10;
-
-  const virtualTier = new Map<CharmId, number>(charmList.map((c) => [c.id, getUnlockedTier(unlockedList, c.id) ?? 0]));
+  let remainingBudget = budget;
+  const virtualTier = new Map<CharmId, number>(roleCharms.map((c) => [c.id, getUnlockedTier(unlockedList, c.id) ?? 0]));
   const suggestions: CharmPurchaseSuggestion[] = [];
 
   while (suggestions.length < suggestionCap) {
-    let best: { charm: CharmDefinition; fromTier: number; toTier: CharmTier; cost: number; monsterName: string; scoreGain: number; scorePerCost: number } | null = null;
+    let best: { charm: CharmDefinition; fromTier: number; toTier: CharmTier; cost: number; monsterName: string; metricGain: number; metricPerCost: number } | null = null;
 
-    for (const charm of charmList) {
+    for (const charm of roleCharms) {
       const currentTier = virtualTier.get(charm.id)!;
       if (currentTier >= targetTier) continue;
       const toTier = (currentTier + 1) as CharmTier;
       const cost = getTierDefinition(charm, toTier).cost;
       if (cost > remainingBudget) continue;
 
-      let bestForCharm: { monsterName: string; scoreGain: number } | null = null;
-      for (const { monsterName, ctx, majorMaxima, minorMaxima } of creatureContexts) {
-        const maxima = category === 'major' ? majorMaxima : minorMaxima;
-        const currentResult =
-          currentTier > 0 ? computeCharmEffect(charm, getTierDefinition(charm, currentTier as CharmTier), ctx) : null;
+      let bestForCharm: { monsterName: string; metricGain: number } | null = null;
+      for (const { monsterName, ctx } of creatureContexts) {
+        const currentResult = currentTier > 0 ? computeCharmEffect(charm, getTierDefinition(charm, currentTier as CharmTier), ctx) : null;
         const currentEffect = currentResult?.effect ?? emptyEffect();
         const nextResult = computeCharmEffect(charm, getTierDefinition(charm, toTier), ctx);
         const gain =
-          scoreEffect(nextResult.effect, maxima, weights, nextResult.confidence).totalScore -
-          scoreEffect(currentEffect, maxima, weights, currentResult?.confidence ?? 'high').totalScore;
-        if (!bestForCharm || gain > bestForCharm.scoreGain) bestForCharm = { monsterName, scoreGain: gain };
+          roleMetricFor(nextResult.effect, role) * CONFIDENCE_SCORE_MULTIPLIER[nextResult.confidence] -
+          roleMetricFor(currentEffect, role) * CONFIDENCE_SCORE_MULTIPLIER[currentResult?.confidence ?? 'high'];
+        if (!bestForCharm || gain > bestForCharm.metricGain) bestForCharm = { monsterName, metricGain: gain };
       }
-      if (!bestForCharm || bestForCharm.scoreGain <= 0) continue;
+      if (!bestForCharm || bestForCharm.metricGain <= 0) continue;
 
-      const scorePerCost = cost > 0 ? bestForCharm.scoreGain / cost : bestForCharm.scoreGain;
-      if (!best || scorePerCost > best.scorePerCost) {
-        best = { charm, fromTier: currentTier, toTier, cost, monsterName: bestForCharm.monsterName, scoreGain: bestForCharm.scoreGain, scorePerCost };
+      const metricPerCost = cost > 0 ? bestForCharm.metricGain / cost : bestForCharm.metricGain;
+      if (!best || metricPerCost > best.metricPerCost) {
+        best = { charm, fromTier: currentTier, toTier, cost, monsterName: bestForCharm.monsterName, metricGain: bestForCharm.metricGain, metricPerCost };
       }
     }
 
@@ -425,16 +423,58 @@ function buildPurchaseSuggestions(
     suggestions.push({
       charmId: best.charm.id,
       category,
+      role,
       monsterName: best.monsterName,
       fromTier: best.fromTier,
       toTier: best.toTier,
       cost: best.cost,
       currency: best.charm.currency,
-      scoreGain: best.scoreGain,
-      scorePerCost: best.scorePerCost,
+      metricGain: best.metricGain,
+      metricPerCost: best.metricPerCost,
     });
     virtualTier.set(best.charm.id, best.toTier);
     remainingBudget -= best.cost;
+  }
+
+  return suggestions;
+}
+
+/**
+ * Partitions `charmList` by role (so the allocator above only ever compares
+ * same-unit candidates) and runs it once per role in `ROLE_PRIORITY` order.
+ * The Charm Point/Echo budget is one real, shared pool, so roles can't each
+ * independently assume they get the full amount - instead each role only
+ * sees what's left after every higher-priority role already spent, the same
+ * fixed-priority rule used everywhere else a cross-role decision is
+ * otherwise unavoidable, applied here as a sequential claim on one budget
+ * instead of a blended ranking.
+ *
+ * When no budget has been entered (still 0, the Advanced-settings default),
+ * there is nothing to allocate against, so every role instead gets an
+ * advisory top-10 list of its own most efficient next steps, unconstrained
+ * by affordability - the same spirit as the previous behaviour, but still
+ * capable of chaining.
+ */
+function buildPurchaseSuggestions(
+  charmList: CharmDefinition[],
+  category: CharmCategory,
+  unlockedList: UnlockedCharm[],
+  creatureContexts: CreatureContext[],
+  availableBudget: number,
+  targetTier: CharmTier,
+): CharmPurchaseSuggestion[] {
+  const hasBudget = availableBudget > 0;
+  let remainingBudget = hasBudget ? availableBudget : Number.POSITIVE_INFINITY;
+  const suggestions: CharmPurchaseSuggestion[] = [];
+
+  for (const role of ASSIGNABLE_ROLES) {
+    const roleCharms = charmList.filter((c) => EFFECT_KIND_TO_ROLE[c.effectKind] === role);
+    if (roleCharms.length === 0) continue;
+
+    const suggestionCap = hasBudget ? roleCharms.length * targetTier : 10;
+    const roleSuggestions = allocateRoleBudget(roleCharms, category, role, unlockedList, creatureContexts, remainingBudget, suggestionCap, targetTier);
+    suggestions.push(...roleSuggestions);
+    if (hasBudget) remainingBudget -= roleSuggestions.reduce((sum, s) => sum + s.cost, 0);
   }
 
   return suggestions;
@@ -479,8 +519,6 @@ export function optimiseCharms(
 ): HuntOptimisationSummary {
   const { killedMonsters, totals } = parseResult;
   if (killedMonsters.length === 0) return emptySummary(character, mode);
-
-  const weights = MODE_WEIGHTS[mode];
 
   // --- Join Bestiary data first (without a loot value yet - it depends on
   // hitpoints-weighted allocation below, computed from these same profiles).
@@ -541,6 +579,8 @@ export function optimiseCharms(
         hasBestiaryData: false,
         bestMajorCharm: null,
         bestMinorCharm: null,
+        bestMajorCharmByRole: {},
+        bestMinorCharmByRole: {},
         bestMajorCharmOverall: null,
         bestMinorCharmOverall: null,
         rankedMajorCharms: [],
@@ -580,10 +620,10 @@ export function optimiseCharms(
       attacksPerHour: attacksPerHourAllocated[i] ?? 0,
     };
 
-    const majorGroup = rankCharmGroup(MAJOR_CHARM_LIST, 'major', character.unlockedMajorCharms, ctx, weights, targetTier);
-    const minorGroup = rankCharmGroup(MINOR_CHARM_LIST, 'minor', character.unlockedMinorCharms, ctx, weights, targetTier);
+    const majorGroup = rankCharmGroup(MAJOR_CHARM_LIST, 'major', character.unlockedMajorCharms, ctx, targetTier);
+    const minorGroup = rankCharmGroup(MINOR_CHARM_LIST, 'minor', character.unlockedMinorCharms, ctx, targetTier);
 
-    creatureContexts.push({ monsterName: huntStat.monsterName, profile, ctx, majorMaxima: majorGroup.maxima, minorMaxima: minorGroup.maxima });
+    creatureContexts.push({ monsterName: huntStat.monsterName, profile, ctx });
 
     const needsManualReview = profile.wasFuzzyMatched || profile.hitpoints === null || profile.resistances === null;
     if (needsManualReview) creaturesNeedingManualReview.push(huntStat.monsterName);
@@ -607,6 +647,8 @@ export function optimiseCharms(
       hasBestiaryData: true,
       bestMajorCharm: null,
       bestMinorCharm: null,
+      bestMajorCharmByRole: {},
+      bestMinorCharmByRole: {},
       bestMajorCharmOverall: majorGroup.bestOverall,
       bestMinorCharmOverall: minorGroup.bestOverall,
       rankedMajorCharms: majorGroup.recommendations,
@@ -621,16 +663,17 @@ export function optimiseCharms(
   });
 
   // --- Solve the real one-charm-per-creature assignment for Major and Minor
-  // charms separately (Major is additionally capped at the account's slot
-  // limit; Minor Charms have no overall cap beyond the one-per-creature rule).
+  // charms, once per role (Major's damage-role solve is additionally capped
+  // at the account's slot limit; every other solve - including every Minor
+  // Charm role - has no overall cap beyond the one-per-creature rule).
   const slotLimit = calculateMajorCharmSlotLimit(character.accountType, character.hasCharmExpansion);
-  const majorAssignment = solveGlobalCharmAssignment(
+  const majorAssignmentsByRole = solveAssignmentsByRole(
     creatureResults,
     character.unlockedMajorCharms.map((u) => u.charmId),
     'major',
     slotLimit ?? undefined,
   );
-  const minorAssignment = solveGlobalCharmAssignment(
+  const minorAssignmentsByRole = solveAssignmentsByRole(
     creatureResults,
     character.unlockedMinorCharms.map((u) => u.charmId),
     'minor',
@@ -639,12 +682,33 @@ export function optimiseCharms(
 
   for (const result of creatureResults) {
     if (!result.hasBestiaryData) continue;
-    const bestMajorCharm = majorAssignment.get(result.monsterName) ?? null;
-    const bestMinorCharm = minorAssignment.get(result.monsterName) ?? null;
+
+    const bestMajorCharmByRole: Partial<Record<CharmRole, CharmRecommendation>> = {};
+    const bestMinorCharmByRole: Partial<Record<CharmRole, CharmRecommendation>> = {};
+    for (const role of ASSIGNABLE_ROLES) {
+      const major = majorAssignmentsByRole[role]?.get(result.monsterName);
+      if (major) bestMajorCharmByRole[role] = major;
+      const minor = minorAssignmentsByRole[role]?.get(result.monsterName);
+      if (minor) bestMinorCharmByRole[role] = minor;
+    }
+
+    // The default pick walks ROLE_PRIORITY (damage-role solve's answer
+    // first, then the other roles in the same fixed order) and takes the
+    // first role that actually won this creature a slot - not just
+    // damage/loot_utility, since a player can easily have nothing unlocked
+    // in either of those (e.g. only Cripple, a control-role Charm) and
+    // still deserves a default pick rather than none at all. Every role's
+    // solved assignment also lives in `bestMajorCharmByRole`/
+    // `bestMinorCharmByRole` as alternate-view data regardless of which one
+    // wins here.
+    const bestMajorCharm = ASSIGNABLE_ROLES.reduce<CharmRecommendation | null>((found, role) => found ?? bestMajorCharmByRole[role] ?? null, null);
+    const bestMinorCharm = ASSIGNABLE_ROLES.reduce<CharmRecommendation | null>((found, role) => found ?? bestMinorCharmByRole[role] ?? null, null);
     const combinedEffect = addEffects(bestMajorCharm?.effect ?? emptyEffect(), bestMinorCharm?.effect ?? emptyEffect());
 
     result.bestMajorCharm = bestMajorCharm;
     result.bestMinorCharm = bestMinorCharm;
+    result.bestMajorCharmByRole = bestMajorCharmByRole;
+    result.bestMinorCharmByRole = bestMinorCharmByRole;
     result.expectedDamagePerHour = combinedEffect.expectedDamagePerHour;
     result.expectedProfitPerHour = combinedEffect.expectedProfitPerHour;
     result.expectedDamagePreventedPerHour = combinedEffect.expectedDamagePreventedPerHour;
@@ -680,10 +744,16 @@ export function optimiseCharms(
 
   const majorCharmSlotPlan: MajorCharmSlotPlan = { recommendedSlots, unassignedCandidates, slotLimit };
 
-  // --- Ranked alternatives across the whole hunt (top charms regardless of creature).
+  // --- Ranked alternatives across the whole hunt (top charms regardless of
+  // creature) - same fixed role-priority-then-roleMetric order as within one
+  // creature's rankedMajorCharms/rankedMinorCharms, just applied hunt-wide.
   const rankedAlternatives = creatureResults
     .flatMap((r) => [...r.rankedMajorCharms, ...r.rankedMinorCharms])
-    .sort((a, b) => b.scores.totalScore - a.scores.totalScore)
+    .sort((a, b) => {
+      const priorityDiff = ROLE_PRIORITY.indexOf(a.role) - ROLE_PRIORITY.indexOf(b.role);
+      if (priorityDiff !== 0) return priorityDiff;
+      return b.roleMetric - a.roleMetric || a.charmId.localeCompare(b.charmId) || a.monsterName.localeCompare(b.monsterName);
+    })
     .slice(0, 15);
 
   // --- Purchase suggestions for unspent Charm Points / Minor Charm Echoes.
@@ -692,7 +762,6 @@ export function optimiseCharms(
     'major',
     character.unlockedMajorCharms,
     creatureContexts,
-    weights,
     character.availableCharmPoints,
     targetTier,
   );
@@ -701,12 +770,17 @@ export function optimiseCharms(
     'minor',
     character.unlockedMinorCharms,
     creatureContexts,
-    weights,
     character.availableMinorCharmEchoes,
     targetTier,
   );
 
-  // --- Reassignment suggestions: where the current loadout differs from the recommendation.
+  // --- Reassignment suggestions: where the current loadout differs from the
+  // recommendation. The currently-assigned Charm was chosen freely by the
+  // player, so it can easily be a different role than the recommendation
+  // (e.g. Parry equipped, Wound recommended) - netMetricGain is only ever a
+  // real number when both sides share a role (same unit); otherwise it's
+  // null and the UI shows the swap by role rather than inventing a
+  // cross-unit delta.
   const reassignmentSuggestions: CharmReassignmentSuggestion[] = [];
   for (const result of creatureResults) {
     if (!result.hasBestiaryData) continue;
@@ -714,32 +788,42 @@ export function optimiseCharms(
     const recommendedMajor = result.bestMajorCharm;
     const currentMajorId = getAssignedCharmId(character.assignedMajorCharms, result.monsterName);
     if (recommendedMajor && recommendedMajor.charmId !== currentMajorId) {
-      const currentScore = result.rankedMajorCharms.find((r) => r.charmId === currentMajorId)?.scores.totalScore ?? 0;
+      const currentEntry = result.rankedMajorCharms.find((r) => r.charmId === currentMajorId);
       reassignmentSuggestions.push({
         monsterName: result.monsterName,
         category: 'major',
         fromCharmId: currentMajorId,
         toCharmId: recommendedMajor.charmId,
+        toRole: recommendedMajor.role,
         removalCost: currentMajorId ? calculateRemovalCost(character.level, character.hasCharmExpansion) : 0,
-        netScoreGain: recommendedMajor.scores.totalScore - currentScore,
+        netMetricGain: !currentMajorId
+          ? recommendedMajor.roleMetric
+          : currentEntry && currentEntry.role === recommendedMajor.role
+            ? recommendedMajor.roleMetric - currentEntry.roleMetric
+            : null,
       });
     }
 
     const recommendedMinor = result.bestMinorCharm;
     const currentMinorId = getAssignedCharmId(character.assignedMinorCharms, result.monsterName);
     if (recommendedMinor && recommendedMinor.charmId !== currentMinorId) {
-      const currentScore = result.rankedMinorCharms.find((r) => r.charmId === currentMinorId)?.scores.totalScore ?? 0;
+      const currentEntry = result.rankedMinorCharms.find((r) => r.charmId === currentMinorId);
       reassignmentSuggestions.push({
         monsterName: result.monsterName,
         category: 'minor',
         fromCharmId: currentMinorId,
         toCharmId: recommendedMinor.charmId,
+        toRole: recommendedMinor.role,
         removalCost: currentMinorId ? calculateRemovalCost(character.level, character.hasCharmExpansion) : 0,
-        netScoreGain: recommendedMinor.scores.totalScore - currentScore,
+        netMetricGain: !currentMinorId
+          ? recommendedMinor.roleMetric
+          : currentEntry && currentEntry.role === recommendedMinor.role
+            ? recommendedMinor.roleMetric - currentEntry.roleMetric
+            : null,
       });
     }
   }
-  reassignmentSuggestions.sort((a, b) => b.netScoreGain - a.netScoreGain);
+  reassignmentSuggestions.sort((a, b) => (b.netMetricGain ?? Number.NEGATIVE_INFINITY) - (a.netMetricGain ?? Number.NEGATIVE_INFINITY));
 
   // --- Economics: removal cost of the suggested changes vs. a full reset.
   const totalRemovalCost = reassignmentSuggestions.reduce((sum, r) => sum + r.removalCost, 0);
